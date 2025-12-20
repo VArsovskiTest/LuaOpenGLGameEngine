@@ -3,6 +3,7 @@
 local MockCommandEngine = {
     tables = {},
     calls = {},
+    events = {},
     next_id = {},
 }
 
@@ -57,6 +58,36 @@ function MockCommandEngine:GetComponent(entity_id, command_type_identifier, comp
     return self:Get(command_type_identifier, entity_id)[component_name]
 end
 
+-- Subscribe a handler to an event
+function MockCommandEngine:subscribe(event_name, handler_fn)
+    if not self.events[event_name] then
+        self.events[event_name] = {}
+    end
+    table.insert(self.events[event_name], handler_fn)
+end
+
+-- Unsubscribe (optional, for cleanup)
+function MockCommandEngine:unsubscribe(event_name, handler_fn)
+    if self.events[event_name] then
+        for i, fn in ipairs(self.events[event_name]) do
+            if fn == handler_fn then
+                table.remove(self.events[event_name], i)
+                break
+            end
+        end
+    end
+end
+
+-- Fire an event with optional data
+function MockCommandEngine:dispatch(event_name, data)
+    data = data or {}
+    if self.events[event_name] then
+        for _, handler in ipairs(self.events[event_name]) do
+            handler(data)
+        end
+    end
+end
+
 -- Get entity/command by ID
 function MockCommandEngine:Get(table_name, id)
     table_name = table_name or "default"
@@ -73,16 +104,17 @@ function MockCommandEngine:GetCalls(table_name)
     return self.calls[table_name] or {}
 end
 
--- Clear everything (great for before_each)
 function MockCommandEngine:Reset(table_name)
     if table_name then
         self.tables[table_name] = nil
         self.calls[table_name] = nil
         self.next_id[table_name] = nil
+        self.events[table_name] = nil
     else
         self.tables = {}
         self.calls = {}
         self.next_id = {}
+        self.events = {}
     end
 end
 
@@ -91,6 +123,7 @@ function MockCommandEngine:ClearTable(table_name)
     self.tables[table_name] = nil
     self.calls[table_name] = nil
     self.next_id[table_name] = nil
+    self.events[table_name] = nil
 end
 
 return MockCommandEngine

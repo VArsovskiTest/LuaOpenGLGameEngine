@@ -12,25 +12,29 @@ function CommandQueue:enqueue(cmd)
     end
 end
 
--- Execute a command immediately and log it (bypasses the queue entirely)
-function CommandQueue:execute_immediately(cmd, engine)
-    if cmd and engine then
-        cmd:execute(engine)
-        table.insert(self.history, cmd)
-        self:trim_history()
-    end
+-- Private: executes a command, dispatches event, and records in history
+function CommandQueue:_execute_and_record(cmd, engine)
+    if not cmd or not engine then return end
+
+    cmd:execute(engine)
+    _G.MockEngine:dispatch("command_executed", { command = cmd })
+    table.insert(self.history, cmd)
+    self:trim_history()
 end
 
--- Process and execute the next command in the queue (FIFO order) and return
+-- Execute immediately (bypasses queue)
+function CommandQueue:execute_immediately(cmd, engine)
+    self:_execute_and_record(cmd, engine)
+end
+
+-- Process next from queue
 function CommandQueue:process_next(engine)
     if #self.queue == 0 or not engine then
         return nil
     end
 
-    local cmd = table.remove(self.queue, 1)  -- Dequeue
-    cmd:execute(engine)
-    table.insert(self.history, cmd)
-    self:trim_history()
+    local cmd = table.remove(self.queue, 1)
+    self:_execute_and_record(cmd, engine)
 
     return cmd
 end

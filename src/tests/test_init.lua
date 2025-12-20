@@ -117,6 +117,11 @@ local function expect(value)
     return {
         -- Equality
         to_equal = function(expected)
+            -- print("DEBUG: type of value =", type(value))
+            -- print("DEBUG: value =", value)
+            -- print("DEBUG: type of expected =", type(expected))
+            -- print("DEBUG: expected =", expected)
+
             if value == expected then
                 PASS = PASS + 1
                 print(c("32", "PASS"))
@@ -354,6 +359,15 @@ local function init(context)
         print("TestInit: Initialized with AI Mock Engine.")
     elseif context == _G.EngineModules.COMMAND then
         _G.MockEngine = require("mocks.command_mock_engine")
+
+        -- Subscribe enqueue and process events of _G.MockEngine globally:
+        _G.MockEngine:subscribe("enqueue", function(c)
+            print("command issued: ".. c)
+        end)
+        _G.MockEngine:subscribe("execute_immediately", function(c)
+            print("command executed: ".. c)
+        end)
+
         print("TestInit: Initialized with Command Mock Engine.")
     else
         error("TestInit: Unknown context provided: " .. tostring(context))
