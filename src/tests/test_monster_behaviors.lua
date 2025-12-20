@@ -1,12 +1,15 @@
 -- src/tests/ai/test_monster_behaviors.lua
 
-require("../src/tests/test_init")
-local h = require("helpers")                    -- your MockEngine + shortcuts
+local init = require("../src/tests/test_init")
+init.init(_G.EngineModules.AI)
+
+local h = _G.MockEngine
+
 local MonsterBehaviors = require("ai.monster_behaviors")
 
 describe("Monster Behaviors", function()
     before_each(function()
-        h.reset()
+        h:Reset()
     end)
 
     it("starts in IDLE and transitions to PATROLLING when healthy", function()
@@ -18,7 +21,7 @@ describe("Monster Behaviors", function()
 
     it("detects player in sight range and starts CHASING (melee)", function()
         h.entities[1001].Monster.sight_range = 12
-        h.player:setPosition(5, 5)
+        h:SetPlayerPosition(5, 5)
 
         MonsterBehaviors:update(1001, 0.016, h)
 
@@ -28,30 +31,30 @@ describe("Monster Behaviors", function()
     end)
 
     it("ranged/caster goes straight to ATTACKING when player is seen", function()
-        h.set_player_weapon("BOW")
+        h:SetPlayerWeapon("BOW")
 
         local m = h.entities[1001].Monster
         m.specialization = { attackType = "Ranged" }
         m.sight_range    = 20
 
-        h.player:setPosition(15, 0)
+        h:SetPlayerPosition(15, 0)
 
-        MonsterBehaviors:update(1001, 0.016, h)
-        MonsterBehaviors:update(1001, 0.016, h)  -- ranged skips straight to ATTACKING
+        MonsterBehaviors:update(1, 0.016, h)
+        MonsterBehaviors:update(1, 0.016, h)
 
         expect(m.state).to_equal("ATTACKING")
         expect(m.target).to_equal("player")
     end)
 
     it("deals spellpower damage when caster attacks", function()
-        h.set_player_weapon("STAFF")
+        h:SetPlayerWeapon("STAFF")
 
         local m = h.entities[1001].Monster
         m.specialization = { attackType = "Caster" }
         m.spellpower     = 777
         m.sight_range    = 30
 
-        h.player:setPosition(1, 0)
+        h:SetPlayerPosition(1, 0)
 
         -- run ticks until we enter ATTACKING
         for i = 1, 30 do
@@ -62,9 +65,12 @@ describe("Monster Behaviors", function()
         -- one more tick to actually fire the spell
         MonsterBehaviors:update(1001, 0.016, h)
 
-        local calls = h.calls.DealDamage
-        local last  = calls[#calls]
+        local damageRecords = h.calls.DealDamage
+        local last  = damageRecords[#damageRecords]
+        expect(last).not_nil()
         expect(last["target"]).to_equal("player")
         expect(last["amount"]).to_equal(7)
     end)
+
+    summary()
 end)
