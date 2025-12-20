@@ -35,12 +35,12 @@ describe("Monster Behaviors", function()
 
         local m = h.entities[1001].Monster
         m.specialization = { attackType = "Ranged" }
-        m.sight_range    = 20
+        m.sight_range = 20
 
         h:SetPlayerPosition(15, 0)
 
-        MonsterBehaviors:update(1, 0.016, h)
-        MonsterBehaviors:update(1, 0.016, h)
+        MonsterBehaviors:update(1001, 0.016, h)
+        MonsterBehaviors:update(1001, 0.016, h)
 
         expect(m.state).to_equal("ATTACKING")
         expect(m.target).to_equal("player")
