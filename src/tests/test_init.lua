@@ -14,6 +14,7 @@ local function initializePaths()
         root .. "/src/?.lua",
         root .. "/src/?/init.lua",
         root .. "/src/commands/?.lua",
+        root .. "/src/engines/?.lua",
         root .. "/src/enums/?.lua",
         root .. "/src/mocks/?.lua",
         root .. "/src/scripts/?.lua",
@@ -29,6 +30,31 @@ local function initializePaths()
         if not package.path:find(p:gsub("([%.%+%-%?])", "%%%1"), 1, true) then
             package.path = package.path .. ";" .. p
         end
+    end
+
+    -- Add WSL local LuaRocks modules to package.path (for Windows Lua accessing WSL files)
+    -- local wsl_rocks_path = [[\\wsl$\Ubuntu\home\vicko\.luarocks\share\lua\5.4\?.lua]]
+    -- local wsl_rocks_init = [[\\wsl$\Ubuntu\home\vicko\.luarocks\share\lua\5.4\?\init.lua]]
+    -- package.path = package.path .. ";" .. wsl_rocks_path .. ";" .. wsl_rocks_init
+    -- local wsl_cpath = [[\\wsl$\Ubuntu\home\vicko\.luarocks\lib\lua\5.4\?.so]]
+    -- package.cpath = package.cpath .. ";" .. wsl_cpath
+    -- package.path = package.path .. ";\\\\wsl$\\Ubuntu\\home\\vicko\\.luarocks\\share\\lua\\5.4\\?.lua"
+
+    -- Add C:\lua5.4 to package.path and package.cpath
+    local lua54_path = "C:\\lua5.4"   -- use double backslashes in Lua strings
+    -- For .lua modules (e.g., redis.lua)
+    package.path = package.path .. ";" .. lua54_path .. "\\?.lua;" .. lua54_path .. "\\?\\init.lua"
+    -- For .dll C extensions (e.g., socket/core.dll, cjson.dll)
+    package.cpath = package.cpath .. ";" .. lua54_path .. "\\?.dll;" .. lua54_path .. "\\clibs\\?.dll"
+
+    local ok, redis_mod = pcall(require, "redis")
+    if ok then
+        print("redis loaded successfully from C:\\lua5.4")
+        if redis_mod._VERSION then
+            print("redis version:", redis_mod._VERSION)
+        end
+    else
+        print("Failed to load redis:", redis_mod)
     end
 
     -- Print current package paths for debugging

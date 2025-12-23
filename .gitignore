@@ -6,3 +6,5 @@ vs/*
 lua-debug/
 bin/
 obj/
+wsl$/
+logs/

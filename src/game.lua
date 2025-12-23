@@ -1,4 +1,25 @@
 -- src/game.lua
+local logPath = get_logs_path("game_engine_log.txt")
+local logFile = io.open(logPath, "a")
+
+if logFile then
+    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] Log started\n")
+    logFile:flush()
+else
+    print("WARNING: Could not open log file at " .. logPath)
+end
+
+local function log(...)
+    local args = {...}
+    local line = ""
+    for i = 1, #args do
+        line = line .. tostring(args[i])
+        if i < #args then line = line .. "\t" end
+    end
+    local timestamp = os.date("%Y-%m-%d %H:%M:%S")
+    logFile:write("[" .. timestamp .. "] " .. line .. "\n")
+    logFile:flush()  -- immediate write (great for debugging crashes)
+end
 
 local function clear_render_table()
     for k in pairs(render) do
@@ -40,7 +61,56 @@ function render_scene()
     return render
 end
 
+-- Helper function to convert a table to a string for logging
+local function serialize_table(t)
+    if type(t) ~= 'table' then
+        return tostring(t)
+    end
+    local s = '{ '
+    for k, v in pairs(t) do
+        s = s .. tostring(k) .. '=' .. serialize_table(v) .. ', '
+    end
+    return s .. '}'
+end
+
+-- function redis_clear(queue)
+--     log("=== Redis Queue: " .. queue .. " Cleared ===")
+-- end
+
+-- function redis_enqueue(queue, data)
+--     log("=== Redis Queue: " .. queue .. " Added item " .. serialize_table(data) .. " ===")
+-- end
+
+-- function redis_dequeue(queue, data)
+--     log("=== Redis Queue: " .. queue .. " Removed item " .. serialize_table(data) .. " ===")
+-- end
+
 function initGame()
-    print("Executing script: game")
+    log("=== Redis Queue Test Start ===")
+    redis_clear("test:queue")
+
+    redis_enqueue("test:queue", { action = "spawn", entity = "enemy", id = 1 })
+    redis_enqueue("test:queue", { action = "move", target = "player", x = 100, y = 200 })
+    redis_enqueue("test:queue", { action = "attack", damage = 50 })
+
+    log("Enqueued 3 commands")
+
+    local cmd1 = redis_dequeue("test:queue", 0)
+    if cmd1 then
+        log("Dequeued:", cmd1.action, cmd1.entity or cmd1.target or cmd1.damage)
+    else
+        log("No command (should not happen)")
+    end
+
+    local cmd2 = redis_dequeue("test:queue", 2)
+    if cmd2 then
+        log("Dequeued (blocking):", cmd2.action)
+    else
+        log("Timeout - no more commands")
+    end
+
+    log("=== Redis Queue Test End ===")
+    log("Executing script: game")
+
     return render_scene()
 end

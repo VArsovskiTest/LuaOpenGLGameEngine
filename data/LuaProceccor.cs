@@ -5,33 +5,62 @@ using Newtonsoft.Json.Linq;
 public class LuaProcessor
 {
     private Lua _lua;
-    private string _luaFilePath;
 
-    public LuaProcessor(Lua luaContext, string luaFilePath)
+    // Cache the LuaFunction objects to avoid repeated lookups
+    private readonly Dictionary<string, LuaFunction> _luaFunctionCache; 
+
+    public LuaProcessor(Lua lua, string luaFilePath)
     {
-        _lua = new Lua();
-        _luaFilePath = luaFilePath;
+        _lua = lua;
+        _luaFunctionCache = new Dictionary<string, LuaFunction>();
+
+        // --- Load the script ONCE here ---
+        try
+        {
+            _lua.DoFile(luaFilePath); 
+        }
+        catch (Exception ex)
+        {
+            // Handle file not found, syntax errors, etc.
+            Console.WriteLine($"FATAL: Could not load or execute Lua script at {luaFilePath}. Error: {ex.Message}");
+        }
+    }
+
+    // Helper to get and cache a function
+    private LuaFunction GetLuaFunction(string functionName)
+    {
+        if (_luaFunctionCache.TryGetValue(functionName, out LuaFunction func))
+        {
+            return func;
+        }
+
+        func = _lua[functionName] as LuaFunction;
+        if (func == null)
+        {
+            throw new InvalidOperationException($"Lua function '{functionName}' not found.");
+        }
+
+        _luaFunctionCache[functionName] = func;
+        return func;
     }
 
     public T ProcessLuaQuery<T>(string functionName, params object[] args) where T : class
     {
-        _lua.DoFile(_luaFilePath);
-
-        if (_lua[functionName] is LuaFunction luaFunction)
+        var luaFunction = GetLuaFunction(functionName);
+        var result = luaFunction.Call(args);
+        
+        if (result.Length > 0 && result[0] is LuaTable luaTable)
         {
-            var luaTable = luaFunction.Call(args)[0] as LuaTable;
             return ConvertLuaTableToObject<T>(luaTable);
         }
-
+        
         return default;
     }
 
-    public void ProcessLuaNonQuery(string functionName)
+    public void ProcessLuaNonQuery(string functionName, params object[] args)
     {
-        _lua.DoFile(_luaFilePath);
-
-        if (_lua[functionName] is LuaFunction luaFunction)
-            luaFunction.Call();
+        var luaFunction = GetLuaFunction(functionName);
+        luaFunction.Call(args);
     }
 
     private T ConvertLuaTableToObject<T>(LuaTable luaTable) where T : class
@@ -80,5 +109,14 @@ public class LuaProcessor
         }
 
         return jObject;
+    }
+
+    public void Dispose()
+    {
+        _lua?.Dispose();
+        foreach(var func in _luaFunctionCache.Values)
+        {
+            func?.Dispose();
+        }
     }
 }

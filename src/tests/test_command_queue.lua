@@ -220,3 +220,5 @@ describe("CommandQueue with Events", function()
         expect(handler_called).to_be_falsy()
     end)
 end)
+
+summary()

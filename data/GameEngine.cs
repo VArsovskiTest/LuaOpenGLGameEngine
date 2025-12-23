@@ -16,6 +16,8 @@ namespace LuaOpenGLGameEngine
 
         private EngineState _state { get; set; }
 
+        private RedisQueue _redisQueue { get; set; }
+
         public GameEngine() : base(1024, 768, GraphicsMode.Default, "C# + Lua + OpenGL Engine")
         {
             graphicsRenderer = new GraphicsRenderer();
@@ -24,12 +26,11 @@ namespace LuaOpenGLGameEngine
             _lua = new Lua();
 
             // Get the current working directory
-            string currentDirectory = Path.GetFullPath(Directory.GetCurrentDirectory());
-            string projectRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), @"..\..\..\"));
+            string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+            _luaFilePath = Path.Combine(projectRoot, "src", "game.lua");
 
-            // Adjust the path below to point to your project's root
-            string selectedDir = currentDirectory == projectRoot ? Path.GetFullPath(Directory.GetCurrentDirectory()) : Path.GetFullPath("../../../", Directory.GetCurrentDirectory());
-            _luaFilePath = Path.Combine(selectedDir, "src", "game.lua");
+            _redisQueue = new RedisQueue(_lua);
+            _redisQueue.SetupBindings();
 
             // === Set State ===
             _state = new EngineState(_lua);
@@ -55,9 +56,9 @@ namespace LuaOpenGLGameEngine
             _lua.DoString("render = {}");
             //_lua["render_scene"] = (Action<string, string>)RenderTable;
             _lua["update"] = (Action<string>)UpdateState;
-            renderTable = _lua["render_scene"] as LuaTable;
+            renderTable = _lua["initGame"] as LuaTable;
 
-            var sceneData = new GenericScene(new LuaProcessor(_lua, _luaFilePath).ProcessLuaQuery<Dictionary<string, ModelRGB>>("render_scene"));
+            var sceneData = new GenericScene(new LuaProcessor(_lua, _luaFilePath).ProcessLuaQuery<Dictionary<string, ModelRGB>>("initGame"));
             RedrawScene(sceneData);
         }
 
