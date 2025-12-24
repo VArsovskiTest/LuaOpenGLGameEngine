@@ -1,8 +1,19 @@
 -- src/game.lua
-local logPath = get_logs_path("game_engine_log.txt")  -- Just to test the binding
+local enableLogging = true  -- Set to false to skip logging
+
+local logPath
+
+if get_logs_path and enableLogging then
+    logPath = get_logs_path("game_engine_log.txt")
+end
+
 local logFile = nil
 
-function init_logging()
+local color_helper = require("helpers.color_helper")
+local ColorHelper = color_helper:new()
+local color_pallette = require("enums.colors")
+
+local function init_logging()
     if logFile then return end
     
     local path = get_logs_path("game_engine_log.txt")
@@ -17,50 +28,98 @@ function init_logging()
     end
 end
 
-function log(msg)
+local function log(msg)
     if not logFile then return end
     logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(msg) .. "\n")
     logFile:flush()
 end
 
-local function clear_render_table()
-    for k in pairs(render) do
-        render[k] = nil
+local function clear_current_scene()
+    for k in pairs(current_state) do
+        current_state[k] = nil
     end
-    -- or simply: render = {}
+    -- or simply: current_state = {}
 end
 
-function update(dt)
-    -- you can do game logic here later
-end
+current_state = current_state or {}
 
-render = render or {}
+function render_scene(clearColors, rects, resource_bars, circles)
+    clear_current_scene()
 
-function render_scene()
-    clear_render_table()
-
-    table.insert(render, { type = "clear", r = 0.1, g = 0.15, b = 0.3 })
+    -- Insert clear color based on the passed parameter
+    for _, clr in ipairs(clearColors) do
+        local colorObject = ColorHelper.createColorObject(clr or color_pallette.RICH_MAGENTA)
+        table.insert(current_state, {
+            type = "clear",
+            r = colorObject.r,
+            g = colorObject.g,
+            b = colorObject.b,
+            a = colorObject.a,
+        })
+    end
 
     local time = os.clock()
     local x = math.sin(time * 2) * 0.5
 
-    table.insert(render, {
+    -- Insert rectangle based on dynamic values
+    local clr = ColorHelper.createColorObject(clearColor or color_pallette.INDIGO)
+    table.insert(current_state, {
         type = "rect",
         x = x - 0.2,
         y = -0.3,
         w = 0.4,
         h = 0.6,
-        r = 1, g = 0.3, b = 0.5
+        r = clr.r,
+        g = clr.g,
+        b = clr.b,
+        a = clr.a
     })
 
-    table.insert(render, {
-        type = "rect",
-        x = -0.8, y = -0.8,
-        w = 0.3, h = 0.3,
-        r = 0.8, g = 0.9, b = 0.2
-    })
+    -- Insert additional rectangles from the provided parameter
+    for _, rect in ipairs(rects) do
+        local clr = ColorHelper.createColorObject(rect.color_id or color_pallette.SILVER)
+        table.insert(current_state, {
+            type = "rect",
+            x = rect.x,
+            y = rect.y,
+            w = rect.w,
+            h = rect.h,
+            r = clr.r,
+            g = clr.g,
+            b = clr.b,
+            a = clr.a
+        })
+    end
 
-    return render
+    for _, bar in ipairs(resource_bars) do
+        local clr = ColorHelper.createColorObject(bar.color_id or color_pallette.GOLD)
+        table.insert(current_state, {
+            type = "resource_bar",
+            name = bar:name() or nil,
+            current = bar:current() or 0,
+            maximum = bar:maximum() or 100,
+            percentage = bar:percentage() or 0,
+            r = clr.r,
+            g = clr.g,
+            b = clr.b,
+            a = clr.a,
+        })
+    end
+
+    for _, c in ipairs(circles) do
+        local clr = ColorHelper.createColorObject(c.color_id  or color_pallette.OLIVE)
+        table.insert(current_state, {
+            type = "circle",
+            x = c.x or -2,
+            y = c.y or -2,
+            r = clr.r,
+            g = clr.g,
+            b = clr.b,
+            a = clr.a,
+        })
+    end
+
+    return current_state
 end
 
 -- Helper function to convert a table to a string for logging
@@ -75,19 +134,7 @@ local function serialize_table(t)
     return s .. '}'
 end
 
--- function redis_clear(queue)
---     log("=== Redis Queue: " .. queue .. " Cleared ===")
--- end
-
--- function redis_enqueue(queue, data)
---     log("=== Redis Queue: " .. queue .. " Added item " .. serialize_table(data) .. " ===")
--- end
-
--- function redis_dequeue(queue, data)
---     log("=== Redis Queue: " .. queue .. " Removed item " .. serialize_table(data) .. " ===")
--- end
-
-function initGame()
+local function setup_command_queue()
     log("=== Redis Queue Test Start ===")
     redis_clear("test:queue")
 
@@ -113,6 +160,20 @@ function initGame()
 
     log("=== Redis Queue Test End ===")
     log("Executing script: game")
+end
 
+-- This function is called via NLua from C# when GameEngine starts:
+function initGame()
+    setup_command_queue()
     return render_scene()
 end
+
+function update(dt)
+    -- you can do game-state (for current_state) logic here later
+end
+
+-- This function is used for tests (namely render_sample_scene rather)
+return {
+    setup_command_queue = setup_command_queue,
+    render_scene = render_scene,
+}
