@@ -1,16 +1,17 @@
--- ResourceBar.lua - HP, Mana, Stamina Manager
+-- resource_bar.lua - HP, Mana, Stamina Manager
 local ResourceBar = {}
 ResourceBar.__index = ResourceBar
 
 -- Constructor with TYPE CHECKING!
-function ResourceBar:new(progress_bar)
+function ResourceBar:new(resource_bar)
     -- VALIDATE: Must be ResourceBar or nil
-    if progress_bar and getmetatable(progress_bar) ~= ResourceBar then
-        error("progress_bar must be a ResourceBar!")
+    if resource_bar and getmetatable(resource_bar) ~= ResourceBar then
+        error("resource_bar must be a ResourceBar!")
     end
     
     local self = setmetatable({
-        _val = progress_bar and progress_bar._val or {
+        _val = resource_bar and resource_bar._val or {
+            name = nil,
             current = 0,
             maximum = 100,  -- Default max
             regen = 0,
@@ -22,6 +23,15 @@ function ResourceBar:new(progress_bar)
     
     return self
 end
+
+function ResourceBar:create(resource_bar, name)
+    -- VALIDATE: Must be ResourceBar or nil
+    local self = ResourceBar:new(resource_bar)
+    self._val.name = name
+    
+    return self
+end
+
 
 -- GAIN (positive differential)
 function ResourceBar:gain(amount)
@@ -68,11 +78,6 @@ function ResourceBar:tick()
     -- Apply REGEN
     v.current = v.current + v.regen
     v.current = v.current + (v.maximum * v.regen_percentage / 100)
-
-    -- REGEN does not go above maximum
-    if v.current >= v.maximum then
-        v.current = v.maximum
-    end
     
     -- Apply DIFFERENTIAL %
     if v.differential_percentage ~= 0 then
@@ -91,21 +96,22 @@ function ResourceBar:tick()
 end
 
 -- READ-ONLY ACCESSORS
+function ResourceBar:name() return self._val.name end
 function ResourceBar:current() return self._val.current end
 function ResourceBar:maximum() return self._val.maximum end
-function ResourceBar:percentage() 
+function ResourceBar:percentage()
     return self._val.maximum > 0 and (self._val.current / self._val.maximum * 100) or 0 
 end
 
 -- SET MAXIMUM
 function ResourceBar:set_maximum(max, set_current)
     self._val.maximum = max or 100
-    if set_current ~= nil then
+    if set_current then
         self._val.current = max or 100
     end
 end
 
--- PROTECT: Read-only public interface
+--PROTECT: Read-only public interface
 local mt = {
     __index = ResourceBar,
     __newindex = function(self, k, v)
@@ -117,4 +123,3 @@ local mt = {
 setmetatable(ResourceBar, mt)
 
 return ResourceBar
-

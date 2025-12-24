@@ -10,6 +10,7 @@ namespace LuaOpenGLGameEngine
     public class GameEngine : GameWindow
     {
         private Lua _lua;
+        private LuaProcessor _luaProcessor { get; set; }
         private LuaTable renderTable;
         private GraphicsRenderer graphicsRenderer;
         private string _luaFilePath;
@@ -31,6 +32,23 @@ namespace LuaOpenGLGameEngine
 
             _redisQueue = new RedisQueue(_lua);
             _redisQueue.SetupBindings();
+
+            // === CRITICAL: Load the Lua script FIRST ===
+            if (File.Exists(_luaFilePath))
+            {
+                _lua.DoFile(_luaFilePath);  // ← This executes game.lua and defines init_logging(), log(), etc.
+                Console.WriteLine("game.lua loaded successfully.");
+            }
+            else
+            {
+                Console.WriteLine($"ERROR: game.lua not found at {_luaFilePath}");
+                return;
+            }
+
+            _luaProcessor = new LuaProcessor(_lua, _luaFilePath);
+
+            // -- Initialize Logging: Once
+            _lua.DoString("init_logging()");
 
             // === Set State ===
             _state = new EngineState(_lua);
@@ -58,7 +76,7 @@ namespace LuaOpenGLGameEngine
             _lua["update"] = (Action<string>)UpdateState;
             renderTable = _lua["initGame"] as LuaTable;
 
-            var sceneData = new GenericScene(new LuaProcessor(_lua, _luaFilePath).ProcessLuaQuery<Dictionary<string, ModelRGB>>("initGame"));
+            var sceneData = new GenericScene(_luaProcessor.ProcessLuaQuery<Dictionary<string, ModelRGB>>("initGame"));
             RedrawScene(sceneData);
         }
 
@@ -87,6 +105,11 @@ namespace LuaOpenGLGameEngine
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             base.OnUpdateFrame(e);
+
+            if (Keyboard.GetState().IsKeyDown(Key.F5))  // Or file watcher
+            {
+                _luaProcessor.ReloadScript();
+            }
 
             if (Keyboard.GetState().IsKeyDown(Key.Escape))
                 Close();

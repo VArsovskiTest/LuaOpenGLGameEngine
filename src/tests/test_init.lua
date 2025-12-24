@@ -17,6 +17,7 @@ local function initializePaths()
         root .. "/src/engines/?.lua",
         root .. "/src/enums/?.lua",
         root .. "/src/mocks/?.lua",
+        root .. "/src/models/?.lua",        
         root .. "/src/scripts/?.lua",
         root .. "/src/tests/?.lua",
         root .. "/src/tests/?/init.lua",
@@ -354,20 +355,23 @@ end
 ----------------------------------------------------------------
 -- 5. Bootstrap game (only ONCE)
 ----------------------------------------------------------------
-if not _G.GAME_BOOTSTRAPPED then
-    require("game")
-    initGame()
-    _G.GAME_BOOTSTRAPPED = true
+
+function bootstrap_game()
+    if not _G.GAME_BOOTSTRAPPED then
+        require("game")
+        initGame()
+        _G.GAME_BOOTSTRAPPED = true
+    end
+
+    print(c("90", "Test framework ready! Root: ".._G.ROOT))
 end
 
-print(c("90", "Test framework ready! Root: ".._G.ROOT))
-
--- Run the test(s)
-if arg and arg[1] then
-    dofile(arg[1])
--- else
---     dofile("./run_all_tests.lua")
-end
+-- -- Run the test(s)
+-- if arg and arg[1] then
+--     dofile(arg[1])
+-- -- else
+-- --     dofile("./run_all_tests.lua")
+-- end
 
 ----------------------------------------------------------------
 -- 6. Init MockEngine hook
@@ -398,6 +402,8 @@ local function init(context)
     else
         error("TestInit: Unknown context provided: " .. tostring(context))
     end
+
+    bootstrap_game()
 end
 
 print("=== Test Init Complete ===")

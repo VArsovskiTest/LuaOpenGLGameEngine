@@ -7,17 +7,23 @@ public class LuaProcessor
     private Lua _lua;
 
     // Cache the LuaFunction objects to avoid repeated lookups
-    private readonly Dictionary<string, LuaFunction> _luaFunctionCache; 
+    private readonly Dictionary<string, LuaFunction> _luaFunctionCache;
+
+    private string _luaFilePath;
+
+    private bool _scriptLoaded = false;
 
     public LuaProcessor(Lua lua, string luaFilePath)
     {
         _lua = lua;
+        _luaFilePath = luaFilePath;
         _luaFunctionCache = new Dictionary<string, LuaFunction>();
 
         // --- Load the script ONCE here ---
         try
         {
-            _lua.DoFile(luaFilePath); 
+            _lua.DoFile(luaFilePath);
+            _scriptLoaded = true;
         }
         catch (Exception ex)
         {
@@ -29,6 +35,10 @@ public class LuaProcessor
     // Helper to get and cache a function
     private LuaFunction GetLuaFunction(string functionName)
     {
+        if (!_scriptLoaded)
+        {
+            throw new InvalidOperationException("Lua script not loaded successfully — check constructor logs.");
+        }
         if (_luaFunctionCache.TryGetValue(functionName, out LuaFunction func))
         {
             return func;
@@ -42,6 +52,22 @@ public class LuaProcessor
 
         _luaFunctionCache[functionName] = func;
         return func;
+    }
+
+    public void ReloadScript()
+    {
+        _luaFunctionCache.Clear();
+        try
+        {
+            _lua.DoFile(_luaFilePath);  // Re-execute the script
+            _scriptLoaded = true;
+            Console.WriteLine($"Lua script reloaded: {_luaFilePath}");
+        }
+        catch (Exception ex)
+        {
+            _scriptLoaded = false;
+            Console.WriteLine($"Reload failed: {ex.Message}");
+        }
     }
 
     public T ProcessLuaQuery<T>(string functionName, params object[] args) where T : class

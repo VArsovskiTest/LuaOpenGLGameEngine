@@ -1,24 +1,26 @@
 -- src/game.lua
-local logPath = get_logs_path("game_engine_log.txt")
-local logFile = io.open(logPath, "a")
+local logPath = get_logs_path("game_engine_log.txt")  -- Just to test the binding
+local logFile = nil
 
-if logFile then
-    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] Log started\n")
-    logFile:flush()
-else
-    print("WARNING: Could not open log file at " .. logPath)
+function init_logging()
+    if logFile then return end
+    
+    local path = get_logs_path("game_engine_log.txt")
+    logFile = io.open(path, "a")
+    if logFile then
+        logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] === Game Session Started ===\n")
+        logFile:flush()
+        print("Log initialized successfully at: " .. path)
+    else
+        print("FAILED to open log file: " .. path)
+        print("Check permissions and path: " .. path)
+    end
 end
 
-local function log(...)
-    local args = {...}
-    local line = ""
-    for i = 1, #args do
-        line = line .. tostring(args[i])
-        if i < #args then line = line .. "\t" end
-    end
-    local timestamp = os.date("%Y-%m-%d %H:%M:%S")
-    logFile:write("[" .. timestamp .. "] " .. line .. "\n")
-    logFile:flush()  -- immediate write (great for debugging crashes)
+function log(msg)
+    if not logFile then return end
+    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(msg) .. "\n")
+    logFile:flush()
 end
 
 local function clear_render_table()
