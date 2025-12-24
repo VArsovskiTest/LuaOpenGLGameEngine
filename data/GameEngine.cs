@@ -28,6 +28,12 @@ namespace LuaOpenGLGameEngine
 
             // Get the current working directory
             string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+            if (projectRoot.Contains(@"\bin\Debug\net8.0"))
+            {
+                projectRoot = Path.GetFullPath(Path.Combine(projectRoot, Path.DirectorySeparatorChar.ToString()
+                , Path.DirectorySeparatorChar.ToString()
+                , Path.DirectorySeparatorChar.ToString()));
+            }
             _luaFilePath = Path.Combine(projectRoot, "src", "game.lua");
 
             _redisQueue = new RedisQueue(_lua);
@@ -71,7 +77,7 @@ namespace LuaOpenGLGameEngine
             _lua["drawRect"] = (Action<float, float, float, float, float, float, float>)graphicsRenderer.DrawRect;
 
             // Bind Scripts
-            _lua.DoString("render = {}");
+            _lua.DoString("current_scene = {}");
             //_lua["render_scene"] = (Action<string, string>)RenderTable;
             _lua["update"] = (Action<string>)UpdateState;
             renderTable = _lua["initGame"] as LuaTable;
