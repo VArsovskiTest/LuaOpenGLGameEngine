@@ -113,7 +113,7 @@ end
 function render_scene()
     local scene_sampler = require("helpers.scene_sampler")
     local clears, rects, resource_bars, circles = scene_sampler.render_sample_scene()
-    render_scene_with_params(clears, rects, resource_bars, circles)
+    return render_scene_with_params(clears, rects, resource_bars, circles)
 end
 
 -- Helper function to convert a table to a string for logging

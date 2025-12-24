@@ -33,14 +33,14 @@ local function render_sample_scene()
             type = "circle",
             x = 0.32,
             y = 0.55,
-            r = 0.32,
+            rad = 0.32,
             color_id = color_pallette.SEA_GREEN,
         },
         {
             type = "circle",
             x = 0.92,
             y = 0.85,
-            r = 0.15,
+            rad = 0.15,
             color_id = color_pallette.RED,
         },
     }

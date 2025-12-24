@@ -4,6 +4,7 @@ using OpenTK.Graphics;
 using OpenTK.Input;             // For Keyboard
 using OpenTK.Graphics.OpenGL;   // For GL
 using NLua;
+using System.Drawing;
 
 namespace LuaOpenGLGameEngine
 {
@@ -11,17 +12,18 @@ namespace LuaOpenGLGameEngine
     {
         private Lua _lua;
         private LuaProcessor _luaProcessor { get; set; }
-        private LuaTable renderTable;
-        private GraphicsRenderer graphicsRenderer;
+        private GraphicsRenderer _graphicsRenderer;
         private string _luaFilePath;
+        private LuaTable renderTable;
+
+        private ISizable _viewport { get; set; }// = new ViewPort { Width = 0, Height = 0 };
 
         private EngineState _state { get; set; }
-
         private RedisQueue _redisQueue { get; set; }
 
         public GameEngine() : base(1024, 768, GraphicsMode.Default, "C# + Lua + OpenGL Engine")
         {
-            graphicsRenderer = new GraphicsRenderer();
+            _graphicsRenderer = new GraphicsRenderer();
 
             // === Lua Setup ===
             _lua = new Lua();
@@ -65,21 +67,21 @@ namespace LuaOpenGLGameEngine
             base.OnLoad(e);
 
             // == Setup Graphics ==
-            graphicsRenderer.InitGraphics();
+            ISizable currentViewport = new Viewport { Width = this.Width, Height = this.Height };
+            SetupGraphics(currentViewport);
 
             // Register converters for Lua base types
             JsonSettingsFactory.RegisterDiscriminatorConverter<ModelRGB>("type");
 
             _lua.LoadCLRPackage();
 
-            // Bind Scene objects to Graphics
-            _lua["clear"] = (Action<float, float, float>)graphicsRenderer.ClearScreen;
-            _lua["drawRect"] = (Action<float, float, float, float, float, float, float>)graphicsRenderer.DrawRect;
-
             // Bind Scripts
-            _lua.DoString("current_scene = {}");
-            //_lua["render_scene"] = (Action<string, string>)RenderTable;
+            _lua["clear"] = (Action<float, float, float>)_graphicsRenderer.ClearScreen;
+            _lua["drawRect"] = (Action<float, float, float, float, float, float, float>)_graphicsRenderer.DrawRect;
             _lua["update"] = (Action<string>)UpdateState;
+
+            _lua.DoString("current_scene = {}");
+            // _lua["render_scene"] = (Action<string, string>)RenderTable;
             renderTable = _lua["initGame"] as LuaTable;
 
             var sceneData = new GenericScene(_luaProcessor.ProcessLuaQuery<Dictionary<string, ModelRGB>>("initGame"));
@@ -99,12 +101,12 @@ namespace LuaOpenGLGameEngine
 
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            new LuaProcessor(_lua, _luaFilePath).ProcessLuaNonQuery("update");
+            // _luaProcessor.ProcessLuaNonQuery("update");
 
-            var sceneData = new GenericScene(new LuaProcessor(_lua, _luaFilePath).ProcessLuaQuery<Dictionary<string, ModelRGB>>("render_scene"));
+            var sceneData = new GenericScene(_luaProcessor.ProcessLuaQuery<Dictionary<string, ModelRGB>>("render_scene"));
             RedrawScene(sceneData);
 
-            _lua.DoString("render = {}"); // Reset for next frame
+            _lua.DoString("current_state = {}"); // Reset for next frame
             SwapBuffers();
         }
 
@@ -146,14 +148,32 @@ namespace LuaOpenGLGameEngine
             Console.WriteLine("State updated !");
         }
 
+        void SetupGraphics(ISizable viewport)
+        {
+            _viewport = viewport;
+            // Optionally, if you want to ensure the viewport matches the window size:
+            // GL.Viewport(0, 0, viewportWidth, viewportHeight);
+
+            // Output
+            Console.WriteLine("Viewport size: " + viewport.Width + " x " + viewport.Height);
+
+            _graphicsRenderer.InitGraphics(viewport as ISizable);
+        }
+
         void RedrawScene(GenericScene sceneData)
         {
             foreach(var element in sceneData.Actors)
             {
-                if (element is RectangleRBG)
-                    graphicsRenderer.DrawRect((element as RectangleRBG).x, (element as RectangleRBG).y, (element as RectangleRBG).w, (element as RectangleRBG).h,  element.r, element.g, element.b);
-                else graphicsRenderer.ClearScreen(element.r, element.g, element.b);
-            }            
+                if (element is RectangleRGB)
+                    _graphicsRenderer.DrawRect((element as RectangleRGB).x, (element as RectangleRGB).y, (element as RectangleRGB).w, (element as RectangleRGB).h,  element.r, element.g, element.b);
+                else if (element is ClearRGB)
+                    _graphicsRenderer.ClearScreen((element as ClearRGB).r, (element as ClearRGB).g, (element as ClearRGB).b);
+                else if (element is CircleRGB)
+                    _graphicsRenderer.DrawCircle((element as CircleRGB).x, (element as CircleRGB).y, (element as CircleRGB).rad, (element as CircleRGB).r, (element as CircleRGB).g, (element as CircleRGB).b);
+                else if (element is ResourceBarRGB)
+                    _graphicsRenderer.DrawBar((element as ResourceBarRGB).name, (element as ResourceBarRGB).current, (element as ResourceBarRGB).maximum, (element as ResourceBarRGB).percentage, (element as ResourceBarRGB).r, (element as ResourceBarRGB).g, (element as ResourceBarRGB).b);
+                // else graphicsRenderer.DrawText("Element unindentified", element.x, element.y,1, element.r, element.g, element.b);
+            }
         }
     }
 }

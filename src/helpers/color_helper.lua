@@ -74,11 +74,12 @@ local function validate(colorId)
         return false
     end
 end
+
 local function createColorObject(colorId)
     if validate(colorId) then
-        for _, color in ipairs(colors_rgba) do
-            if color.id == colorId then
-                return { r = color.r, g = color.g, b = color.b, a = color.a }
+        for id, value in pairs(colors_rgba) do
+            if id == colorId then
+                return { r = value.r, g = value.g, b = value.b, a = value.a }
             end
         end
         return { r = 0, g = 0, b = 0, a = 1 }
@@ -87,8 +88,8 @@ end
 
 local function getColor(colorId)
     if validate(colorId) then
-        for _, color in ipairs(colors) do
-            if color.id == colorId then
+        for id, value in pairs(colors_rgba) do
+            if id == colorId then
                 return color.r, color.g, color.b, color.a
             end
         end
