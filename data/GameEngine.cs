@@ -5,6 +5,7 @@ using OpenTK.Input;             // For Keyboard
 using OpenTK.Graphics.OpenGL;   // For GL
 using NLua;
 using System.Drawing;
+using System.Text.Json;
 
 namespace LuaOpenGLGameEngine
 {
@@ -96,7 +97,7 @@ namespace LuaOpenGLGameEngine
             if (_lua == null)
             {
                 Console.WriteLine("Lua state is not initialized.");
-                return; // Exit if lua is not ready
+                return;
             }
 
             GL.Clear(ClearBufferMask.ColorBufferBit);
@@ -157,23 +158,46 @@ namespace LuaOpenGLGameEngine
             // Output
             Console.WriteLine("Viewport size: " + viewport.Width + " x " + viewport.Height);
 
-            _graphicsRenderer.InitGraphics(viewport as ISizable);
+            _graphicsRenderer.InitGraphics();
         }
 
         void RedrawScene(GenericScene sceneData)
         {
+            foreach (var element in sceneData.Actors) // Render clears first, then draw all the others
+                if (element is ClearRGB) _graphicsRenderer.ClearScreen((element as ClearRGB).r, (element as ClearRGB).g, (element as ClearRGB).b);
+
+            // Draw center cross
+            _graphicsRenderer.DrawLine(-0.1f, 0f, 0.1f, 0f, 1f, 0f, 0f); // Horizontal red line at center
+            _graphicsRenderer.DrawLine(0f, -0.1f, 0f, 0.1f, 1f, 0f, 0f); // Vertical red line at center
+
+            // Draw scene elements
             foreach(var element in sceneData.Actors)
             {
                 if (element is RectangleRGB)
                     _graphicsRenderer.DrawRect((element as RectangleRGB).x, (element as RectangleRGB).y, (element as RectangleRGB).w, (element as RectangleRGB).h,  element.r, element.g, element.b);
-                else if (element is ClearRGB)
-                    _graphicsRenderer.ClearScreen((element as ClearRGB).r, (element as ClearRGB).g, (element as ClearRGB).b);
                 else if (element is CircleRGB)
                     _graphicsRenderer.DrawCircle((element as CircleRGB).x, (element as CircleRGB).y, (element as CircleRGB).rad, (element as CircleRGB).r, (element as CircleRGB).g, (element as CircleRGB).b);
                 else if (element is ResourceBarRGB)
-                    _graphicsRenderer.DrawBar((element as ResourceBarRGB).name, (element as ResourceBarRGB).current, (element as ResourceBarRGB).maximum, (element as ResourceBarRGB).percentage, (element as ResourceBarRGB).r, (element as ResourceBarRGB).g, (element as ResourceBarRGB).b);
-                // else graphicsRenderer.DrawText("Element unindentified", element.x, element.y,1, element.r, element.g, element.b);
+                    _graphicsRenderer.DrawBar(
+                        (element as ResourceBarRGB).name,
+                        (element as ResourceBarRGB).current,
+                        (element as ResourceBarRGB).maximum,
+                        (element as ResourceBarRGB).percentage / 100,
+                        0.02f, // Thickness of the Bar
+                        (element as ResourceBarRGB).x,
+                        (element as ResourceBarRGB).y,
+                        (element as ResourceBarRGB).r,
+                        (element as ResourceBarRGB).g,
+                        (element as ResourceBarRGB).b);
+                else _graphicsRenderer.DrawText("Element unindentified", 0.05f, 0.05f,1, 1, 0.25f, 0.25f);
             }
+
+            // Draw corners
+            _graphicsRenderer.DrawText("TL", -0.95f,  0.95f, 5.5f, 1f, 0f, 0f); // Red Top-Left
+            _graphicsRenderer.DrawText("TR",  0.80f,  0.95f, 5.5f, 0f, 1f, 0f); // Green Top-Right
+            _graphicsRenderer.DrawText("BL", -0.95f, -0.95f, 5.5f, 0f, 0f, 1f); // Blue Bottom-Left
+            _graphicsRenderer.DrawText("BR",  0.80f, -0.95f, 5.5f, 1f, 1f, 0f); // Yellow Bottom-Right
+            _graphicsRenderer.DrawText(JsonSerializer.Serialize(_viewport), 0.05f, 0.05f, 5.5f, 1, 1, 1);
         }
     }
 }

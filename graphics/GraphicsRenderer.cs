@@ -5,11 +5,13 @@ public class GraphicsRenderer
 {
     public GraphicsRenderer() { }
     private ISizable _viewport { get; set; }
+    private uint _fontBase = 0; // 0 = font not built yet
 
-    public void InitGraphics(ISizable viewport)
+    public void InitGraphics()
     {
-        _viewport = viewport;
-        GL.ClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+        UpdateViewportValues();
+        BuildBitmapFont("Arial", 28, bold: true);
+        GL.ClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         GL.Enable(EnableCap.Blend);
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
@@ -18,6 +20,59 @@ public class GraphicsRenderer
     {
         GL.ClearColor(r, g, b, 1f);
         GL.Clear(ClearBufferMask.ColorBufferBit);
+    }
+
+    private void UpdateViewportValues()
+    {
+        int[] viewport = new int[4]; // Create an array to hold the viewport dimensions.
+        GL.GetInteger(GetPName.Viewport, viewport); // Get the current viewport
+
+        int width = viewport[2];    // Assign the width of the viewport
+        int height = viewport[3];   // Assign the height of the viewport
+        _viewport = new Viewport { Width = width, Height = height };
+    }
+
+    public void BuildBitmapFont(string fontName = "Consolas", int height = 24, bool bold = true)
+    {
+        if (_fontBase != 0) return; // Already built
+
+        IntPtr hdc = Native.GetDC(IntPtr.Zero); // Screen DC is sufficient
+
+        int weight = bold ? Native.FW_BOLD : Native.FW_NORMAL;
+
+        IntPtr hFont = Native.CreateFont(
+            -height, 0, 0, 0, weight,
+            0, 0, 0,
+            Native.DEFAULT_CHARSET,
+            Native.OUT_DEFAULT_PRECIS,
+            Native.CLIP_DEFAULT_PRECIS,
+            Native.ANTIALIASED_QUALITY,
+            Native.DEFAULT_PITCH | Native.FF_DONTCARE,
+            fontName);
+
+        if (hFont == IntPtr.Zero)
+            throw new Exception($"Failed to create font: {fontName}");
+
+        IntPtr oldFont = Native.SelectObject(hdc, hFont);
+
+        _fontBase = (uint)GL.GenLists(256);                    // Allocate 256 display lists
+        bool success = WglExtensions.wglUseFontBitmaps(hdc, 0, 255, _fontBase);
+
+        Native.SelectObject(hdc, oldFont);
+        Native.DeleteObject(hFont);
+        Native.ReleaseDC(IntPtr.Zero, hdc);
+
+        if (!success)
+            throw new Exception("wglUseFontBitmaps failed");
+    }
+
+    public void DrawLine(float x1, float y1, float x2, float y2, float r, float g, float b)
+    {
+        GL.Color3(r, g, b);
+        GL.Begin(PrimitiveType.Lines);
+        GL.Vertex2(x1, y1);
+        GL.Vertex2(x2, y2);
+        GL.End();
     }
 
     public void DrawRect(float x, float y, float w, float h, float r, float g, float b)
@@ -31,89 +86,64 @@ public class GraphicsRenderer
         GL.End();
     }
 
-    public void DrawPercentageLine(float percentage, float x, float y, bool isHorizontal, float r, float g, float b)
+    public void DrawPercentageLine(float percentage, float thickness, float x, float y, bool isHorizontal, float r, float g, float b)
     {
-        // Get the current viewport dimensions
-        int[] viewport = new int[4];
-        GL.GetInteger(GetPName.Viewport, viewport);
-
-        float width = viewport[2];  // Viewport width
-        float height = viewport[3]; // Viewport height
-
-        // Calculate line endpoints based on percentage and orientation
-        float lineLength = isHorizontal ? width * percentage : height * percentage;
-
-        // Define line endpoints
-        float x1 = isHorizontal ? 0 : (width - lineLength) / 2; // Starting x for vertical
-        float y1 = isHorizontal ? (height - lineLength) / 2 : 0; // Starting y for horizontal
-        float x2 = isHorizontal ? lineLength : (width - lineLength) / 2; // Ending x for horizontal
-        float y2 = isHorizontal ? (height - lineLength) / 2 : lineLength; // Ending y for vertical
-
-        // Translate to (x, y) being starting position/s
-        x1 += x;
-        x2 += x;
-        y1 += y;
-        y2 += y;
-
-        // Set color
-        GL.Color3(r, g, b);
-
-        // Draw the line
-        GL.Begin(PrimitiveType.Lines);
-        GL.Vertex2(x1, y1);
-        GL.Vertex2(x2, y2);
-        GL.End();
+        DrawRect(x, y
+        , isHorizontal ? percentage : thickness
+        , isHorizontal ? thickness : percentage
+        , r, g, b);
     }
 
-    public void DrawBar(string name, float current, float max, float percentage, float r, float g, float b)
+    public void DrawBar(string name, float current, float max, float percentage, float thickness, float x, float y, float r, float g, float b)
     {
-        var x = 0.05f;
-        var y = 0.05f;
-        DrawText(name + ": " + current + "/" + max, x, y, 1, r, g, b);
-        DrawPercentageLine((float)(percentage * 0.1), x, y, true, r, g, b);
+        DrawPercentageLine(percentage, thickness, x, y, true, r, g, b);
+        // DrawText(name + ": " + current + "/" + max, x, y, 1, r, g, b);
     }
 
     public void DrawText(string text, float x, float y, float scale, float r, float g, float b)
     {
-        GL.Color3(r, g, b); // Set the color
+        if (string.IsNullOrEmpty(text) || _fontBase == 0) return;
 
-        // // Assuming you have a texture for the font loaded
-        // GL.BindTexture(TextureTarget.Texture2D, fontTextureId);
+        // Save absolutely everything we might change
+        GL.PushAttrib(AttribMask.AllAttribBits);
 
-        GL.Enable(EnableCap.Texture2D);
-        GL.Begin(PrimitiveType.Quads);
-
-        // foreach (char character in text)
-        // {
-        //     // Calculate the texture coordinates and position
-        //     float texX = (character % numColumns) / (float)numColumns; // numColumns: number of characters in your texture atlas row
-        //     float texY = (character / numColumns) / (float)numRows; // numRows: number of rows in your texture atlas
-
-        //     float width = charWidth * scale;  // charWidth: width of each character in pixels
-        //     float height = charHeight * scale; // charHeight: height of each character in pixels
-
-        //     // Bottom-left
-        //     GL.TexCoord2(texX, texY + charHeight / fontHeight);
-        //     GL.Vertex2(x, y);
-
-        //     // Bottom-right
-        //     GL.TexCoord2(texX + charWidth / fontWidth, texY + charHeight / fontHeight);
-        //     GL.Vertex2(x + width, y);
-
-        //     // Top-right
-        //     GL.TexCoord2(texX + charWidth / fontWidth, texY);
-        //     GL.Vertex2(x + width, y + height);
-
-        //     // Top-left
-        //     GL.TexCoord2(texX, texY);
-        //     GL.Vertex2(x, y + height);
-
-        //     // Move the position for the next character
-        //     x += width;
-        // }
-
-        GL.End();
+        // Disable things that interfere with 2D overlay
+        GL.Disable(EnableCap.Lighting);
+        GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Texture2D);
+        GL.Disable(EnableCap.Blend); // Optional — re-enable if you want alpha
+
+        GL.Color3(r, g, b);
+
+        // === Force 2D orthographic projection (-1 to 1 NDC) ===
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.PushMatrix();
+        GL.LoadIdentity();
+        GL.Ortho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);  // Bottom-left = (-1,-1), Top-right = (1,1)
+
+        GL.MatrixMode(MatrixMode.Modelview);
+        GL.PushMatrix();
+        GL.LoadIdentity();
+
+        // Position and scale the text
+        GL.Translate(x, y, 0.0f);
+        GL.Scale(scale, scale, scale);
+
+        // Render text
+        GL.ListBase(_fontBase);
+
+        byte[] bytes = System.Text.Encoding.ASCII.GetBytes(text + '\0'); // null-terminate just in case
+        GL.CallLists(bytes.Length - 1, ListNameType.UnsignedByte, bytes);
+
+        // === Restore everything exactly as it was ===
+        GL.MatrixMode(MatrixMode.Modelview);
+        GL.PopMatrix();
+
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.PopMatrix();
+
+        // PopAttrib restores enables, color mask, etc.
+        GL.PopAttrib();
     }
 
     public void DrawCircle(float x, float y, float radius, float r, float g, float b)
@@ -121,41 +151,18 @@ public class GraphicsRenderer
         int numSegments = 100; // Number of segments to approximate the circle
         float angleStep = (float)(2 * Math.PI / numSegments);
 
-        GL.Color3(r, g, b); // Set the color
-
-        GL.Begin(PrimitiveType.TriangleFan); // Start drawing a triangle fan
-
+        GL.Color3(r, g, b);
+        GL.Begin(PrimitiveType.TriangleFan);
         GL.Vertex2(x, y); // Center of the circle
 
-        // Generate vertices for the circle
         for (int i = 0; i <= numSegments; i++)
         {
             float angle = i * angleStep;
-            float px = x + radius * (float)Math.Cos(angle); // X coordinate of the perimeter
-            float py = y + radius * (float)Math.Sin(angle); // Y coordinate of the perimeter
+            float px = x + radius * (float)Math.Cos(angle);
+            float py = y + radius * (float)Math.Sin(angle);
             GL.Vertex2(px, py); // Create vertex
         }
 
         GL.End();
     }
-
-    // // TODO: Consider refactoring DrawText (and maybe DrawCircle, if possible)
-    // public void InitializeFreeType(string fontPath)
-    // {
-    //     // Initialize FreeType and load the font
-    //     // Create a texture atlas for the characters as needed
-    // }
-
-    // public void RenderText(string text, float x, float y, float scale)
-    // {
-    //     foreach (char c in text)
-    //     {
-    //         Character ch = characters[c];
-
-    //         // Rendering logic here using OpenGL 
-    //         // Use the character's texture and position it at (x, y)
-
-    //         x += (ch.Advance >> 6) * scale; // Advance to the next character
-    //     }
-    // }
 }

@@ -46,22 +46,22 @@ function render_scene_with_params(clearColors, rects, resource_bars, circles)
         })
     end
 
-    local time = os.clock()
-    local x = math.sin(time * 2) * 0.5
+    -- local time = os.clock()
+    -- local x = math.sin(time * 2) * 0.5
 
-    -- Insert rectangle based on dynamic values
-    local clr = ColorHelper.createColorObject(clearColor or color_pallette.INDIGO)
-    table.insert(current_state, {
-        type = "rect",
-        x = x - 0.2,
-        y = -0.3,
-        w = 0.4,
-        h = 0.6,
-        r = clr.r,
-        g = clr.g,
-        b = clr.b,
-        a = clr.a
-    })
+    -- -- Insert rectangle based on dynamic values
+    -- local clr = ColorHelper.createColorObject(clearColor or color_pallette.INDIGO)
+    -- table.insert(current_state, {
+    --     type = "rect",
+    --     x = x - 0.2,
+    --     y = -0.3,
+    --     w = 0.4,
+    --     h = 0.6,
+    --     r = clr.r,
+    --     g = clr.g,
+    --     b = clr.b,
+    --     a = clr.a
+    -- })
 
     -- Insert additional rectangles from the provided parameter
     for _, rect in ipairs(rects) do
@@ -87,6 +87,8 @@ function render_scene_with_params(clearColors, rects, resource_bars, circles)
             current = bar:current() or 0,
             maximum = bar:maximum() or 100,
             percentage = bar:percentage() or 0,
+            x = bar.x or 0.05,
+            y = bar.y or 0.05,
             r = clr.r,
             g = clr.g,
             b = clr.b,
@@ -100,6 +102,7 @@ function render_scene_with_params(clearColors, rects, resource_bars, circles)
             type = "circle",
             x = c.x or -2,
             y = c.y or -2,
+            rad = c.rad,
             r = clr.r,
             g = clr.g,
             b = clr.b,
@@ -108,12 +111,6 @@ function render_scene_with_params(clearColors, rects, resource_bars, circles)
     end
 
     return current_state
-end
-
-function render_scene()
-    local scene_sampler = require("helpers.scene_sampler")
-    local clears, rects, resource_bars, circles = scene_sampler.render_sample_scene()
-    return render_scene_with_params(clears, rects, resource_bars, circles)
 end
 
 -- Helper function to convert a table to a string for logging
@@ -156,10 +153,24 @@ local function setup_command_queue()
     log("Executing script: game")
 end
 
+function render_scene()
+    local scene_sampler = require("helpers.scene_sampler")
+    local clears, rects, resource_bars, circles = scene_sampler.render_sample_scene()
+    -- log(serialize_table(clears))
+    -- log(serialize_table(rects))
+    -- log(serialize_table(resource_bars))
+    -- log(serialize_table(circles))
+    
+    return render_scene_with_params(clears, rects, resource_bars, circles)
+end
+
 -- Public functions (for Binding with GameEngine in C#)
 function initGame()
+    local scene_sampler = require("helpers.scene_sampler")
+    local clears, rects, resource_bars, circles = scene_sampler.render_sample_scene()
+
     setup_command_queue()
-    return render_scene()
+    return render_scene_with_params(clears, rects, resource_bars, circles)
 end
 
 function update(dt)
