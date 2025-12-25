@@ -13,6 +13,7 @@ local function setup_paths()
         root .. "/src/commands/?.lua",
         root .. "/src/engines/?.lua",
         root .. "/src/enums/?.lua",
+        root .. "/src/helpers/?.lua",
         root .. "/src/mocks/?.lua",
         root .. "/src/models/?.lua",        
         root .. "/src/scripts/?.lua",

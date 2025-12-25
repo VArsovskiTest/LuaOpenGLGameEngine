@@ -16,6 +16,8 @@ local color_helper = require("helpers/color_helper")
 local color_pallette = require("enums/colors")
 local ColorHelper = color_helper:new()
 
+local table_helper = require("helpers.table_helper")
+
 local function log(msg)
     if not logFile then return end
     logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(msg) .. "\n")
@@ -23,94 +25,10 @@ local function log(msg)
 end
 
 local function clear_current_scene()
-    for k in pairs(current_state) do
-        current_state[k] = nil
+    for k in pairs(current_scene) do
+        current_scene[k] = nil
     end
-    -- or simply: current_state = {}
-end
-
-current_state = current_state or {}
-
-function render_scene_with_params(clearColors, rects, resource_bars, circles)
-    clear_current_scene()
-
-    -- Insert clear color based on the passed parameter
-    for _, clr in ipairs(clearColors) do
-        local colorObject = ColorHelper.createColorObject(clr or color_pallette.RICH_MAGENTA)
-        table.insert(current_state, {
-            type = "clear",
-            r = colorObject.r,
-            g = colorObject.g,
-            b = colorObject.b,
-            a = colorObject.a,
-        })
-    end
-
-    -- local time = os.clock()
-    -- local x = math.sin(time * 2) * 0.5
-
-    -- -- Insert rectangle based on dynamic values
-    -- local clr = ColorHelper.createColorObject(clearColor or color_pallette.INDIGO)
-    -- table.insert(current_state, {
-    --     type = "rect",
-    --     x = x - 0.2,
-    --     y = -0.3,
-    --     w = 0.4,
-    --     h = 0.6,
-    --     r = clr.r,
-    --     g = clr.g,
-    --     b = clr.b,
-    --     a = clr.a
-    -- })
-
-    -- Insert additional rectangles from the provided parameter
-    for _, rect in ipairs(rects) do
-        local clr = ColorHelper.createColorObject(rect.color_id or color_pallette.SILVER)
-        table.insert(current_state, {
-            type = "rect",
-            x = rect.x,
-            y = rect.y,
-            w = rect.w,
-            h = rect.h,
-            r = clr.r,
-            g = clr.g,
-            b = clr.b,
-            a = clr.a
-        })
-    end
-
-    for _, bar in ipairs(resource_bars) do
-        local clr = ColorHelper.createColorObject(bar.color_id or color_pallette.GOLD)
-        table.insert(current_state, {
-            type = "resource_bar",
-            name = bar:name() or nil,
-            current = bar:current() or 0,
-            maximum = bar:maximum() or 100,
-            percentage = bar:percentage() or 0,
-            x = bar.x or 0.05,
-            y = bar.y or 0.05,
-            r = clr.r,
-            g = clr.g,
-            b = clr.b,
-            a = clr.a,
-        })
-    end
-
-    for _, c in ipairs(circles) do
-        local clr = ColorHelper.createColorObject(c.color_id  or color_pallette.OLIVE)
-        table.insert(current_state, {
-            type = "circle",
-            x = c.x or -2,
-            y = c.y or -2,
-            rad = c.rad,
-            r = clr.r,
-            g = clr.g,
-            b = clr.b,
-            a = clr.a,
-        })
-    end
-
-    return current_state
+    -- or simply: current_scene = {}
 end
 
 -- Helper function to convert a table to a string for logging
@@ -122,8 +40,10 @@ local function serialize_table(t)
     for k, v in pairs(t) do
         s = s .. tostring(k) .. '=' .. serialize_table(v) .. ', '
     end
-    return s .. '}'
+    return s .. '}\n'
 end
+
+current_scene = current_scene or {}
 
 local function setup_command_queue()
     log("=== Redis Queue Test Start ===")
@@ -153,30 +73,6 @@ local function setup_command_queue()
     log("Executing script: game")
 end
 
-function render_scene()
-    local scene_sampler = require("helpers.scene_sampler")
-    local clears, rects, resource_bars, circles = scene_sampler.render_sample_scene()
-    -- log(serialize_table(clears))
-    -- log(serialize_table(rects))
-    -- log(serialize_table(resource_bars))
-    -- log(serialize_table(circles))
-    
-    return render_scene_with_params(clears, rects, resource_bars, circles)
-end
-
--- Public functions (for Binding with GameEngine in C#)
-function initGame()
-    local scene_sampler = require("helpers.scene_sampler")
-    local clears, rects, resource_bars, circles = scene_sampler.render_sample_scene()
-
-    setup_command_queue()
-    return render_scene_with_params(clears, rects, resource_bars, circles)
-end
-
-function update(dt)
-    -- you can do game-state (for current_state) logic here later
-end
-
 function init_logging()
     if logFile then return end
     
@@ -192,8 +88,151 @@ function init_logging()
     end
 end
 
+-- # region Scene generation
+
+local function generate_actor_data(type, actor)
+    local actor_data = {}
+
+    if type == "rect" then
+        actor_data = {
+            name = actor.name or "unnamed_rect",
+            x = actor.x or 0,
+            y = actor.y or 0,
+            width = actor.width or 0.1,
+            height = actor.height or 0.1,
+        }
+
+    elseif type == "resource_bar" then
+        actor_data = {
+            name = actor.name or "unnamed_bar",
+            current = actor:current() or 0,
+            maximum = actor:maximum() or 100,
+            percentage = actor:percentage() or 0,
+            x = actor.x or 0,
+            y = actor.y or 0,
+        }
+
+    elseif type == "circle" then
+        actor_data = {
+            name = actor.name or "unnamed_circle",
+            x = actor.x or 0,
+            y = actor.y or 0,
+            rad = actor.rad or 0.1,
+        }
+
+    else
+        error("game.lua: Unknown actor type '" .. tostring(type) .. "'")
+    end
+
+    if actor.color_id then
+        actor_data.color = ColorHelper.createColorObject(actor.color_id)
+    end
+
+    actor_data.type = type
+    actor_data.id = actor.id
+
+    return actor_data
+end
+
+local function render_scene_with_params(clearColors, actors)
+    -- local time = os.clock()
+    -- local x = math.sin(time * 2) * 0.5
+    -- -- Insert rectangle based on dynamic values
+    -- local clr = ColorHelper.createColorObject(clearColor or color_pallette.INDIGO)
+    -- table.insert(current_state, {
+    --     type = "rect",
+    --     x = x - 0.2,
+    --     y = -0.3,
+    --     w = 0.4,
+    --     h = 0.6,
+    --     r = clr.r,
+    --     g = clr.g,
+    --     b = clr.b,
+    --     a = clr.a
+    -- })
+
+    clear_current_scene()
+    local scene = { clears = {}, actors = {} }
+
+    -- Insert clear color based on the passed parameter
+    for _, clr in ipairs(clearColors) do
+        local colorObject = ColorHelper.createColorObject(clr)
+        table.insert(scene.clears, {
+            type = "clear",
+            id = clr.id,
+            r = colorObject.r,
+            g = colorObject.g,
+            b = colorObject.b,
+            a = colorObject.a,
+        })
+    end
+
+    -- Insert actors from provided parameters
+    for _, actor in ipairs(actors) do
+        local actor_type = actor.type
+        local actor_data = generate_actor_data(actor_type, actor)
+
+        -- Set defaults for actors without color
+        if not actor_data.color then
+            local selected_color = ({
+                rect         = color_pallette.SILVER,
+                circle       = color_pallette.TEAL,
+                resource_bar = color_pallette.MAGENTA
+            })[actor_type] or color_pallette.WHITE
+            actor_data.color = ColorHelper.createColorObject(selected_color)
+        end
+
+        table.insert(scene.actors, actor_data)
+    end
+
+    return scene
+end
+
+-- Public functions (for Binding with GameEngine in C#)
+function render_scene()
+    local scene_sampler = require("helpers.scene_sampler")
+    local scene = scene_sampler.render_sample_scene()
+
+    -- log(serialize_table(clears))
+    -- log(serialize_table(rects))
+    -- log(serialize_table(resource_bars))
+    -- log(serialize_table(circles))
+
+    current_scene = render_scene_with_params(scene.clears, scene.actors)
+    return current_scene
+end
+
+-- # endregion
+
+function initGame()
+    init_logging()
+    setup_command_queue()
+    return render_scene()
+end
+
+function update_actor_by_id(id, prop, value)
+    log("updating actor: " .. id)
+    table_helper.updateRecordById(current_scene.actors or {}, id, prop, value)
+    log("updated state: " .. serialize_table(select_actor_by_id(id)))
+end
+
+function select_actor_by_id(id)
+    return table_helper.selectRecordById(current_scene.actors or {}, id)
+end
+
+function get_current_scene()
+    return current_scene
+end
+
+function update(dt)
+    -- you can do game-state (for current_state) logic here later
+end
+
 return {
     setup_command_queue = setup_command_queue,
     render_scene_with_params = render_scene_with_params,
-    render_scene = render_scene
+    render_scene = render_scene,
+    select_actor_by_id = select_actor_by_id,
+    update_actor_by_id = update_actor_by_id,
+    get_current_scene = get_current_scene
 }

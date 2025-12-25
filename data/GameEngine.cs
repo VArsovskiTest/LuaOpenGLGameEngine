@@ -22,6 +22,12 @@ namespace LuaOpenGLGameEngine
         private EngineState _state { get; set; }
         private RedisQueue _redisQueue { get; set; }
 
+        private MouseClickHandler _mouseClickHandler { get; set; }
+
+        private GenericScene _currentScene { get; set; }
+
+        #region BaseSetup & Rendering
+
         public GameEngine() : base(1024, 768, GraphicsMode.Default, "C# + Lua + OpenGL Engine")
         {
             _graphicsRenderer = new GraphicsRenderer();
@@ -38,6 +44,8 @@ namespace LuaOpenGLGameEngine
                 , Path.DirectorySeparatorChar.ToString()));
             }
             _luaFilePath = Path.Combine(projectRoot, "src", "game.lua");
+
+            _mouseClickHandler = new MouseClickHandler();
 
             _redisQueue = new RedisQueue(_lua);
             _redisQueue.SetupBindings();
@@ -77,23 +85,28 @@ namespace LuaOpenGLGameEngine
             _lua.LoadCLRPackage();
 
             // Bind Scripts
-            _lua["clear"] = (Action<float, float, float>)_graphicsRenderer.ClearScreen;
-            _lua["drawRect"] = (Action<float, float, float, float, float, float, float>)_graphicsRenderer.DrawRect;
+            _lua["clear"] = (Action<IColorable>)_graphicsRenderer.ClearScreen;
+            _lua["drawRect"] = (Action<float, float, float, float, IColorable>)_graphicsRenderer.DrawRect;
             _lua["update"] = (Action<string>)UpdateState;
 
             _lua.DoString("current_scene = {}");
             // _lua["render_scene"] = (Action<string, string>)RenderTable;
             renderTable = _lua["initGame"] as LuaTable;
 
-            var sceneData = new GenericScene(_luaProcessor.ProcessLuaQuery<Dictionary<string, ModelRGB>>("initGame"));
-            RedrawScene(sceneData);
+            //// Execute Lua script that returns { clears = ..., actors = ... }
+            //var luaResult = lua.DoString("return build_sample_scene()")[0]; // MoonSharp returns DynValue
+            //_currentScene = new GenericScene(_luaProcessor.ProcessLuaQuery<Dictionary<string, ActorRGB>>("initGame"));
+            // _currentScene = GenericScene.FromLuaTable(_luaProcessor.ProcessLuaQuery<Dictionary<string, ActorRGB>>("initGame"));
+            LuaTable luaResult = _lua.DoString("return render_scene()").First() as LuaTable;
+            _currentScene = GenericScene.FromLuaTable(luaResult);
+
+            RedrawScene(_currentScene);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
 
-            // Check if lua is initialized
             if (_lua == null)
             {
                 Console.WriteLine("Lua state is not initialized.");
@@ -102,51 +115,31 @@ namespace LuaOpenGLGameEngine
 
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
-            // _luaProcessor.ProcessLuaNonQuery("update");
+            // Pull the latest scene state from Lua — this reflects all updates!
+            LuaTable luaResult = _lua.DoString("return get_current_scene()").First() as LuaTable;
+            _currentScene = GenericScene.FromLuaTable(luaResult);
 
-            var sceneData = new GenericScene(_luaProcessor.ProcessLuaQuery<Dictionary<string, ModelRGB>>("render_scene"));
-            RedrawScene(sceneData);
+            RedrawScene(_currentScene);
 
-            _lua.DoString("current_state = {}"); // Reset for next frame
+            // Reset (only when changing level or game-over, i.e. globalStateChange)
+            // if (globalStateChange) _lua.DoString("return clear_current_scene()");
+
             SwapBuffers();
-        }
-
-        protected override void OnUpdateFrame(FrameEventArgs e)
-        {
-            base.OnUpdateFrame(e);
-
-            if (Keyboard.GetState().IsKeyDown(Key.F5))  // Or file watcher
-            {
-                _luaProcessor.ReloadScript();
-            }
-
-            if (Keyboard.GetState().IsKeyDown(Key.Escape))
-                Close();
-
-            if (Keyboard.GetState().IsKeyDown(Key.W))
-                Close();
-
-            if (Keyboard.GetState().IsKeyDown(Key.S))
-                Close();
-
-            if (Keyboard.GetState().IsKeyDown(Key.A))
-                Close();
-
-            if (Keyboard.GetState().IsKeyDown(Key.D))
-                Close();
-
         }
 
         // FIXED: Resize event uses different args in OpenTK 3.3.3
         protected override void OnResize(EventArgs e)  // ← Changed from ResizeEventArgs
         {
             base.OnResize(e);
-            GL.Viewport(0, 0, Width, Height);
-        }
 
-        void UpdateState(string state_name)
-        {
-            Console.WriteLine("State updated !");
+            // var width = e.target.Bounds.Width;
+            // var height = e.target.Bounds.Height;
+            // var left = e.target.Bounds.Left;
+            // var right = e.target.Bounds.Right;
+
+            _viewport.Width = Width;
+            _viewport.Height = Height;
+            GL.Viewport(0, 0, Width, Height);
         }
 
         void SetupGraphics(ISizable viewport)
@@ -163,41 +156,150 @@ namespace LuaOpenGLGameEngine
 
         void RedrawScene(GenericScene sceneData)
         {
-            foreach (var element in sceneData.Actors) // Render clears first, then draw all the others
-                if (element is ClearRGB) _graphicsRenderer.ClearScreen((element as ClearRGB).r, (element as ClearRGB).g, (element as ClearRGB).b);
-
-            // Draw center cross
-            _graphicsRenderer.DrawLine(-0.1f, 0f, 0.1f, 0f, 1f, 0f, 0f); // Horizontal red line at center
-            _graphicsRenderer.DrawLine(0f, -0.1f, 0f, 0.1f, 1f, 0f, 0f); // Vertical red line at center
-
-            // Draw scene elements
-            foreach(var element in sceneData.Actors)
+            // 1. Handle clears (there should be only one usually)
+            foreach (var clear in sceneData.Clears)
             {
-                if (element is RectangleRGB)
-                    _graphicsRenderer.DrawRect((element as RectangleRGB).x, (element as RectangleRGB).y, (element as RectangleRGB).w, (element as RectangleRGB).h,  element.r, element.g, element.b);
-                else if (element is CircleRGB)
-                    _graphicsRenderer.DrawCircle((element as CircleRGB).x, (element as CircleRGB).y, (element as CircleRGB).rad, (element as CircleRGB).r, (element as CircleRGB).g, (element as CircleRGB).b);
-                else if (element is ResourceBarRGB)
-                    _graphicsRenderer.DrawBar(
-                        (element as ResourceBarRGB).name,
-                        (element as ResourceBarRGB).current,
-                        (element as ResourceBarRGB).maximum,
-                        (element as ResourceBarRGB).percentage / 100,
-                        0.02f, // Thickness of the Bar
-                        (element as ResourceBarRGB).x,
-                        (element as ResourceBarRGB).y,
-                        (element as ResourceBarRGB).r,
-                        (element as ResourceBarRGB).g,
-                        (element as ResourceBarRGB).b);
-                else _graphicsRenderer.DrawText("Element unindentified", 0.05f, 0.05f,1, 1, 0.25f, 0.25f);
+                _graphicsRenderer.ClearScreen(clear.Color);
             }
 
-            // Draw corners
-            _graphicsRenderer.DrawText("TL", -0.95f,  0.95f, 5.5f, 1f, 0f, 0f); // Red Top-Left
-            _graphicsRenderer.DrawText("TR",  0.80f,  0.95f, 5.5f, 0f, 1f, 0f); // Green Top-Right
-            _graphicsRenderer.DrawText("BL", -0.95f, -0.95f, 5.5f, 0f, 0f, 1f); // Blue Bottom-Left
-            _graphicsRenderer.DrawText("BR",  0.80f, -0.95f, 5.5f, 1f, 1f, 0f); // Yellow Bottom-Right
-            _graphicsRenderer.DrawText(JsonSerializer.Serialize(_viewport), 0.05f, 0.05f, 5.5f, 1, 1, 1);
+            // 2. Debug crosshair
+            _graphicsRenderer.DrawLine(-0.1f, 0f, 0.1f, 0f, new RGBColor { r = 1f, g = 0f, b = 0f });
+            _graphicsRenderer.DrawLine(0f, -0.1f, 0f, 0.1f, new RGBColor { r = 1f, g = 0f, b = 0f });
+
+            // 3. Draw all actors with hover/selection
+            foreach (var actor in sceneData.Actors)
+            {
+                // Draw main shape
+                switch (actor)
+                {
+                    case RectangleRGB rect:
+                        _graphicsRenderer.DrawRect(rect.X, rect.Y, rect.Width, rect.Height, rect.Color);
+                        break;
+
+                    case CircleRGB circle:
+                        _graphicsRenderer.DrawCircle(circle.X, circle.Y, circle.rad, circle.Color);
+                        break;
+
+                    case ResourceBarRGB bar:
+                        _graphicsRenderer.DrawBar(
+                            bar.Name,
+                            bar.Current,
+                            bar.Maximum,
+                            bar.Percentage / 100f,
+                            0.02f, // thickness
+                            bar.X,
+                            bar.Y,
+                            bar.Color);
+                        break;
+
+                    default:
+                        _graphicsRenderer.DrawText("Unknown actor", 0.05f, 0.05f, 1f, new RGBColor { r = 1f, g = 0f, b = 0f });
+                        break;
+                }
+
+                // Draw hover/selection outline
+                bool shouldHighlight = actor.hovered || actor.selected;
+
+                if (shouldHighlight &&
+                    actor is IPlaceable placeable &&
+                    actor is ISizable sizable)
+                {
+                    float brightness = actor.selected ? 1.5f : 1.2f;
+                    float outlineW = sizable.Width + 0.02f;
+                    float outlineH = sizable.Height + 0.02f;
+
+                    _graphicsRenderer.DrawRect(
+                        placeable.X, placeable.Y,
+                        outlineW, outlineH,
+                        new RGBColor { r = actor.Color.r, g = actor.Color.g, b = actor.Color.b });
+                }
+            }
+
+            // 4. Overlay text (always on top)
+            var textColorLegend = new RGBColor { r = 1f, g = 0f, b = 0f };
+            _graphicsRenderer.DrawText("TL", -0.95f, 0.95f, 5.5f, textColorLegend);
+            _graphicsRenderer.DrawText("TR", 0.80f, 0.95f, 5.5f, textColorLegend);
+            _graphicsRenderer.DrawText("BL", -0.95f, -0.95f, 5.5f, textColorLegend);
+            _graphicsRenderer.DrawText("BR", 0.80f, -0.95f, 5.5f, textColorLegend);
+            _graphicsRenderer.DrawText(JsonSerializer.Serialize(_viewport), 0.05f, 0.05f, 5.5f, textColorLegend);
         }
+
+        #endregion
+
+        private ActorRGB? hoveredActor = null;
+        private ActorRGB? selectedActor = null;
+
+        void UpdateState(string state_name)
+        {
+            Console.WriteLine("State updated !");
+        }
+
+        #region Interaction & Handlers
+
+        protected override void OnUpdateFrame(FrameEventArgs e)
+        {
+            base.OnUpdateFrame(e);
+
+            if (Keyboard.GetState().IsKeyDown(Key.F5))  // Or file watcher
+            {
+                _luaProcessor.ReloadScript();
+            }
+
+            if (Keyboard.GetState().IsKeyDown(Key.Escape))
+                Close();
+
+            if (Keyboard.GetState().IsKeyDown(Key.W)) { }
+
+            if (Keyboard.GetState().IsKeyDown(Key.S)) { }
+
+            if (Keyboard.GetState().IsKeyDown(Key.A)) { }
+
+            if (Keyboard.GetState().IsKeyDown(Key.D)) { }
+        }
+
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseDown(e);
+
+            if (e.Button == MouseButton.Left && e.IsPressed) // Only on press down
+            {
+                var pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
+                if (pickedActor != null)
+                {
+                    var actor = _currentScene.Actors.First(i => i.Id == pickedActor.Id);
+                    bool newSelected = !actor.selected;
+                    actor.selected = newSelected;
+
+                    _lua.DoString(string.Format("update_actor_by_id(\"{0}\", \"selected\", {1})",
+                        pickedActor.Id.ToString(),
+                        newSelected ? "true" : "false"));
+                }
+            }
+        }
+
+        // Optional: Hover support
+        protected override void OnMouseMove(MouseMoveEventArgs e)
+        {
+            base.OnMouseMove(e);
+
+            // ActorRGB? pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
+
+            // if (pickedActor != null) _currentScene.Actors.First(i => i.Id == pickedActor.Id).selected = true;
+
+            // TODO: Adjust/add mouse cursor manipulation feature
+            // Cursor = pickedActor != null ? MouseCursor.Arrow : MouseCursor.Default;
+        }
+
+        // Keyboard example (you mentioned it's already there)
+        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+
+            // if (e.Key == Keys.Escape)
+            //     Close();
+            // // ... other keys
+        }
+
+        #endregion
     }
 }

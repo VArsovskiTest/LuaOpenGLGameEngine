@@ -16,9 +16,9 @@ public class GraphicsRenderer
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
-    public void ClearScreen(float r, float g, float b)
+    public void ClearScreen(IColorable color)
     {
-        GL.ClearColor(r, g, b, 1f);
+        GL.ClearColor(color.r, color.g, color.b, 1f);
         GL.Clear(ClearBufferMask.ColorBufferBit);
     }
 
@@ -66,18 +66,18 @@ public class GraphicsRenderer
             throw new Exception("wglUseFontBitmaps failed");
     }
 
-    public void DrawLine(float x1, float y1, float x2, float y2, float r, float g, float b)
+    public void DrawLine(float x1, float y1, float x2, float y2, IColorable color)
     {
-        GL.Color3(r, g, b);
+        GL.Color3(color.r, color.g, color.b);
         GL.Begin(PrimitiveType.Lines);
         GL.Vertex2(x1, y1);
         GL.Vertex2(x2, y2);
         GL.End();
     }
 
-    public void DrawRect(float x, float y, float w, float h, float r, float g, float b)
+    public void DrawRect(float x, float y, float w, float h, IColorable color)
     {
-        GL.Color3(r, g, b);
+        GL.Color3(color.r, color.g, color.b);
         GL.Begin(PrimitiveType.Quads);
         GL.Vertex2(x, y);
         GL.Vertex2(x + w, y);
@@ -86,21 +86,21 @@ public class GraphicsRenderer
         GL.End();
     }
 
-    public void DrawPercentageLine(float percentage, float thickness, float x, float y, bool isHorizontal, float r, float g, float b)
+    public void DrawPercentageLine(float percentage, float thickness, float x, float y, bool isHorizontal, IColorable color)
     {
         DrawRect(x, y
         , isHorizontal ? percentage : thickness
         , isHorizontal ? thickness : percentage
-        , r, g, b);
+        , color);
     }
 
-    public void DrawBar(string name, float current, float max, float percentage, float thickness, float x, float y, float r, float g, float b)
+    public void DrawBar(string name, float current, float max, float percentage, float thickness, float x, float y, IColorable color)
     {
-        DrawPercentageLine(percentage, thickness, x, y, true, r, g, b);
+        DrawPercentageLine(percentage, thickness, x, y, true, color);
         // DrawText(name + ": " + current + "/" + max, x, y, 1, r, g, b);
     }
 
-    public void DrawText(string text, float x, float y, float scale, float r, float g, float b)
+    public void DrawText(string text, float x, float y, float scale, IColorable color)
     {
         if (string.IsNullOrEmpty(text) || _fontBase == 0) return;
 
@@ -113,7 +113,7 @@ public class GraphicsRenderer
         GL.Disable(EnableCap.Texture2D);
         GL.Disable(EnableCap.Blend); // Optional — re-enable if you want alpha
 
-        GL.Color3(r, g, b);
+        GL.Color3(color.r, color.g, color.b);
 
         // === Force 2D orthographic projection (-1 to 1 NDC) ===
         GL.MatrixMode(MatrixMode.Projection);
@@ -146,12 +146,12 @@ public class GraphicsRenderer
         GL.PopAttrib();
     }
 
-    public void DrawCircle(float x, float y, float radius, float r, float g, float b)
+    public void DrawCircle(float x, float y, float radius, IColorable color)
     {
         int numSegments = 100; // Number of segments to approximate the circle
         float angleStep = (float)(2 * Math.PI / numSegments);
 
-        GL.Color3(r, g, b);
+        GL.Color3(color.r, color.g, color.b);
         GL.Begin(PrimitiveType.TriangleFan);
         GL.Vertex2(x, y); // Center of the circle
 
