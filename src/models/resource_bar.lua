@@ -28,7 +28,8 @@ function ResourceBar:create(resource_bar, name)
     -- VALIDATE: Must be ResourceBar or nil
     local self = ResourceBar:new(resource_bar)
     self._val.name = name
-    
+    self.type = "resource_bar"
+
     return self
 end
 

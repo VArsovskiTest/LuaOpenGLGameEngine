@@ -2,6 +2,8 @@
 local setup = require("src.setup.setup_paths")
 setup.setup_paths()
 
+local guid_generator = require("helpers.guid_helper")
+
 local enableLogging = true  -- Set to false to skip logging
 
 local logPath
@@ -23,32 +25,54 @@ local function log(msg)
 end
 
 local function clear_current_scene()
-    for k in pairs(current_state) do
-        current_state[k] = nil
+    for k in pairs(current_scene) do
+        current_scene[k] = nil
     end
-    -- or simply: current_state = {}
+    -- or simply: current_scene = {}
 end
 
-current_state = current_state or {}
+local function generate_actor_data(type, actor)
+    local actor_data = {}
 
-function render_scene_with_params(clearColors, rects, resource_bars, circles)
-    clear_current_scene()
+    if type == "rect" then
+        actor_data = {
+            x = actor.x or 0,
+            y = actor.y or 0,
+            width = actor.width or 0.1,
+            height = actor.height or 0.1,
+        }
 
-    -- Insert clear color based on the passed parameter
-    for _, clr in ipairs(clearColors) do
-        local colorObject = ColorHelper.createColorObject(clr or color_pallette.RICH_MAGENTA)
-        table.insert(current_state, {
-            type = "clear",
-            r = colorObject.r,
-            g = colorObject.g,
-            b = colorObject.b,
-            a = colorObject.a,
-        })
+    elseif type == "resource_bar" then
+        actor_data = {
+            name = actor.name or "unnamed_bar",
+            current = actor:current() or 0,
+            maximum = actor:maximum() or 100,
+            percentage = actor:percentage() or 0,
+            x = actor.x or 0,
+            y = actor.y or 0,
+        }
+
+    elseif type == "circle" then
+        actor_data = {
+            id = guid_generator.generate_guid(),
+            x = actor.x or 0,
+            y = actor.y or 0,
+            rad = actor.rad or 0.1,
+        }
+
+    else
+        error("game.lua: Unknown actor type '" .. tostring(type) .. "'")
     end
 
+    actor_data.type = type
+    return actor_data
+end
+
+current_scene = current_scene or {}
+
+function render_scene_with_params(clearColors, actors)
     -- local time = os.clock()
     -- local x = math.sin(time * 2) * 0.5
-
     -- -- Insert rectangle based on dynamic values
     -- local clr = ColorHelper.createColorObject(clearColor or color_pallette.INDIGO)
     -- table.insert(current_state, {
@@ -63,54 +87,40 @@ function render_scene_with_params(clearColors, rects, resource_bars, circles)
     --     a = clr.a
     -- })
 
-    -- Insert additional rectangles from the provided parameter
-    for _, rect in ipairs(rects) do
-        local clr = ColorHelper.createColorObject(rect.color_id or color_pallette.SILVER)
-        table.insert(current_state, {
-            type = "rect",
-            x = rect.x,
-            y = rect.y,
-            w = rect.w,
-            h = rect.h,
-            r = clr.r,
-            g = clr.g,
-            b = clr.b,
-            a = clr.a
+    clear_current_scene()
+    local scene = { clears = {}, actors = {} }
+
+    -- Insert clear color based on the passed parameter
+    for _, clr in ipairs(clearColors) do
+        local colorObject = ColorHelper.createColorObject(clr or color_pallette.RICH_MAGENTA)
+        table.insert(scene.clears, {
+            type = "clear",
+            id = guid_generator.generate_guid(),
+            r = colorObject.r,
+            g = colorObject.g,
+            b = colorObject.b,
+            a = colorObject.a,
         })
     end
 
-    for _, bar in ipairs(resource_bars) do
-        local clr = ColorHelper.createColorObject(bar.color_id or color_pallette.GOLD)
-        table.insert(current_state, {
-            type = "resource_bar",
-            name = bar:name() or nil,
-            current = bar:current() or 0,
-            maximum = bar:maximum() or 100,
-            percentage = bar:percentage() or 0,
-            x = bar.x or 0.05,
-            y = bar.y or 0.05,
-            r = clr.r,
-            g = clr.g,
-            b = clr.b,
-            a = clr.a,
-        })
+    -- Insert actors from provided parameters
+    for _, actor in ipairs(actors) do
+        local actor_type = actor.type
+        local actor_data = generate_actor_data(actor_type, actor)
+
+        local selected_color = ({
+            rect         = color_pallette.SILVER,
+            circle       = color_pallette.TEAL,
+            resource_bar = color_pallette.MAGENTA
+        })[actor_type] or color_pallette.WHITE
+        actor_data.color = ColorHelper.createColorObject(selected_color)
+
+        actor_data.id  = guid_generator.generate_guid()
+        table.insert(scene.actors, actor_data)
     end
 
-    for _, c in ipairs(circles) do
-        local clr = ColorHelper.createColorObject(c.color_id  or color_pallette.OLIVE)
-        table.insert(current_state, {
-            type = "circle",
-            x = c.x or -2,
-            y = c.y or -2,
-            rad = c.rad,
-            r = clr.r,
-            g = clr.g,
-            b = clr.b,
-            a = clr.a,
-        })
-    end
-
-    return current_state
+    current_scene = scene;
+    return current_scene
 end
 
 -- Helper function to convert a table to a string for logging
@@ -155,19 +165,22 @@ end
 
 function render_scene()
     local scene_sampler = require("helpers.scene_sampler")
-    local clears, rects, resource_bars, circles = scene_sampler.render_sample_scene()
+    local scene = scene_sampler.render_sample_scene()
+
     -- log(serialize_table(clears))
     -- log(serialize_table(rects))
     -- log(serialize_table(resource_bars))
     -- log(serialize_table(circles))
     
-    return render_scene_with_params(clears, rects, resource_bars, circles)
+    return render_scene_with_params(scene.clears, scene.actors)
 end
 
 -- Public functions (for Binding with GameEngine in C#)
 function initGame()
     local scene_sampler = require("helpers.scene_sampler")
     local clears, rects, resource_bars, circles = scene_sampler.render_sample_scene()
+
+    guid_generator.initialize_guid_generation()
 
     setup_command_queue()
     return render_scene_with_params(clears, rects, resource_bars, circles)

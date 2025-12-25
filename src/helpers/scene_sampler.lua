@@ -1,5 +1,6 @@
 local color_pallette = require("enums.colors")
 local ColoredResourceBar = require("models.colored_resource_bar")
+local tableHelper = require("helpers.table_helper")
 
 local function render_sample_scene()
     local rects = {
@@ -7,24 +8,24 @@ local function render_sample_scene()
             type = "rect",
             x = 0.2,
             y = 0.1,
-            w = 0.35,
-            h = 0.1,
+            width = 0.35,
+            height = 0.1,
             color_id = color_pallette.TEAL,
         },
         {
             type = "rect",
             x = 0.7,
             y = 0.65,
-            w = 0.15,
-            h = 0.22,
+            width = 0.15,
+            height = 0.22,
             color_id = color_pallette.NAVY,
         },
         {
             type = "rect",
             x = -0.7,
             y = -0.25,
-            w = 0.52,
-            h = 0.17,
+            width = 0.52,
+            height = 0.17,
         },
     }
 
@@ -69,7 +70,9 @@ local function render_sample_scene()
     stamina_bar.y = 0.15;
 
     local resource_bars = { hp_bar, mana_bar, stamina_bar }
-    return clears, rects, resource_bars, circles
+    local actors = tableHelper.flatten(rects, resource_bars, circles)
+
+    return { clears = clears, actors = actors }
 end
 
 return { render_sample_scene = render_sample_scene }
