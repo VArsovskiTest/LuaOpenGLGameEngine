@@ -6,6 +6,7 @@ using OpenTK.Graphics.OpenGL;   // For GL
 using NLua;
 using System.Drawing;
 using System.Text.Json;
+using System.Security.Cryptography.X509Certificates;
 
 namespace LuaOpenGLGameEngine
 {
@@ -65,7 +66,8 @@ namespace LuaOpenGLGameEngine
             _luaProcessor = new LuaProcessor(_lua, _luaFilePath);
 
             // -- Initialize Logging: Once
-            _lua.DoString("init_logging()");
+            _lua.DoString("game.init_logging()");
+            _lua.DoString("game.setup_command_queue()");
 
             // === Set State ===
             _state = new EngineState(_lua);
@@ -97,7 +99,7 @@ namespace LuaOpenGLGameEngine
             //var luaResult = lua.DoString("return build_sample_scene()")[0]; // MoonSharp returns DynValue
             //_currentScene = new GenericScene(_luaProcessor.ProcessLuaQuery<Dictionary<string, ActorRGB>>("initGame"));
             // _currentScene = GenericScene.FromLuaTable(_luaProcessor.ProcessLuaQuery<Dictionary<string, ActorRGB>>("initGame"));
-            LuaTable luaResult = _lua.DoString("return render_scene()").First() as LuaTable;
+            LuaTable luaResult = _lua.DoString("return game.render_scene()").First() as LuaTable;
             _currentScene = GenericScene.FromLuaTable(luaResult);
 
             RedrawScene(_currentScene);
@@ -116,7 +118,7 @@ namespace LuaOpenGLGameEngine
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
             // Pull the latest scene state from Lua — this reflects all updates!
-            LuaTable luaResult = _lua.DoString("return get_current_scene()").First() as LuaTable;
+            LuaTable luaResult = _lua.DoString("return game.get_current_scene()").First() as LuaTable;
             _currentScene = GenericScene.FromLuaTable(luaResult);
 
             RedrawScene(_currentScene);
@@ -240,6 +242,10 @@ namespace LuaOpenGLGameEngine
         {
             base.OnUpdateFrame(e);
 
+            var base_move_speed = 5;
+
+            var pickedActor = selectedActor ?? null;
+
             if (Keyboard.GetState().IsKeyDown(Key.F5))  // Or file watcher
             {
                 _luaProcessor.ReloadScript();
@@ -248,13 +254,27 @@ namespace LuaOpenGLGameEngine
             if (Keyboard.GetState().IsKeyDown(Key.Escape))
                 Close();
 
-            if (Keyboard.GetState().IsKeyDown(Key.W)) { }
+            if (pickedActor != null)
+            {
+                if (Keyboard.GetState().IsKeyDown(Key.W)) {
+                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"up\", \"{base_move_speed}\")");
+                }
 
-            if (Keyboard.GetState().IsKeyDown(Key.S)) { }
+                if (Keyboard.GetState().IsKeyDown(Key.S))
+                {
+                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"down\", \"{base_move_speed}\")");
+                }
 
-            if (Keyboard.GetState().IsKeyDown(Key.A)) { }
+                if (Keyboard.GetState().IsKeyDown(Key.A))
+                {
+                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"left\", \"{base_move_speed}\")");
+                }
 
-            if (Keyboard.GetState().IsKeyDown(Key.D)) { }
+                if (Keyboard.GetState().IsKeyDown(Key.D))
+                {
+                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"right\", \"{base_move_speed}\")");
+                }
+            }
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -267,10 +287,11 @@ namespace LuaOpenGLGameEngine
                 if (pickedActor != null)
                 {
                     var actor = _currentScene.Actors.First(i => i.Id == pickedActor.Id);
+                    selectedActor = actor;
                     bool newSelected = !actor.selected;
                     actor.selected = newSelected;
 
-                    _lua.DoString(string.Format("update_actor_by_id(\"{0}\", \"selected\", {1})",
+                    _lua.DoString(string.Format("game.select_actor_by_id(\"{0}\", {1})",
                         pickedActor.Id.ToString(),
                         newSelected ? "true" : "false"));
                 }
@@ -282,9 +303,13 @@ namespace LuaOpenGLGameEngine
         {
             base.OnMouseMove(e);
 
-            // ActorRGB? pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
+            ActorRGB? pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
 
-            // if (pickedActor != null) _currentScene.Actors.First(i => i.Id == pickedActor.Id).selected = true;
+            if (pickedActor != null)
+            {
+                hoveredActor = pickedActor;
+                // _currentScene.Actors.First(i => i.Id == pickedActor.Id).selected = true;
+            }
 
             // TODO: Adjust/add mouse cursor manipulation feature
             // Cursor = pickedActor != null ? MouseCursor.Arrow : MouseCursor.Default;
