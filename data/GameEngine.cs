@@ -29,12 +29,15 @@ namespace LuaOpenGLGameEngine
 
         #region BaseSetup & Rendering
 
-        public GameEngine() : base(1024, 768, GraphicsMode.Default, "C# + Lua + OpenGL Engine")
+        public GameEngine(RedisConfig redisConfig) : base(1024, 768, GraphicsMode.Default, "C# + Lua + OpenGL Engine")
         {
             _graphicsRenderer = new GraphicsRenderer();
 
             // === Lua Setup ===
             _lua = new Lua();
+
+            _redisQueue = new RedisQueue(redisConfig, _lua);
+            _redisQueue.SetupBindings();
 
             // Get the current working directory
             string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
@@ -47,9 +50,6 @@ namespace LuaOpenGLGameEngine
             _luaFilePath = Path.Combine(projectRoot, "src", "game.lua");
 
             _mouseClickHandler = new MouseClickHandler();
-
-            _redisQueue = new RedisQueue(_lua);
-            _redisQueue.SetupBindings();
 
             // === CRITICAL: Load the Lua script FIRST ===
             if (File.Exists(_luaFilePath))
@@ -67,7 +67,11 @@ namespace LuaOpenGLGameEngine
 
             // -- Initialize Logging: Once
             _lua.DoString("game.init_logging()");
-            _lua.DoString("game.setup_command_queue()");
+
+            if (redisConfig.IsAvailable())
+            {
+                _lua.DoString("game.setup_command_queue()");
+            }
 
             // === Set State ===
             _state = new EngineState(_lua);
@@ -92,13 +96,8 @@ namespace LuaOpenGLGameEngine
             _lua["update"] = (Action<string>)UpdateState;
 
             _lua.DoString("current_scene = {}");
-            // _lua["render_scene"] = (Action<string, string>)RenderTable;
             renderTable = _lua["initGame"] as LuaTable;
 
-            //// Execute Lua script that returns { clears = ..., actors = ... }
-            //var luaResult = lua.DoString("return build_sample_scene()")[0]; // MoonSharp returns DynValue
-            //_currentScene = new GenericScene(_luaProcessor.ProcessLuaQuery<Dictionary<string, ActorRGB>>("initGame"));
-            // _currentScene = GenericScene.FromLuaTable(_luaProcessor.ProcessLuaQuery<Dictionary<string, ActorRGB>>("initGame"));
             LuaTable luaResult = _lua.DoString("return game.render_scene()").First() as LuaTable;
             _currentScene = GenericScene.FromLuaTable(luaResult);
 
@@ -187,8 +186,8 @@ namespace LuaOpenGLGameEngine
                             bar.Name,
                             bar.Current,
                             bar.Maximum,
-                            bar.Percentage / 100f,
-                            0.02f, // thickness
+                            bar.Percentage / 500f,
+                            bar.Thickness,
                             bar.X,
                             bar.Y,
                             bar.Color);
@@ -242,7 +241,7 @@ namespace LuaOpenGLGameEngine
         {
             base.OnUpdateFrame(e);
 
-            var base_move_speed = 5;
+            var base_move_speed = 1.9;
 
             var pickedActor = selectedActor ?? null;
 
@@ -256,23 +255,18 @@ namespace LuaOpenGLGameEngine
 
             if (pickedActor != null)
             {
-                if (Keyboard.GetState().IsKeyDown(Key.W)) {
-                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"up\", \"{base_move_speed}\")");
-                }
+                var move_up = Keyboard.GetState().IsKeyDown(Key.W) || Keyboard.GetState().IsKeyDown(Key.Up);
+                var move_down = Keyboard.GetState().IsKeyDown(Key.S) || Keyboard.GetState().IsKeyDown(Key.Down);
+                var move_left = Keyboard.GetState().IsKeyDown(Key.A) || Keyboard.GetState().IsKeyDown(Key.Left);
+                var move_right = Keyboard.GetState().IsKeyDown(Key.D) || Keyboard.GetState().IsKeyDown(Key.Right);
 
-                if (Keyboard.GetState().IsKeyDown(Key.S))
-                {
-                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"down\", \"{base_move_speed}\")");
-                }
+                var move_direction = move_up ? "up"
+                    : move_down ? "down"
+                    : move_left ? "left"
+                    : "right";
 
-                if (Keyboard.GetState().IsKeyDown(Key.A))
-                {
-                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"left\", \"{base_move_speed}\")");
-                }
-
-                if (Keyboard.GetState().IsKeyDown(Key.D))
-                {
-                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"right\", \"{base_move_speed}\")");
+                if (move_up || move_down || move_left || move_right) {
+                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"{move_direction}\", \"{base_move_speed}\")");
                 }
             }
         }

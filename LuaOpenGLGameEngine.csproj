@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.0" />
     <PackageReference Include="MoonSharp" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
@@ -21,6 +26,8 @@
     <Compile Include="data\**\*.cs" />
     <Compile Include="graphics\**\*.cs" />
     <Compile Include="models\**\*.cs" />
+    <Compile Include="observability\**\*.cs" />
+
     <!-- <PackageReference Include="KeraLua" Version="1.6.3" /> -->
   </ItemGroup>
 

@@ -33,7 +33,8 @@ public class ResourceBarRGB : ActorRGB
     public string Name { get; set; }
     public float Current { get; set; }
     public float Maximum { get; set; }
-    public float Percentage { get; set; }    
+    public float Thickness { get; set; }
+    public float Percentage { get; set; }
 }
 
 [JsonType("text")]

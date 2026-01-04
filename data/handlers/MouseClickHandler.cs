@@ -57,7 +57,7 @@ public class MouseClickHandler
             else if (actor is ResourceBarRGB bar)
             {
                 // Treat bar as rectangle
-                var rBar = new RectangleRGB { X = bar.X, Y = bar.Y, Width = bar.Percentage * 0.1f * windowWidth, Height = windowHeight * 0.01f
+                var rBar = new RectangleRGB { X = bar.X, Y = bar.Y, Width = bar.Percentage * 0.1f * windowWidth, Height = bar.Thickness * windowHeight
                 , Color = new RGBColor { r = bar.Color.r, g = bar.Color.g, b = bar.Color.b } };
                 float left = rBar.X - rBar.Width / 2f;
                 float right = rBar.X + rBar.Width / 2f;

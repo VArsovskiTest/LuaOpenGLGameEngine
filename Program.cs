@@ -1,4 +1,9 @@
 ﻿using OpenTK;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualBasic;
+using System.ComponentModel.Design;
 
 namespace LuaOpenGLGameEngine
 {
@@ -6,10 +11,25 @@ namespace LuaOpenGLGameEngine
     {
         static void Main(string[] args)
         {
-            using (var engine = new GameEngine())
-            {
-                engine.Run(); // This starts the loop (60 FPS by default)
-            }
+            var host = new HostBuilder()
+                .ConfigureAppConfiguration((context, configBuilder) =>
+                {
+                    configBuilder
+                        .SetBasePath(Directory.GetCurrentDirectory())
+                        .AddJsonFile("appsettings.json", optional: true)
+                        .AddJsonFile($"appsettings.{context.HostingEnvironment.EnvironmentName}.json", optional: true);
+                })
+                .ConfigureServices((context, services) =>
+                {
+                    services.AddSingleton<RedisConfig>();
+                    services.AddSingleton<GameEngine>();
+                })
+                .Build();
+
+            var game = host.Services.GetRequiredService<GameEngine>();
+            game.Run();
+
+            host.Run();
         }
     }
 }

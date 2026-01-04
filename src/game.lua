@@ -2,6 +2,8 @@
 local setup = require("src.setup.setup_paths")
 setup.setup_paths()
 
+local exception_handler = require("exception_handler")
+
 -- Polyfill for older Lua versions
 if not math.clamp then
     function math.clamp(value, min, max)
@@ -17,23 +19,23 @@ if get_logs_path and enableLogging then
 end
 
 local logFile = nil
+local errorLogFile = nil
 
 local table_helper = require("helpers.table_helper")
 local color_helper = require("helpers/color_helper")
 local color_pallette = require("enums/colors")
 local ColorHelper = color_helper:new()
 
-local function log(msg)
+local function log_data(msg)
     if not logFile then return end
     logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(msg) .. "\n")
     logFile:flush()
 end
 
-local function clear_current_scene()
-    for k in pairs(current_scene) do
-        current_scene[k] = nil
-    end
-    -- or simply: current_scene = {}
+local function log_error(msg)
+    if not errorLogFile then return end
+    errorLogFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(msg) .. "\n")
+    errorLogFile:flush()
 end
 
 -- Helper function to convert a table to a string for logging
@@ -48,34 +50,32 @@ local function serialize_table(t)
     return s .. '}\n'
 end
 
-current_scene = current_scene or {}
-
 local function setup_command_queue()
-    log("=== Redis Queue Test Start ===")
+    log_data("=== Redis Queue Test Start ===")
     redis_clear("test:queue")
 
     redis_enqueue("test:queue", { action = "spawn", entity = "enemy", id = 1 })
     redis_enqueue("test:queue", { action = "move", target = "player", x = 100, y = 200 })
     redis_enqueue("test:queue", { action = "attack", damage = 50 })
 
-    log("Enqueued 3 commands")
+    log_data("Enqueued 3 commands")
 
     local cmd1 = redis_dequeue("test:queue", 0)
     if cmd1 then
-        log("Dequeued:", cmd1.action, cmd1.entity or cmd1.target or cmd1.damage)
+        log_data("Dequeued:", cmd1.action, cmd1.entity or cmd1.target or cmd1.damage)
     else
-        log("No command (should not happen)")
+        log_data("No command (should not happen)")
     end
 
     local cmd2 = redis_dequeue("test:queue", 2)
     if cmd2 then
-        log("Dequeued (blocking):", cmd2.action)
+        log_data("Dequeued (blocking):", cmd2.action)
     else
-        log("Timeout - no more commands")
+        log_data("Timeout - no more commands")
     end
 
-    log("=== Redis Queue Test End ===")
-    log("Executing script: game")
+    log_data("=== Redis Queue Test End ===")
+    log_data("Executing script: game")
 end
 
 function init_logging()
@@ -92,6 +92,22 @@ function init_logging()
         print("Check permissions and path: " .. path)
     end
 end
+
+function init_error_logging()
+    if errorLogFile then return end
+    
+    local path = get_logs_path("game_engine_errors.txt")
+    errorLogFile = io.open(path, "a")
+    if errorLogFile then
+        errorLogFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] === Game Session Started ===\n")
+        errorLogFile:flush()
+        print("Error log initialized successfully at: " .. path)
+    else
+        print("FAILED to open log file: " .. path)
+        print("Check permissions and path: " .. path)
+    end
+end
+
 
 -- # region Scene generation
 
@@ -113,6 +129,7 @@ local function generate_actor_data(type, actor)
             current = actor:current() or 0,
             maximum = actor:maximum() or 100,
             percentage = actor:percentage() or 0,
+            thickness = actor.thickness or 0,
             x = actor.x or 0,
             y = actor.y or 0,
         }
@@ -137,6 +154,13 @@ local function generate_actor_data(type, actor)
     actor_data.id = actor.id
 
     return actor_data
+end
+
+local function clear_current_scene()
+    for k in pairs(current_scene) do
+        current_scene[k] = nil
+    end
+    -- or simply: current_scene = {}
 end
 
 local function render_scene_with_params(clearColors, actors)
@@ -198,34 +222,21 @@ function render_scene()
     local scene_sampler = require("helpers.scene_sampler")
     local scene = scene_sampler.render_sample_scene()
 
-    -- log(serialize_table(clears))
-    -- log(serialize_table(rects))
-    -- log(serialize_table(resource_bars))
-    -- log(serialize_table(circles))
-
     current_scene = render_scene_with_params(scene.clears, scene.actors)
     return current_scene
 end
 
 -- # endregion
 
-function initGame()
-    -- init_logging()
-    -- setup_command_queue()
-    return render_scene()
+local function find_actor_by_id(id)
+    return table_helper.selectRecordById(current_scene.actors or {}, id)
 end
 
 local function update_actor_by_id(id, prop, value)
     table_helper.updateRecordById(current_scene.actors or {}, id, prop, value)
-    log("updated state: " .. serialize_table(find_actor_by_id(id)))
-end
-
-function find_actor_by_id(id)
-    return table_helper.selectRecordById(current_scene.actors or {}, id)
 end
 
 local function action_select_actor_by_id(id, value)
-    log("select_actor: " .. tostring(id))
     local selected_actor = find_actor_by_id(id)
     if selected_actor then
         update_actor_by_id(id, "selected", value)
@@ -236,12 +247,12 @@ local function action_select_actor_by_id(id, value)
 end
 
 local function action_move_actor_by_id(id, direction, speed)
-    speed = speed or 5  -- default speed
+    speed = speed or 1
     local delta = speed / 100  -- convert to normalized units
 
     local actor = find_actor_by_id(id)
     if not actor then
-        return false  -- optional: indicate failure
+        return false
     end
 
     -- Map direction to coordinate change
@@ -261,7 +272,7 @@ local function action_move_actor_by_id(id, direction, speed)
         return false
     end
 
-    log("move_actor: " .. id)
+    log_data("move_actor: " .. id)
 
     -- Clamp to [-1, 1] range and update
     if dx ~= 0 then
@@ -277,16 +288,44 @@ local function action_move_actor_by_id(id, direction, speed)
     return true
 end
 
-function get_current_scene()
+local function get_current_scene()
     return current_scene
 end
 
-function update(dt)
-    -- you can do game-state (for current_state) logic here later
+local function update_scene(dt)
+    -- do game-state updates (for current_state) logic here later
+end
+
+current_scene = current_scene or {}
+
+function initGame()
+    -- if set_logging init_logging() end
+    -- if set_queue setup_command_queue() end
+
+    init_error_logging()
+    local ok, scene_or_error = safe_call_with_retry(function()
+        local scene = render_scene()
+        assert_safe(scene ~= nil, "ERROR: failed generating initial scene")
+
+        error("Error test: log_error")
+        return scene
+    end, 5, 250)
+
+    if ok then
+        return scene_or_error  -- success: scene
+    else
+        -- Error already printed by global_error_handler
+        -- You could add extra handling here if needed
+        print(color("33", "Warning: initGame failed, returning empty scene or retrying..."))
+        print(color("33", scene_or_error))
+        log_data(scene_or_error)
+        return nil  -- or fallback scene
+    end
 end
 
 game = {
     init_logging = init_logging,
+    init_error_logging = init_error_logging,
     setup_command_queue = setup_command_queue,
     render_scene_with_params = render_scene_with_params,
     render_scene = render_scene,

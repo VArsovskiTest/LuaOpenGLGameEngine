@@ -77,6 +77,7 @@ public class GenericScene
                             Current = Convert.ToSingle(t["current"] ?? 0.0),
                             Maximum = Convert.ToSingle(t["maximum"] ?? 100.0),
                             Percentage = Convert.ToSingle(t["percentage"] ?? 0.0),
+                            Thickness = Convert.ToSingle(t["thickness"] ?? 0.0),
                             X = Convert.ToSingle(t["x"] ?? 0.0),
                             Y = Convert.ToSingle(t["y"] ?? 0.0),
                             Color = color,

@@ -9,6 +9,7 @@ public class RedisQueue
 {
     private readonly IDatabase _db;
     private readonly ISubscriber _sub;
+    private readonly RedisConfig _redisConfig;
     private Lua _lua { get; set; }
     private LogHelper _logger { get; set; }
 
@@ -16,15 +17,24 @@ public class RedisQueue
         new Lazy<ConnectionMultiplexer>(() => ConnectionMultiplexer.Connect("localhost:6379"));
     private static ConnectionMultiplexer Connection => LazyConnection.Value;
 
+    // private bool IsRedisEnabled() => _redisEnabled && _connection != null && _connection.IsConnected;
+
     private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public RedisQueue(Lua lua)
+    public RedisQueue(RedisConfig redisConfig, Lua lua)
     {
-        _db = Connection.GetDatabase();
-        _sub = Connection.GetSubscriber();
+        _redisConfig = redisConfig;
+
+        if (_redisConfig.IsAvailable())
+        {
+            _db = Connection.GetDatabase();
+            _sub = Connection.GetSubscriber();
+        }
+        // TODO: else save temporarily in file..
+
         _lua = lua;
         _logger = new LogHelper("redis_queue.log");
     }
@@ -114,33 +124,36 @@ public class RedisQueue
 
     public void SetupBindings()
     {
-        _lua["_redis_enqueue"] = (Func<string, object, bool>)Enqueue;
-        _lua["_redis_dequeue"] = (Func<string, double, object>)Dequeue;
-        _lua["_redis_clear"] = (Action<string>)Clear;
-        
         _lua["get_logs_path"] = (Func<string, string>)((filename) =>
         {
             string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
             var logsDir = Path.Combine(projectRoot, "logs");
-            
+
             // Ensure the logs directory exists
             if (!Directory.Exists(logsDir))
                 Directory.CreateDirectory(logsDir);
-            
+
             return Path.Combine(logsDir, filename);
         });
 
-        // Register functions to Lua
-        _lua.DoString(@"
-            redis_enqueue = function(queue_name, command_table)
-                return _redis_enqueue(queue_name, command_table)
-            end
-            redis_dequeue = function(queue_name, timeout_seconds)
-                return _redis_dequeue(queue_name, timeout_seconds or 0)
-            end
-            redis_clear = function(queue_name)
-                _redis_clear(queue_name)
-            end
-        ");
+        if (_redisConfig.IsAvailable())
+        {
+            _lua["_redis_enqueue"] = (Func<string, object, bool>)Enqueue;
+            _lua["_redis_dequeue"] = (Func<string, double, object>)Dequeue;
+            _lua["_redis_clear"] = (Action<string>)Clear;
+
+            // Register functions to Lua
+            _lua.DoString(@"
+                redis_enqueue = function(queue_name, command_table)
+                    return _redis_enqueue(queue_name, command_table)
+                end
+                redis_dequeue = function(queue_name, timeout_seconds)
+                    return _redis_dequeue(queue_name, timeout_seconds or 0)
+                end
+                redis_clear = function(queue_name)
+                    _redis_clear(queue_name)
+                end
+            ");
+        }
     }
 }
