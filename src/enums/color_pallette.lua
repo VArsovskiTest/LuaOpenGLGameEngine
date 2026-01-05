@@ -1,3 +1,5 @@
+--color_pallette.lua
+
 local colors = {
     RED = "RED",
     GREEN = "GREEN",

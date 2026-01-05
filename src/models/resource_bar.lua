@@ -1,4 +1,6 @@
 -- resource_bar.lua - HP, Mana, Stamina Manager
+local guid_generator = require("helpers.guid_helper")
+
 local ResourceBar = {}
 ResourceBar.__index = ResourceBar
 
@@ -11,6 +13,7 @@ function ResourceBar:new(resource_bar)
     
     local self = setmetatable({
         _val = resource_bar and resource_bar._val or {
+            id = guid_generator.generate_guid(),
             name = nil,
             current = 0,
             maximum = 100,  -- Default max
@@ -27,12 +30,12 @@ end
 function ResourceBar:create(resource_bar, name)
     -- VALIDATE: Must be ResourceBar or nil
     local self = ResourceBar:new(resource_bar)
+    self.class = ResourceBar
     self._val.name = name
     self.type = "resource_bar"
 
     return self
 end
-
 
 -- GAIN (positive differential)
 function ResourceBar:gain(amount)

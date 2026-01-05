@@ -11,11 +11,14 @@ if not math.clamp then
     end
 end
 
+local color_pallette = require("enums.color_pallette")
 local table_helper = require("helpers.table_helper")
-local color_helper = require("helpers/color_helper")
 local scene_sampler = require("helpers.scene_sampler")
-local color_pallette = require("enums/colors")
-local ColorHelper = color_helper:new()
+
+local Clear = require("models.clear")
+local Rectangle = require("models.rectangle")
+local Circle = require("models.circle")
+local ResourceBar = require("models.resource_bar")
 
 local function setup_command_queue()
     log_handler.log_data("=== Redis Queue Test Start ===")
@@ -47,51 +50,6 @@ end
 
 -- # region Scene generation
 
-local function generate_actor_data(type, actor)
-    local actor_data = {}
-
-    if type == "rect" then
-        actor_data = {
-            name = actor.name or "unnamed_rect",
-            x = actor.x or 0,
-            y = actor.y or 0,
-            width = actor.width or 0.1,
-            height = actor.height or 0.1,
-        }
-
-    elseif type == "resource_bar" then
-        actor_data = {
-            name = actor.name or "unnamed_bar",
-            current = actor:current() or 0,
-            maximum = actor:maximum() or 100,
-            percentage = actor:percentage() or 0,
-            thickness = actor.thickness or 0,
-            x = actor.x or 0,
-            y = actor.y or 0,
-        }
-
-    elseif type == "circle" then
-        actor_data = {
-            name = actor.name or "unnamed_circle",
-            x = actor.x or 0,
-            y = actor.y or 0,
-            rad = actor.rad or 0.1,
-        }
-
-    else
-        error("game.lua: Unknown actor type '" .. tostring(type) .. "'")
-    end
-
-    if actor.color_id then
-        actor_data.color = ColorHelper.createColorObject(actor.color_id)
-    end
-
-    actor_data.type = type
-    actor_data.id = actor.id
-
-    return actor_data
-end
-
 local function clear_current_scene()
     for k in pairs(current_scene) do
         current_scene[k] = nil
@@ -101,40 +59,7 @@ end
 
 local function render_scene_with_params(clearColors, actors)
     clear_current_scene()
-    local scene = { clears = {}, actors = {} }
-
-    -- Insert clear color based on the passed parameter
-    for _, clr in ipairs(clearColors) do
-        local colorObject = ColorHelper.createColorObject(clr)
-        table.insert(scene.clears, {
-            type = "clear",
-            id = clr.id,
-            r = colorObject.r,
-            g = colorObject.g,
-            b = colorObject.b,
-            a = colorObject.a,
-        })
-    end
-
-    -- Insert actors from provided parameters
-    for _, actor in ipairs(actors) do
-        local actor_type = actor.type
-        local actor_data = generate_actor_data(actor_type, actor)
-
-        -- Set defaults for actors without color
-        if not actor_data.color then
-            local selected_color = ({
-                rect         = color_pallette.SILVER,
-                circle       = color_pallette.TEAL,
-                resource_bar = color_pallette.MAGENTA
-            })[actor_type] or color_pallette.WHITE
-            actor_data.color = ColorHelper.createColorObject(selected_color)
-        end
-
-        table.insert(scene.actors, actor_data)
-    end
-
-    return scene
+    return { clears = clearColors, actors = actors }
 end
 
 -- Public functions (for Binding with GameEngine in C#)
@@ -154,6 +79,17 @@ function render_scene()
         -- You could add extra handling here if needed
         log_handler.log_error(render_scene_or_error)
         return nil  -- or fallback scene
+    end
+end
+
+function tick_all_resource_bars()
+    local actors = current_scene.actors
+    for _, actor in ipairs(actors) do
+        safe_call(function()
+            if actor.class == ResourceBar and actor.tick then
+                actor:tick()
+            end
+        end)
     end
 end
 
@@ -243,7 +179,8 @@ game = {
     find_actor_by_id = find_actor_by_id,
     select_actor_by_id = action_select_actor_by_id,
     move_actor_by_id = action_move_actor_by_id,
-    get_current_scene = get_current_scene
+    get_current_scene = get_current_scene,
+    tick_all_resource_bars = tick_all_resource_bars
 }
 
 return game

@@ -1,5 +1,5 @@
 --color_helper.lua
-local colorIDsSet = require("enums.colors")
+local colorIDsSet = require("enums.color_pallette")
 
 local colors_rgba = {
     RED = { r = 1.0, g = 0.0, b = 0.0, a = 1.0 },

@@ -1,57 +1,59 @@
-local color_pallette = require("enums.colors")
+local color_pallette = require("enums.color_pallette")
 local ColoredResourceBar = require("models.colored_resource_bar")
-local tableHelper = require("helpers.table_helper")
+local Rectangle = require("models.rectangle")
+local Circle = require("models.circle")
+local Clear = require("models.clear")
 
+local tableHelper = require("helpers.table_helper")
 local guid_generator = require("helpers.guid_helper")
 -- Only seed once at the start of the application
 guid_generator.initialize_guid_generation()
 
 local function render_sample_scene()
     local rects = {
-        {
-            type = "rect",
+        Rectangle:new({
+            name = "R1",
             x = 0.2,
             y = 0.1,
             width = 0.35,
             height = 0.1,
             color_id = color_pallette.TEAL,
-        },
-        {
-            type = "rect",
+        }),
+        Rectangle:new({
+            name = "R2",            
             x = 0.7,
             y = 0.65,
             width = 0.15,
             height = 0.22,
             color_id = color_pallette.NAVY,
-        },
-        {
-            type = "rect",
+        }),
+        Rectangle:new({
+            name = "R3",
             x = -0.7,
             y = -0.25,
             width = 0.52,
             height = 0.17,
-        },
+        }),
     }
 
     local circles = {
-        {
-            type = "circle",
+        Circle:new({
+            name = "C1",
             x = -0.72,
             y = 0.55,
             rad = 0.12,
             color_id = color_pallette.SEA_GREEN,
-        },
-        {
-            type = "circle",
+        }),
+        Circle:new({
             x = 0.92,
             y = 0.85,
             rad = 0.15,
             color_id = color_pallette.RED,
-        },
+        }),
     }
 
     local clears = {
-        color_id = color_pallette.GRAY
+        Clear:new({color_id = color_pallette.GRAY})
     }
 
     local hp_bar = ColoredResourceBar:new("hp", color_pallette.RICH_MAGENTA)
@@ -73,20 +75,12 @@ local function render_sample_scene()
     stamina_bar.x = -0.95;
     stamina_bar.y = 0.15;
 
+    local resource_bars = { hp_bar, mana_bar, stamina_bar }
     for _, bar in ipairs(resource_bars) do
         bar.thickness = 0.02
     end
 
-    local resource_bars = { hp_bar, mana_bar, stamina_bar }
     local actors = tableHelper.flatten(rects, resource_bars, circles)
-
-    for _, clr in ipairs(clears) do
-        clr.id = guid_generator.generate_guid()
-    end
-
-    for _, actor in ipairs(actors) do
-        actor.id = guid_generator.generate_guid()
-    end
 
     return { clears = clears, actors = actors }
 end
