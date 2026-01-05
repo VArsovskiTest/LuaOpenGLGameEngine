@@ -73,12 +73,12 @@ local function render_sample_scene()
     stamina_bar.x = -0.95;
     stamina_bar.y = 0.15;
 
-    local resource_bars = { hp_bar, mana_bar, stamina_bar }
-    local actors = tableHelper.flatten(rects, resource_bars, circles)
-
     for _, bar in ipairs(resource_bars) do
         bar.thickness = 0.02
     end
+
+    local resource_bars = { hp_bar, mana_bar, stamina_bar }
+    local actors = tableHelper.flatten(rects, resource_bars, circles)
 
     for _, clr in ipairs(clears) do
         clr.id = guid_generator.generate_guid()

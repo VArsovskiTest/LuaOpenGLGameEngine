@@ -15,7 +15,7 @@ public class GenericScene
         var scene = new GenericScene();
 
         // ---------- Parse clears ----------
-        if (table["clears"] is LuaTable clearsTable)
+        if (table != null && table["clears"] is LuaTable clearsTable)
         {
             foreach (object key in clearsTable.Keys)
             {
@@ -34,7 +34,7 @@ public class GenericScene
         }
 
         // ---------- Parse actors ----------
-        if (table["actors"] is LuaTable actorsTable)
+        if (table != null && table["actors"] is LuaTable actorsTable)
         {
             foreach (object key in actorsTable.Keys)
             {

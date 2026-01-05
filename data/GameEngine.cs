@@ -66,7 +66,8 @@ namespace LuaOpenGLGameEngine
             _luaProcessor = new LuaProcessor(_lua, _luaFilePath);
 
             // -- Initialize Logging: Once
-            _lua.DoString("game.init_logging()");
+            _lua.DoString("game.log_handler.init_logging()");
+            _lua.DoString("game.log_handler.init_error_logging()");
 
             if (redisConfig.IsAvailable())
             {

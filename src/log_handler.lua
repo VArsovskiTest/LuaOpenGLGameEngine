@@ -1,4 +1,15 @@
--- utils/error_handler.lua or at top of your main file
+-- log_handler.lua
+local enableLogging = true
+local logPath
+
+local errorLogFile = nil
+local logFile = nil
+
+local unpack = unpack or table.unpack
+
+if get_logs_path and enableLogging then
+    logPath = get_logs_path("game_engine_log.txt")
+end
 
 -- Simple ANSI color helper (same as your c())
 local function color(code, text)
@@ -11,14 +22,72 @@ local function clean_error_message(err)
     return tostring(err):gsub("^[^:]+:%d+:%s*", "")
 end
 
+local function log_error(msg)
+    if not errorLogFile then return end
+    errorLogFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(msg) .. "\n")
+    errorLogFile:flush()
+end
+
+local function log_data(msg)
+    if not logFile then return end
+    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(msg) .. "\n")
+    logFile:flush()
+end
+
+-- Helper function to convert a table to a string for logging
+local function serialize_table(t)
+    if type(t) ~= 'table' then
+        return tostring(t)
+    end
+    local s = '{ '
+    for k, v in pairs(t) do
+        s = s .. tostring(k) .. '=' .. serialize_table(v) .. ', '
+    end
+    return s .. '}\n'
+end
+
 -- The global error handler used by xpcall
 local function global_error_handler(err)
     local clean_msg = clean_error_message(err)
     print(color("31", "ERROR"))
     print(color("31", "    " .. clean_msg))
+    print(debug.traceback("", 2))
+
+    log_error(clean_msg)
+    log_error(debug.traceback("", 2))
+
     -- Optional: print full stack trace for debugging
-    -- print(debug.traceback("", 2))
     return clean_msg  -- returned value is passed to the second result of xpcall
+end
+
+function init_logging()
+    if logFile then return end
+    
+    local path = get_logs_path("game_engine_log.txt")
+    logFile = io.open(path, "a")
+    if logFile then
+        logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] === Game Session Started ===\n")
+        logFile:flush()
+        print("Log initialized successfully at: " .. path)
+    else
+        print("FAILED to open log file: " .. path)
+        print("Check permissions and path: " .. path)
+    end
+end
+
+function init_error_logging()
+    if errorLogFile then return end
+    
+    local path = get_logs_path("game_engine_errors.txt")
+    errorLogFile = io.open(path, "a")
+    if errorLogFile then
+        errorLogFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] === Error logging Started ===\n")
+        errorLogFile:flush()
+        print("Error log initialized successfully at: " .. path)
+    else
+        print("FAILED to open log file: " .. path)
+        print("Check permissions and path: " .. path)
+    end
 end
 
 -- Safe call wrapper — use this instead of direct function calls when you want protection
@@ -53,8 +122,8 @@ function with_retry(fn, max_attempts, delay_ms)
 
         if attempts < max_attempts then
             if delay_ms > 0 then
-                os.execute("sleep " .. delay_ms / 1000)  -- Unix
-                -- On Windows: os.execute("timeout /t " .. delay_ms / 1000)
+                -- os.execute("sleep " .. delay_ms / 1000)  -- Unix
+                os.execute("timeout /t " .. delay_ms / 1000) -- Win
             end
         end
     end
@@ -74,7 +143,8 @@ function safe_call_with_retry(fn, max_attempts, delay_ms)
         print(color("33", string.format("Retry %d/%d after error", attempt, max_attempts)))
 
         if attempt < max_attempts and delay_ms then
-            os.execute("sleep " .. delay_ms / 1000)
+            -- os.execute("sleep " .. delay_ms / 1000)  -- Unix
+            os.execute("timeout /t " .. delay_ms / 1000) -- Win
         end
     end
 
@@ -103,3 +173,14 @@ function with_exponential_retry(fn, max_attempts, initial_delay_ms)
 
     return false, "Failed after " .. max_attempts .. " attempts"
 end
+
+log_handler = {
+    log_data = log_data,
+    log_error = log_error,
+    init_logging = init_logging,
+    init_error_logging = init_error_logging,
+    safe_call = safe_call,
+    safe_call_with_retry = safe_call_with_retry,
+}
+
+return log_handler

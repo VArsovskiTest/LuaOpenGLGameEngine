@@ -4,13 +4,13 @@ local init = require("../src/tests/test_init")
 local Queue = require("engines.redis_command_engine")
 
 -- Simple handler for testing
-local function my_handler(cmd)
+local function my_handler(cmd, delay_ms)
     print("Processing command:", cmd.action, "with data:", cmd.data)
     if cmd.action == "fail" then
         error("intentional failure")
     end
-    -- Simulate work
-    -- os.execute("sleep 0.1")
+    -- os.execute("sleep " .. delay_ms / 1000)  -- Unix
+    os.execute("timeout /t " .. delay_ms / 1000) -- Win
 end
 
 -- Create queue instance
@@ -34,8 +34,5 @@ q:enqueue({ action = "done" })
 print("Enqueued 4 jobs")
 
 -- Process all current jobs
-local processed = q:process_all(my_handler)
+local processed = q:process_all(my_handler, 500)
 print("Processed", processed, "jobs in drain mode")
-
--- Or run a continuous worker in a separate script:
--- q:worker(my_handler)  -- blocks forever
