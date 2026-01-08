@@ -41,8 +41,8 @@ describe("State actor functions, selection: ", function()
 
         -- Verify
         local actor = game.find_actor_by_id(actor_id)
-        assert(actor ~= nil, "Actor should be found")
-        assert(actor.selected == true, "Actor should be selected after update")
+        expect(actor).not_nil("Actor should be found")
+        expect(actor.selected).to_equal(true, "Actor should be selected after update")
 
         -- Restore
         game.render_scene = original_render_scene
@@ -61,25 +61,25 @@ describe("State action functions, move: ", function()
     end)
 
     it("moves actor right correctly", function()
-        assert(move_actor_by_id(player_id, "right", 10) == true)
+        expect(move_actor_by_id(player_id, "right", 10)).to_equal(true)
         local actor = find_actor_by_id(player_id)
-        assert(actor.x == 0.1)  -- 10 / 100 = 0.1
-        assert(actor.y == 0)
+        expect(actor.x).to_equal(0.1)  -- 10 / 100 = 0.1
+        expect(actor.y).to_equal(0)
     end)
 
     it("moves actor left correctly", function()
-        assert(move_actor_by_id(player_id, "left", 20) == true)
+        expect(move_actor_by_id(player_id, "left", 20) == true)
         local actor = find_actor_by_id(player_id)
-        assert(actor.x == -0.2)
+        expect(actor.x).to_equal(-0.2)
     end)
 
     it("moves actor up and down correctly", function()
-        assert(move_actor_by_id(player_id, "up", 30) == true)
+        expect(move_actor_by_id(player_id, "up", 30) == true)
         local actor = find_actor_by_id(player_id)
-        assert(actor.y == 0.3)
+        expect(actor.y).to_equal(0.3)
 
-        assert(move_actor_by_id(player_id, "down", 50) == true)
-        assert(actor.y == -0.2)  -- 0.3 - 0.5 = -0.2
+        expect(move_actor_by_id(player_id, "down", 50) == true)
+        expect(actor.y).to_equal(-0.2)  -- 0.3 - 0.5 = -0.2
     end)
 
     it("clamps position at boundaries", function()
@@ -88,21 +88,21 @@ describe("State action functions, move: ", function()
             move_actor_by_id(player_id, "right", 10)
         end
         local actor = find_actor_by_id(player_id)
-        assert(actor.x == 1, "Should be clamped to max 1")
+        expect(actor.x).to_equal(1, "Should be clamped to max 1")
 
         for i = 1, 50 do
             move_actor_by_id(player_id, "left", 10)
         end
-        assert(actor.x == -1, "Should be clamped to min -1")
+        expect(actor.x).to_equal(-1, "Should be clamped to min -1")
     end)
 
     it("returns false for invalid direction", function()
-        assert(move_actor_by_id(player_id, "diagonal", 10) == false)
-        assert(move_actor_by_id(player_id, "UP", 10) == true)  -- case-insensitive
+        expect(move_actor_by_id(player_id, "diagonal", 10)).to_equal(false)
+        expect(move_actor_by_id(player_id, "UP", 10)).to_be_truthy()  -- case-insensitive
     end)
 
     it("returns false for non-existent actor", function()
-        assert(move_actor_by_id("ghost-999", "up", 10) == false)
+        expect(move_actor_by_id("ghost-999", "up", 10)).to_be_falsy()
     end)
 end)
 

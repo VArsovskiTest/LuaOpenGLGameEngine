@@ -170,6 +170,14 @@ function initGame()
     return render_scene()
 end
 
+-- In your main tick/update
+function game_tick()
+    Keyboard.update()  -- <-- This detects and fires all press events
+
+    -- Then do resource regen, etc.
+    ResourceBar:tick()
+end
+
 game = {
     init_logging = log_handler.init_logging,
     init_error_logging = log_handler.init_error_logging,

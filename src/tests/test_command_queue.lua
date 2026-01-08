@@ -35,16 +35,16 @@ describe("Generid command Queue Tests", function()
         local cmd1 = create_dummy_command("LoginAction", { user = "player1" })
 
         CommandQueue:enqueue(cmd1)
-        assert(#CommandQueue.queue == 1, "Command enqueued")
-        assert(#CommandQueue.history == 0, "History empty before processing")
+        expect(#CommandQueue.queue).to_equal(1, "Command enqueued")
+        expect(#CommandQueue.history).to_equal(0, "History empty before processing")
 
         local processed_cmd = CommandQueue:process_next(_G.MockEngine)
 
-        assert(processed_cmd == cmd1, "process_next returns the processed command")
-        assert(#CommandQueue.queue == 0, "Queue empty after process_next")
-        assert(#CommandQueue.history == 1, "Command logged in history")
-        assert(cmd1.was_executed == true, "execute() was called")
-        assert(cmd1.engine_received == _G.MockEngine, "Correct engine passed")
+        expect(processed_cmd).to_equal(cmd1, "process_next returns the processed command")
+        expect(#CommandQueue.queue).to_equal(0, "Queue empty after process_next")
+        expect(#CommandQueue.history).to_equal(1, "Command logged in history")
+        expect(cmd1.was_executed).to_equal(true, "execute() was called")
+        expect(cmd1.engine_received).to_equal(_G.MockEngine, "Correct engine passed")
 
         print("✓ Enqueue + process_next passed\n")
     end)
@@ -57,13 +57,13 @@ describe("Generid command Queue Tests", function()
 
         CommandQueue:enqueue(cmd2)
         CommandQueue:enqueue(cmd3)
-        assert(#CommandQueue.queue == 2)
+        expect(#CommandQueue.queue).to_equal(2)
 
         CommandQueue:process_all(_G.MockEngine)
 
-        assert(#CommandQueue.queue == 0, "Queue cleared by process_all")
-        assert(#CommandQueue.history == 3, "Both new commands logged")
-        assert(cmd3.side_effect == "boom!", "Custom execute logic ran")
+        expect(#CommandQueue.queue).to_equal(0, "Queue cleared by process_all")
+        expect(#CommandQueue.history).to_equal(3, "Both new commands logged")
+        expect(cmd3.side_effect).to_equal("boom!", "Custom execute logic ran")
 
         print("✓ Multiple commands + process_all passed\n")
     end)
@@ -72,16 +72,16 @@ describe("Generid command Queue Tests", function()
         local cmd4 = create_dummy_command("InstantCast")
         CommandQueue:execute_immediately(cmd4, _G.MockEngine)
 
-        assert(#CommandQueue.queue == 0, "execute_immediately doesn't touch queue")
-        assert(#CommandQueue.history == 4, "Still logs to history")
-        assert(cmd4.was_executed == true)
+        expect(#CommandQueue.queue).to_equal(0, "execute_immediately doesn't touch queue")
+        expect(#CommandQueue.history).to_equal(4, "Still logs to history")
+        expect(cmd4.was_executed).to_equal(true)
 
         print("✓ execute_immediately passed\n")
     end)
 
     it("Test 4: History querying", function()
         local attack_cmds = CommandQueue:get_history_by_type("AttackAction")
-        assert(#attack_cmds == 1, "History filter works")
+        expect(#attack_cmds).to_equal(1, "History filter works")
     end)
 end)
 
@@ -109,13 +109,15 @@ describe("MoveToCommmand specific tests:", function()
         CommandQueue:process_next(_G.MockEngine)
 
         local final_pos = _G.MockEngine:GetComponent(entity.id, command_type_identifier, component_name)
-        assert(cmd.params.initial_pos.x == 0 and cmd.params.initial_pos.y == 0, "'from' captured correctly")
-        assert(cmd.params.target_pos.x == 15 and cmd.params.target_pos.y == 25, "target computed correctly")
+        expect(cmd.params.initial_pos.x).to_equal(0)
+        expect(cmd.params.initial_pos.y).to_equal(0, "'from' captured correctly")
+        expect(cmd.params.target_pos.x).to_equal(15)
+        expect(cmd.params.target_pos.y).to_equal(25, "target computed correctly")
 
         -- (Optional) Assert the HISTORY was logged correctly
         local history_log = _G.MockEngine.calls.Position_Commands
-        assert(#history_log == 1, "One command was logged")
-        assert(history_log[1].action == "update_position", "Correct action was logged")
+        expect(#history_log).to_equal(1, "One command was logged")
+        expect(history_log[1].action).to_equal("update_position", "Correct action was logged")
     end)
 
     it("Test 2: Partial move via TestQueue:", function()
@@ -128,15 +130,19 @@ describe("MoveToCommmand specific tests:", function()
         CommandQueue:process_next(_G.MockEngine)
 
         local final_pos = _G.MockEngine:GetComponent(entity.id, command_type_identifier, component_name)
-        assert(final_pos.x == 0 and final_pos.y == 25, "Partial move applied")
-        assert(cmd.params.initial_pos.x == 0 and cmd.params.initial_pos.y == 0, "'from' captured correctly")
-        assert(cmd.params.target_pos.x == 0 and cmd.params.target_pos.y == 25, "target computed correctly")
+        expect(final_pos.x).to_equal(0, "Partial move applied")
+        expect(final_pos.y).to_equal(25, "Partial move applied")
+        expect(cmd.params.initial_pos.x).to_equal(0, "'from' captured correctly")
+        expect(cmd.params.initial_pos.y).to_equal(0, "'from' captured correctly")
+        expect(cmd.params.target_pos.x).to_equal(0, "target computed correctly")
+        expect(cmd.params.target_pos.y).to_equal(25, "target computed correctly")
 
         -- (Optional) Assert the HISTORY was logged correctly
         local history_log = _G.MockEngine.calls.Position_Commands
-        assert(#history_log == 1, "One command was logged")
-        assert(history_log[1].action == "update_position", "Correct action was logged")
+        expect(#history_log).to_equal(1, "One command was logged")
+        expect(history_log[1].action).to_equal("update_position", "Correct action was logged")
     end)
+
     it("Test 3: Handles missing Position component gracefully (silent fail)", function()
         -- Create a valid entity, but deliberately do NOT add a Position component
         local entity_no_pos = _G.MockEngine:CreateEntity("entities", "Position_Commands")
@@ -151,7 +157,7 @@ describe("MoveToCommmand specific tests:", function()
 
         -- Verify nothing was changed/logged for Position_Commands
         local history_log = _G.MockEngine.calls.Position_Commands or {}
-        assert(#history_log == 0, "No logging when Position component is missing")
+        expect(#history_log).to_equal(0, "No logging when Position component is missing")
 
         -- Optional: If you add failure logging to CommandQueue later, you could assert that
         -- print("✓ Silent fail handled gracefully\n")

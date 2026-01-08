@@ -243,8 +243,12 @@ namespace LuaOpenGLGameEngine
             base.OnUpdateFrame(e);
 
             var base_move_speed = 1.9;
-
             var pickedActor = selectedActor ?? null;
+
+            if (!keyboardBindings)
+            {
+                SetupKeyboardBindings(Keyboard);
+            }
 
             if (Keyboard.GetState().IsKeyDown(Key.F5))  // Or file watcher
             {
@@ -270,6 +274,9 @@ namespace LuaOpenGLGameEngine
                     _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"{move_direction}\", \"{base_move_speed}\")");
                 }
             }
+
+            if (Keyboard.GetState().IsKeyDown(Key.Numerics))
+                Close();
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -321,5 +328,33 @@ namespace LuaOpenGLGameEngine
         }
 
         #endregion
+
+        private SetupKeyboardBindings(Keyboard keyboard)
+        {
+            var state = keyboard.GetState();
+
+            lua["Keyboard_update"] = new Action(() =>
+            {
+                var keys = _lua.GetTable("Keyboard");
+
+                // Top row numbers
+                for (int i = 0; i <= 9; i++)
+                {
+                    var key = (Keys)((int)Keys.D0 + i); // D0 to D9
+                    if (i == 0) key = Keys.D0; // special case, D0 is after D9 in enum
+                    bool down = state.IsKeyDown(key == Keys.D0 && i == 0 ? Keys.D0 : (Keys)((int)Keys.D1 + (i - 1)));
+
+                    // Better: explicit mapping
+                    Keys[] numberKeys = { Keys.D1, Keys.D2, Keys.D3, Keys.D4, Keys.D5, Keys.D6, Keys.D7, Keys.D8, Keys.D9, Keys.D0 };
+                    bool isDown = i < 9 ? state.IsKeyDown(numberKeys[i]) : state.IsKeyDown(Keys.D0);
+
+                    keys["isPressed"][i + 1] = isDown;  // Keyboard.isPressed[1] = true if "1" down
+                }
+
+                // Add more keys as needed: Space, LeftShift, E, Q, etc.
+                keys["isPressed"]["space"] = state.IsKeyDown(Keys.Space);
+                keys["isPressed"]["e"] = state.IsKeyDown(Keys.E);
+                // etc.            
+        }
     }
 }

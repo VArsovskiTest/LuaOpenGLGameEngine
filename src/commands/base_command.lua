@@ -7,7 +7,7 @@ function BaseCommand.new(type, entity_id, params)
         entity_id = entity_id,
         params = params or {},
         timestamp = os.time(),
-        executed = false
+        executed = false,
     }
     
     local mt = {

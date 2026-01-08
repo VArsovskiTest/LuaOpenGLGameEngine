@@ -78,15 +78,17 @@ end
 function init_error_logging()
     if errorLogFile then return end
     
-    local path = get_logs_path("game_engine_errors.txt")
-    errorLogFile = io.open(path, "a")
-    if errorLogFile then
-        errorLogFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] === Error logging Started ===\n")
-        errorLogFile:flush()
-        print("Error log initialized successfully at: " .. path)
-    else
-        print("FAILED to open log file: " .. path)
-        print("Check permissions and path: " .. path)
+    if (get_logs_path) then
+        local path = get_logs_path("game_engine_errors.txt")
+        errorLogFile = io.open(path, "a")
+        if errorLogFile then
+            errorLogFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] === Error logging Started ===\n")
+            errorLogFile:flush()
+            print("Error log initialized successfully at: " .. path)
+        else
+            print("FAILED to open log file: " .. path)
+            print("Check permissions and path: " .. path)
+        end
     end
 end
 
