@@ -62,7 +62,9 @@ it = function(name, fn)
     if ok then PASS = PASS + 1 print(c("32", "PASS"))
     else
         FAIL = FAIL + 1
-        print(c("31", "FAIL")) print(c("31", "    " .. tostring(err):gsub("^[^:]+:%d+:%s*", "")))
+        local clean_err = tostring(err):gsub("^.*\\LuaOpenGLGameEngine\\src[\\/]?", "")
+        print(c("31", "    " .. clean_err))
+        -- print(c("31", "FAIL")) print(c("31", "    " .. tostring(err):gsub("^[^:]+:%d+:%s*", "")))
     end
 end
 

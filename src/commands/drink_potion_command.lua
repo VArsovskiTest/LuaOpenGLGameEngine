@@ -1,4 +1,4 @@
--- commands/move_to_command.lua
+-- commands/drink_potion_command.lua
 local BaseCommand = require("commands.base_command")
 local potion_types = require("enums.potion_types")
 local potion_sizes = require("enums.potion_sizes")
@@ -6,16 +6,14 @@ local command_type_identifier = "Action_Key_Commands"
 
 local DrinkPotionCommand = {}
 
-DrinkPotionModel = { type = nil, size = nil }
-
-DrinkPotionCommand.__index = DrinkPotionCommand
+local DrinkPotionModel = { type = nil, size = nil }
 
 local potion_size_values = {
-    potion_sizes.MINOR = 15,
-    potion_sizes.SMALL = 30,
-    potion_sizes.REGULAR = 45,
-    potion_sizes.LARGE = 66,
-    potion_sizes.FULL = 100
+    [potion_sizes.MINOR] = 15,
+    [potion_sizes.SMALL] = 30,
+    [potion_sizes.REGULAR] = 45,
+    [potion_sizes.LARGE] = 66,
+    [potion_sizes.FULL] = 100
 }
 
 function DrinkPotionCommand.new(entity_id, potion_data)

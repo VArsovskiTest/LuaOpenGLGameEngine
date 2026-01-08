@@ -46,6 +46,9 @@ local ActionHandlers = {
     handle_move_right = function()
         CommandQueue.enqueue({ name = "move_right", command = ActorActions.handle_move_right() })
     end,
+    handle_use_consumable = function()
+        CommandQueue.enqueue({ name = "use_consumable", command = ActorActions.handle_use_consumable() })
+    end,
     handle_jump = function()
         CommandQueue.enqueue({ name = "jump", command = ActorActions.handle_jump() })
     end,
@@ -66,9 +69,6 @@ local ActionHandlers = {
     end,
     handle_map = function()
         CommandQueue.enqueue({ name = "map", command = ActorActions.handle_map() })
-    end,
-    handle_use_consumable = function()
-        CommandQueue.enqueue({ name = "use_consumable", command = ActorActions.handle_use_consumable() })
     end,
     handle_engage = function()
         CommandQueue.enqueue({ name = "engage", command = ActorActions.handle_engage() })
@@ -137,7 +137,7 @@ end
 
 -- Change a single binding (e.g., from settings menu or config file)
 local function bind_action(action_name, new_key)
-    local previous_binding = table_helper.tryGetValue(CurrentBindings, new_key)
+    local previous_binding = table_helper.findKeyForValue(CurrentBindings, new_key)
     if ActionHandlers[action_name] then
         if previous_binding then
             local previous_key = CurrentBindings[action_name]

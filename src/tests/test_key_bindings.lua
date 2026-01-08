@@ -16,9 +16,9 @@ local CommandQueue = {
     end
 }
 
--- Global override for tests
-_G.CommandQueue = CommandQueue
-_G.ActorActions = ActorActions
+-- temporary for tests
+local CommandQueue = CommandQueue
+local ActorActions = ActorActions
 
 -- Helper to simulate key press over frames
 local function simulate_press(key)

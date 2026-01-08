@@ -70,4 +70,13 @@ local function tryGetValue(t, value)
     return nil  -- not found
 end
 
-return { containsKey = containsKey, containsValue = containsValue, tryGetValue = tryGetValue, flatten = flatten, selectRecordById = selectRecordById, updateRecordById = updateRecordById }
+local function findKeyForValue(t, value)
+    for k, v in pairs(t) do
+        if v == value then
+            return k
+        end
+    end
+    return nil
+end
+
+return { containsKey = containsKey, containsValue = containsValue, tryGetValue = tryGetValue, findKeyForValue = findKeyForValue, flatten = flatten, selectRecordById = selectRecordById, updateRecordById = updateRecordById }

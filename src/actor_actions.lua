@@ -1,7 +1,17 @@
-local function handle_move_up() print ("Actor: moved up") end
-local function handle_move_down() print ("Actor: moved down") end
-local function handle_move_left() print ("Actor: moved left") end
-local function handle_move_right() print ("Actor: moved right") end
+--actor_actions.lua
+
+local CommandQueue = require("commands.command_queue")
+local DrinkPotionCommand = require("commands.drink_potion_command")
+local MoveCommand = require("commands.move_to_command")
+
+local function handle_move_up(cmd)
+    MoveCommand:execute(cmd)
+    print ("Actor: moved up")
+end
+local function handle_move_down() MoveCommand:execute() print ("Actor: moved down") end
+local function handle_move_left() MoveCommand:execute() print ("Actor: moved left") end
+local function handle_move_right() MoveCommand:execute() print ("Actor: moved right") end
+local function handle_use_consumable() DrinkPotionCommand:execute() print ("Actor: used consumable") end
 local function handle_jump() print ("Actor: jumped") end
 local function handle_attack() print ("Actor: attacked") end
 local function handle_attack_alt() print ("Actor: attacked with an alt") end
@@ -9,7 +19,6 @@ local function handle_defend() print ("Actor: defended") end
 local function handle_sprint() print ("Actor: sprinted") end
 local function handle_boost() print ("Actor: boosted") end
 local function handle_map() print ("Actor: opened map") end
-local function handle_use_consumable() print ("Actor: used consumable") end
 local function handle_engage() print ("Actor: engaged") end
 local function handle_swap_main_attack() print ("Actor: swapped main attack") end
 local function handle_swap_alt_attack() print ("Actor: swapped alternate attack") end
