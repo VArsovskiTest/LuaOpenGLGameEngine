@@ -13,7 +13,7 @@ function CommandQueue:enqueue(cmd)
 end
 
 -- Private: executes a command, dispatches event, and records in history
-function CommandQueue:_execute_and_record(cmd, engine)
+function CommandQueue:execute_and_record(cmd, engine)
     if not cmd or not engine then return end
 
     cmd:execute(engine)
@@ -24,7 +24,7 @@ end
 
 -- Execute immediately (bypasses queue)
 function CommandQueue:execute_immediately(cmd, engine)
-    self:_execute_and_record(cmd, engine)
+    self:execute_and_record(cmd, engine)
 end
 
 -- Process next from queue
@@ -34,7 +34,7 @@ function CommandQueue:process_next(engine)
     end
 
     local cmd = table.remove(self.queue, 1)
-    self:_execute_and_record(cmd, engine)
+    self:execute_and_record(cmd, engine)
 
     return cmd
 end
@@ -76,6 +76,28 @@ end
 
 function CommandQueue:peek_next()
     return self.queue[1]
+end
+
+function CommandQueue:undo_and_record(cmd, engine)
+    if not cmd or not engine then return end
+
+    if cmd.undo then
+        cmd:undo(engine)
+        _G.MockEngine:dispatch("command_reverted", { command = cmd })
+        table.insert(self.history, cmd)
+        self:trim_history()
+    end
+end
+
+function CommandQueue:undo_last(engine)
+    if #self.history == 0 or not engine then
+        return nil
+    end
+
+    local cmd = self.history[#self.history]
+    self:undo_and_record(cmd, engine)
+
+    return cmd
 end
 
 return CommandQueue

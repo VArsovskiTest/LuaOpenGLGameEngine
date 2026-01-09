@@ -19,7 +19,7 @@ function MoveToCommand.new(entity_id, pos)
     local self = BaseCommand.new("MoveToCommand", entity_id, params)
     self.class = MoveToCommand
     
-    function self:getFrom() return self.params.initial_pos end
+    function self:getOrigin() return self.params.initial_pos end
     function self:getTarget() return self.params.target_pos end
 
     return setmetatable(self, { __index = MoveToCommand })
@@ -29,25 +29,34 @@ function MoveToCommand:execute(engine)
     local pos_comp = engine:GetComponent(self.entity_id, command_type_identifier, "Position")
     if not pos_comp then return end
 
-    if self.params.target_pos.x ~= nil then pos_comp.x = self.params.target_pos.x end
-    if self.params.target_pos.y ~= nil then pos_comp.y = self.params.target_pos.y end
+    if self.params.target_pos.x ~= nil then pos_comp[2].x = self.params.target_pos.x end
+    if self.params.target_pos.y ~= nil then pos_comp[2].y = self.params.target_pos.y end
 
     table.insert(engine.calls[command_type_identifier], {
         action = "update_position",
         entity_id = self.entity_id,
-        from = { x = pos_comp.x, y = pos_comp.y },  -- before was lost, but we have intended initial
-        to = { x = pos_comp.x, y = pos_comp.y }
+        from = { x = pos_comp[1].x, y = pos_comp[1].y },  -- before was lost, but we have intended initial
+        to = { x = pos_comp[2].x, y = pos_comp[2].y }
     })
 
     BaseCommand.execute(self, engine)
 end
 
 function MoveToCommand:undo(engine)
-    if self.from then
-        local pos_comp = engine:GetComponent(self.entity_id, "Position")
-        pos_comp.x = self.from.x
-        pos_comp.y = self.from.y
-    end
+    local pos_comp = engine:GetComponent(self.entity_id, command_type_identifier, "Position")
+    if not pos_comp then return end
+
+    if self.params.initial_pos.x ~= nil then pos_comp[2].x = self.params.initial_pos.x end
+    if self.params.initial_pos.y ~= nil then pos_comp[2].y = self.params.initial_pos.y end
+
+    table.insert(engine.calls[command_type_identifier], {
+        action = "update_position",
+        entity_id = self.entity_id,
+        from = { x = pos_comp[2].x, y = pos_comp[2].y },
+        to = { x = pos_comp[1].x, y = pos_comp[1].y }
+    })
+
+    BaseCommand.undo(self, engine)
 end
 
 return MoveToCommand

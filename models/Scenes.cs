@@ -2,6 +2,7 @@ using NLua;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Security.AccessControl;
 
 public class SceneEmpty { }
 
@@ -10,7 +11,7 @@ public class GenericScene
     public List<ClearRGB> Clears { get; set; } = new List<ClearRGB>();   // use List, not array
     public List<ActorRGB> Actors { get; set; } = new List<ActorRGB>();    // use List, not array
 
-    public static GenericScene FromLuaTable(LuaTable table)
+    public static GenericScene FromLuaTable(Lua lua, LuaTable table)
     {
         var scene = new GenericScene();
 
@@ -41,7 +42,8 @@ public class GenericScene
                 if (actorsTable[key] is LuaTable t)
                 {
                     string type = (string?)t["type"] ?? "";
-                    string id = (string?)t["id"] ?? Guid.NewGuid().ToString();
+                    string id = GetSafeId(lua, t);
+
                     var color = new RGBColor
                     {
                         r = Convert.ToSingle((t["color"] as LuaTable)?["r"] ?? 1.0f),
@@ -51,40 +53,12 @@ public class GenericScene
 
                     ActorRGB? actor = type switch
                     {
-                        "rect" => new RectangleRGB
-                        {
-                            Id = new Guid(id),
-                            X = Convert.ToSingle(t["x"] ?? 0.0),
-                            Y = Convert.ToSingle(t["y"] ?? 0.0),
-                            Width = Convert.ToSingle(t["width"] ?? t["w"] ?? 0.0),
-                            Height = Convert.ToSingle(t["height"] ?? t["h"] ?? 0.0),
-                            Color = color,
-                        },
-
-                        "circle" => new CircleRGB
-                        {
-                            Id = new Guid(id),
-                            X = Convert.ToSingle(t["x"] ?? 0.0),
-                            Y = Convert.ToSingle(t["y"] ?? 0.0),
-                            rad = Convert.ToSingle(t["rad"] ?? 0.1),
-                            Color = color,
-                        },
-
-                        "resource_bar" => new ResourceBarRGB
-                        {
-                            Id = new Guid(id),
-                            // Name = (string?)t["name"] ?? "bar",
-                            Current = Convert.ToSingle(t["current"] ?? 0.0),
-                            Maximum = Convert.ToSingle(t["maximum"] ?? 100.0),
-                            Percentage = Convert.ToSingle(t["percentage"] ?? 0.0),
-                            Thickness = Convert.ToSingle(t["thickness"] ?? 0.0),
-                            X = Convert.ToSingle(t["x"] ?? 0.0),
-                            Y = Convert.ToSingle(t["y"] ?? 0.0),
-                            Color = color,
-                        },
-
+                        "rect" => GenerateRectangle(id, t),
+                        "circle" => GenerateCircle(id, t),
+                        "resource_bar" => GenerateResourceBar(id, t),
                         _ => null
                     };
+                    actor.Color = color;
 
                     if (actor != null)
                         scene.Actors.Add(actor);
@@ -93,5 +67,65 @@ public class GenericScene
         }
 
         return scene;
+    }
+
+    private static RectangleRGB GenerateRectangle(string id, LuaTable t)
+    {
+        return new RectangleRGB
+        {
+            Id = new Guid(id),
+            X = Convert.ToSingle(t["x"] ?? 0.0),
+            Y = Convert.ToSingle(t["y"] ?? 0.0),
+            Width = Convert.ToSingle(t["width"] ?? t["w"] ?? 0.0),
+            Height = Convert.ToSingle(t["height"] ?? t["h"] ?? 0.0)
+        };
+    }
+
+    private static CircleRGB GenerateCircle(string id, LuaTable t)
+    {
+        return new CircleRGB
+        {
+            Id = new Guid(id),
+            X = Convert.ToSingle(t["x"] ?? 0.0),
+            Y = Convert.ToSingle(t["y"] ?? 0.0),
+            rad = Convert.ToSingle(t["rad"] ?? 0.1)
+        };
+    }
+
+    private static ResourceBarRGB GenerateResourceBar(string id, LuaTable t)
+    {
+        return new ResourceBarRGB
+        {
+            Id = new Guid(id),
+            // Name = (string?)t["name"] ?? "bar",
+            Current = Convert.ToSingle((t["_val"] as LuaTable)["current"] ?? 0.0),
+            Maximum = Convert.ToSingle((t["_val"] as LuaTable)["maximum"] ?? 100.0),
+            Percentage = Convert.ToSingle((t["_val"] as LuaTable)["percentage"] ?? 0.0),
+            Thickness = Convert.ToSingle((t["_val"] as LuaTable)["thickness"] ?? 0.0),
+            X = Convert.ToSingle(t["x"] ?? 0.0),
+            Y = Convert.ToSingle(t["y"] ?? 0.0)
+        };
+    }
+
+    private static string GetSafeId(Lua lua, LuaTable t)
+    {
+        lua["temp_t"] = t;  // temporary assignment
+        string id = Guid.Empty.ToString();
+        var safeGetIdFunc = lua["safe_get_id"] as LuaFunction;
+
+        if (safeGetIdFunc != null)
+        {
+            var result = safeGetIdFunc.Call(t);
+            // var result = luaStr?.FirstOrDefault()?.ToString();
+            // return !String.IsNullOrEmpty(result) ? result : Guid.Empty.ToString();
+            id = result?.Length > 0
+                ? (result[0] as string ?? Guid.Empty.ToString())
+                : Guid.Empty.ToString();
+        }
+
+        // Clean up (optional but good practice)
+        lua["temp_t"] = null;
+
+        return string.IsNullOrEmpty(id) ? Guid.Empty.ToString() : id;
     }
 }

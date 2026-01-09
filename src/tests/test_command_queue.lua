@@ -6,6 +6,33 @@ init.init(_G.EngineModules.COMMAND)
 local CommandQueue = require("commands.command_queue")
 local MoveToCommand = require("commands.move_to_command")
 
+local mock_command_type_identifier = "mock_command"
+
+local function GenerateMockNoUndoCommand(entity_id, data_params)
+    local MockCommand = {}
+
+    function MockCommand.new(entity_id, data_params)
+        local self = BaseCommand.new("MockNoUndoCommand", entity_id, mock_command_type_identifier)
+        self.class = MockCommand
+
+        setmetatable(self, {__index = MockCommand})
+
+        function self:getData() return data_params end
+        function self:execute(engine)
+        end
+
+        return self
+    end
+
+    function MockCommand.execute(engine)
+        -- local pos_comp = engine:GetComponent(self.entity_id, command_type_identifier, "Position")
+        -- if not pos_comp then return end
+        print("executing command with mock engine..")
+    end
+
+    return MockCommand
+end
+
 -- Helper: Dummy command factory for generic queue tests
 local function create_dummy_command(type_name, payload, custom_execute)
     type_name = type_name or "DummyCommand"
@@ -87,7 +114,7 @@ end)
 
 describe("MoveToCommmand specific tests:", function()
     local entity = {}
-    local initial_pos = { x = 0, y = 0 }
+    local initial_pos = { { x = 0, y = 0 }, { x = 0, y = 0 } }
     local table_name = "entities"
     local component_name = "Position"
     local command_type_identifier = "Position_Commands"
@@ -96,7 +123,7 @@ describe("MoveToCommmand specific tests:", function()
         CommandQueue:clear()
         _G.MockEngine:Reset()  -- ← This clears tables, calls, next_id → fresh start
         entity = _G.MockEngine:CreateEntity("entities", "Position_Commands")
-        _G.MockEngine:AddComponent(entity.id, "Position_Commands", "Position", { x = 0, y = 0 })
+        _G.MockEngine:AddComponent(entity.id, "Position_Commands", "Position", { { x = 0, y = 0 }, { x = 0, y = 0 } })
     end)
 
     it("Test 1: Full move via queue", function()
@@ -129,7 +156,8 @@ describe("MoveToCommmand specific tests:", function()
         CommandQueue:enqueue(cmd)
         CommandQueue:process_next(_G.MockEngine)
 
-        local final_pos = _G.MockEngine:GetComponent(entity.id, command_type_identifier, component_name)
+        local pos_data_from_component = _G.MockEngine:GetComponent(entity.id, command_type_identifier, component_name)
+        local final_pos = pos_data_from_component[2]
         expect(final_pos.x).to_equal(0, "Partial move applied")
         expect(final_pos.y).to_equal(25, "Partial move applied")
         expect(cmd.params.initial_pos.x).to_equal(0, "'from' captured correctly")
@@ -161,6 +189,48 @@ describe("MoveToCommmand specific tests:", function()
 
         -- Optional: If you add failure logging to CommandQueue later, you could assert that
         -- print("✓ Silent fail handled gracefully\n")
+    end)
+end)
+
+describe("Command queue: Undo tests", function()
+    local entity = {}
+    local command_type_identifier = "Position_Commands"
+    local initial_pos = { { x = 0, y = 0 }, { x = 0, y = 0 } }
+
+    before_each(function()
+        entity = _G.MockEngine:CreateEntity("entities", "Position_Commands")
+    end)
+
+    it("undo works properly", function()
+        _G.MockEngine:AddComponent(entity.id, command_type_identifier, "Position", initial_pos)
+
+        local reposition_data = { x = 15, y = -5 }
+        local cmd = MoveToCommand.new(entity.id, reposition_data)
+
+        CommandQueue:enqueue(cmd)
+        CommandQueue:process_next(_G.MockEngine)
+        CommandQueue:undo_last(_G.MockEngine)
+
+        -- Verify nothing was changed/logged for Position_Commands
+        local history_log = _G.MockEngine.calls.Position_Commands or {}
+        expect(#history_log).to_equal(2, "Command process and undo did not log properly")
+        expect(_G.MockEngine.events["command_executed"] or {}).to_have_items(0)
+    end)
+
+    it("if undo not implemented, undo attempt doesn't crash", function()
+        _G.MockEngine:AddComponent(entity.id, command_type_identifier, "Position", initial_pos)
+
+        local reposition_data = { x = 15, y = -5 }
+        local cmd = GenerateMockNoUndoCommand(entity.id, reposition_data)
+
+        CommandQueue:enqueue(cmd)
+        CommandQueue:process_next(_G.MockEngine)
+        CommandQueue:undo_last(_G.MockEngine)
+
+        -- Verify nothing was changed/logged for Position_Commands
+        local history_log = _G.MockEngine.calls.Position_Commands or {}
+        expect(#history_log).to_equal(2, "Command process and undo did not log properly")
+        expect(_G.MockEngine.events["command_executed"] or {}).to_have_items(0)
     end)
 end)
 

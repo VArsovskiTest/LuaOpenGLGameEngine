@@ -176,6 +176,8 @@ function with_exponential_retry(fn, max_attempts, initial_delay_ms)
     return false, "Failed after " .. max_attempts .. " attempts"
 end
 
+print("=== Log Handler successfully initialized ===")
+
 log_handler = {
     log_data = log_data,
     log_error = log_error,

@@ -19,6 +19,9 @@ public class LuaProcessor
         _luaFilePath = luaFilePath;
         _luaFunctionCache = new Dictionary<string, LuaFunction>();
 
+        // --- Register Helper scripts ONCE ---
+        RegisterSafeGetId(_lua);
+
         // --- Load the script ONCE here ---
         try
         {
@@ -144,5 +147,32 @@ public class LuaProcessor
         {
             func?.Dispose();
         }
+    }
+
+        // Called once – during initialization / scene load / Lua state setup
+    public void RegisterSafeGetId(Lua lua)
+    {
+        lua.DoString(@"
+            function safe_get_id(t)
+                if type(t) ~= 'table' then
+                    return ''
+                end
+                
+                local id = rawget(t, 'id')
+                if id ~= nil and type(id) == 'string' then
+                    return id
+                end
+                
+                local val = rawget(t, '_val')
+                if type(val) == 'table' then
+                    local inner_id = rawget(val, 'id')
+                    if inner_id ~= nil and type(inner_id) == 'string' then
+                        return inner_id
+                    end
+                end
+                
+                return ''
+            end
+        ");
     }
 }

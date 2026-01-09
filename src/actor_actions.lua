@@ -8,9 +8,11 @@ local function handle_move_up(cmd)
     MoveCommand:execute(cmd)
     print ("Actor: moved up")
 end
-local function handle_move_down() MoveCommand:execute() print ("Actor: moved down") end
-local function handle_move_left() MoveCommand:execute() print ("Actor: moved left") end
-local function handle_move_right() MoveCommand:execute() print ("Actor: moved right") end
+
+local function handle_move_up() print ("Actor: moved up") return MoveCommand:new() end
+local function handle_move_down() print ("Actor: moved down") return MoveCommand:new() end
+local function handle_move_left() print ("Actor: moved left") return MoveCommand:new() end
+local function handle_move_right() print ("Actor: moved right") return MoveCommand:new() end
 local function handle_use_consumable() DrinkPotionCommand:execute() print ("Actor: used consumable") end
 local function handle_jump() print ("Actor: jumped") end
 local function handle_attack() print ("Actor: attacked") end

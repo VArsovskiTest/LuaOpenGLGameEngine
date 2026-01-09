@@ -8,6 +8,7 @@ function BaseCommand.new(type, entity_id, params)
         params = params or {},
         timestamp = os.time(),
         executed = false,
+        reverted = false,
     }
     
     local mt = {
@@ -26,7 +27,8 @@ end
 
 -- Optional: undo method for reversible commands
 function BaseCommand:undo(engine)
-    -- Placeholder
+    print("Executing " .. self.type .. " for entity " .. self.entity_id)
+    self.reverted = true
 end
 
 return BaseCommand

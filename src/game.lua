@@ -2,8 +2,6 @@
 local setup = require("src.setup.setup_paths")
 setup.setup_paths()
 
-local log_handler = require("log_handler")
-
 -- Polyfill for older Lua versions
 if not math.clamp then
     function math.clamp(value, min, max)
@@ -19,6 +17,11 @@ local Clear = require("models.clear")
 local Rectangle = require("models.rectangle")
 local Circle = require("models.circle")
 local ResourceBar = require("models.resource_bar")
+local Keyboard = require("keyboard")
+local KeyBindings = require("key_bindings")
+local CommandQueue = require("commands.command_queue")
+
+local log_handler = require("log_handler")
 
 local function setup_command_queue()
     log_handler.log_data("=== Redis Queue Test Start ===")
@@ -159,6 +162,11 @@ end
 
 local function update_scene(dt)
     -- do game-state updates (for current_state) logic here later
+    Keyboard.update()           -- ← detects presses → calls handlers → enqueues commands
+    CommandQueue.process()      -- ← THIS executes the commands!
+
+    -- Then other systems (regen, AI, etc.)
+    ResourceSystem.tick()
 end
 
 current_scene = current_scene or {}
@@ -170,9 +178,11 @@ function initGame()
     return render_scene()
 end
 
--- In your main tick/update
-function game_tick()
-    Keyboard.update()  -- <-- This detects and fires all press events
+function game_tick(keyboardState)
+    -- Update keyboard table from C# state -- check existence of method to prevent Lua test crash
+    if Keyboard_update_from_csharp then Keyboard_update_from_csharp(keyboardState) end
+    -- Press detection & callbacks
+    Keyboard.update()
 
     -- Then do resource regen, etc.
     ResourceBar:tick()
@@ -181,6 +191,8 @@ end
 game = {
     init_logging = log_handler.init_logging,
     init_error_logging = log_handler.init_error_logging,
+    log_data = log_handler.log_data,
+    log_error = log_handler.log_error,
     setup_command_queue = setup_command_queue,
     render_scene_with_params = render_scene_with_params,
     render_scene = render_scene,
@@ -188,6 +200,7 @@ game = {
     select_actor_by_id = action_select_actor_by_id,
     move_actor_by_id = action_move_actor_by_id,
     get_current_scene = get_current_scene,
+    game_tick = game_tick,
     tick_all_resource_bars = tick_all_resource_bars
 }
 

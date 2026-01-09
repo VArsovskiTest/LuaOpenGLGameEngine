@@ -66,8 +66,8 @@ namespace LuaOpenGLGameEngine
             _luaProcessor = new LuaProcessor(_lua, _luaFilePath);
 
             // -- Initialize Logging: Once
-            _lua.DoString("game.log_handler.init_logging()");
-            _lua.DoString("game.log_handler.init_error_logging()");
+            _lua.DoString("game.init_logging()");
+            _lua.DoString("game.init_error_logging()");
 
             if (redisConfig.IsAvailable())
             {
@@ -96,11 +96,13 @@ namespace LuaOpenGLGameEngine
             _lua["drawRect"] = (Action<float, float, float, float, IColorable>)_graphicsRenderer.DrawRect;
             _lua["update"] = (Action<string>)UpdateState;
 
+            if (!keyboardBindingsSet) SetupKeyboardBindings(Keyboard.GetState());
+
             _lua.DoString("current_scene = {}");
             renderTable = _lua["initGame"] as LuaTable;
 
             LuaTable luaResult = _lua.DoString("return game.render_scene()").First() as LuaTable;
-            _currentScene = GenericScene.FromLuaTable(luaResult);
+            _currentScene = GenericScene.FromLuaTable(_lua, luaResult);
 
             RedrawScene(_currentScene);
         }
@@ -119,7 +121,7 @@ namespace LuaOpenGLGameEngine
 
             // Pull the latest scene state from Lua — this reflects all updates!
             LuaTable luaResult = _lua.DoString("return game.get_current_scene()").First() as LuaTable;
-            _currentScene = GenericScene.FromLuaTable(luaResult);
+            _currentScene = GenericScene.FromLuaTable(_lua, luaResult);
 
             RedrawScene(_currentScene);
 
@@ -230,6 +232,7 @@ namespace LuaOpenGLGameEngine
 
         private ActorRGB? hoveredActor = null;
         private ActorRGB? selectedActor = null;
+        private bool keyboardBindingsSet = false;
 
         void UpdateState(string state_name)
         {
@@ -240,43 +243,40 @@ namespace LuaOpenGLGameEngine
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
+            if (Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.F5))  // Or file watcher
+                _luaProcessor.ReloadScript();
+
+            if (Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Escape))
+                Close();
+
+            // Get fresh keyboard state
+            var state = Keyboard.GetState();
+
+            // Call one Lua entry point that does everything for this frame
+            _lua.GetFunction("game_tick").Call(state);
             base.OnUpdateFrame(e);
 
-            var base_move_speed = 1.9;
-            var pickedActor = selectedActor ?? null;
+            // var base_move_speed = 1.9;
+            // var pickedActor = selectedActor ?? null;
+            // _lua.DoString($"Keyboard.isPressed['{keyName}'] = true");
+            // _lua.GetFunction("Keyboard_update_from_csharp")?.Call();
 
-            if (!keyboardBindings)
-            {
-                SetupKeyboardBindings(Keyboard);
-            }
+            // if (pickedActor != null)
+            // {
+            //     var move_up = Keyboard.GetState().IsKeyDown(Key.W) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Up);
+            //     var move_down = Keyboard.GetState().IsKeyDown(Key.S) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Down);
+            //     var move_left = Keyboard.GetState().IsKeyDown(Key.A) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Left);
+            //     var move_right = Keyboard.GetState().IsKeyDown(Key.D) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Right);
 
-            if (Keyboard.GetState().IsKeyDown(Key.F5))  // Or file watcher
-            {
-                _luaProcessor.ReloadScript();
-            }
+            //     var move_direction = move_up ? "up"
+            //         : move_down ? "down"
+            //         : move_left ? "left"
+            //         : "right";
 
-            if (Keyboard.GetState().IsKeyDown(Key.Escape))
-                Close();
-
-            if (pickedActor != null)
-            {
-                var move_up = Keyboard.GetState().IsKeyDown(Key.W) || Keyboard.GetState().IsKeyDown(Key.Up);
-                var move_down = Keyboard.GetState().IsKeyDown(Key.S) || Keyboard.GetState().IsKeyDown(Key.Down);
-                var move_left = Keyboard.GetState().IsKeyDown(Key.A) || Keyboard.GetState().IsKeyDown(Key.Left);
-                var move_right = Keyboard.GetState().IsKeyDown(Key.D) || Keyboard.GetState().IsKeyDown(Key.Right);
-
-                var move_direction = move_up ? "up"
-                    : move_down ? "down"
-                    : move_left ? "left"
-                    : "right";
-
-                if (move_up || move_down || move_left || move_right) {
-                    _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"{move_direction}\", \"{base_move_speed}\")");
-                }
-            }
-
-            if (Keyboard.GetState().IsKeyDown(Key.Numerics))
-                Close();
+            //     if (move_up || move_down || move_left || move_right) {
+            //         _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"{move_direction}\", \"{base_move_speed}\")");
+            //     }
+            // }
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -329,32 +329,55 @@ namespace LuaOpenGLGameEngine
 
         #endregion
 
-        private SetupKeyboardBindings(Keyboard keyboard)
+        private static Dictionary<string, Key> keyMapping = new Dictionary<string, Key>()
         {
-            var state = keyboard.GetState();
+            { "w" , Key.W },
+            { "a" , Key.A },
+            { "s" , Key.S },
+            { "d" , Key.D },
+            { "j" , Key.J },
+            { "k" , Key.K },
+            { "l" , Key.L },
+            { "q" , Key.Q },
+            { "e" , Key.E },
+            { "c" , Key.C },
+            { "v" , Key.V },
+            { "tab" , Key.Tab },
+            { "space" , Key.Space },
+            { "1" , Key.Number1 },
+            { "2" , Key.Number2 },
+            { "3" , Key.Number3 },
+            { "4" , Key.Number4 },
+            { "5" , Key.Number5 },
+            { "6" , Key.Number6 },
+            { "7" , Key.Number7 },
+            { "8" , Key.Number8 },
+            { "9" , Key.Number9 },
+            { "0" , Key.Number0 }
+        };
 
-            lua["Keyboard_update"] = new Action(() =>
+        private void SetupKeyboardBindings(OpenTK.Input.KeyboardState state)
+        {
+            _lua["Keyboard_update_from_csharp"] = new Action(() =>
             {
-                var keys = _lua.GetTable("Keyboard");
-
-                // Top row numbers
-                for (int i = 0; i <= 9; i++)
+                var kb = _lua.GetTable("Keyboard.isPressed");
+                var pressedKey = "";
+                foreach (var kbPair in keyMapping)
                 {
-                    var key = (Keys)((int)Keys.D0 + i); // D0 to D9
-                    if (i == 0) key = Keys.D0; // special case, D0 is after D9 in enum
-                    bool down = state.IsKeyDown(key == Keys.D0 && i == 0 ? Keys.D0 : (Keys)((int)Keys.D1 + (i - 1)));
-
-                    // Better: explicit mapping
-                    Keys[] numberKeys = { Keys.D1, Keys.D2, Keys.D3, Keys.D4, Keys.D5, Keys.D6, Keys.D7, Keys.D8, Keys.D9, Keys.D0 };
-                    bool isDown = i < 9 ? state.IsKeyDown(numberKeys[i]) : state.IsKeyDown(Keys.D0);
-
-                    keys["isPressed"][i + 1] = isDown;  // Keyboard.isPressed[1] = true if "1" down
+                    kb[kbPair.Key] = state.IsKeyDown(kbPair.Value);
+                    if (state.IsKeyDown(kbPair.Value)) pressedKey = kbPair.Key;
                 }
 
-                // Add more keys as needed: Space, LeftShift, E, Q, etc.
-                keys["isPressed"]["space"] = state.IsKeyDown(Keys.Space);
-                keys["isPressed"]["e"] = state.IsKeyDown(Keys.E);
-                // etc.            
+                kb["tab"] = state.IsKeyDown(Key.Tab);
+                kb["shift"] = state.IsKeyDown(Key.LShift) || state.IsKeyDown(Key.RShift);
+                kb["ctrl"] = state.IsKeyDown(Key.LControl) || state.IsKeyDown(Key.RControl);
+                kb["alt"] = state.IsKeyDown(Key.LAlt) || state.IsKeyDown(Key.RAlt);
+                kb["space"] = state.IsKeyDown(Key.Space);
+
+                _lua.DoString(String.Format("game.log_data('Keypress detected: {0})'", pressedKey));
+            });
+
+            keyboardBindingsSet = true;
         }
     }
 }
