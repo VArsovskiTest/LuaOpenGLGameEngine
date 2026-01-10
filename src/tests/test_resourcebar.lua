@@ -10,13 +10,9 @@ describe("ResourceBar => Regen, Damage tests", function()
 
     before_each(function()
         -- Setup
-        hp = ResourceBar.create("hp")
-        mana = ResourceBar.create("mana")
-        stamina = ResourceBar.create("stamina")
-
-        hp:set_maximum(100, false)
-        mana:set_maximum(50, false)
-        stamina:set_maximum(200, false)
+        hp = ResourceBar.create("hp", 100)
+        mana = ResourceBar.create("mana", 50)
+        stamina = ResourceBar.create("stamina", 200)
     end)
 
     it("Regen works", function()

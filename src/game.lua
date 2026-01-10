@@ -85,11 +85,13 @@ function render_scene()
     end
 end
 
+-- Invoke once per period/second, not once per frame (i.e. call from C# on timer)
 function tick_all_resource_bars()
     local actors = current_scene.actors
     for _, actor in ipairs(actors) do
         safe_call(function()
-            if actor.class == ResourceBar and actor.tick then
+            if actor.type and actor.type == "resource_bar" and actor.tick then
+                log_handler.log_data(tostring(actor.id) .. " ticked")
                 actor:tick()
             end
         end)
@@ -163,29 +165,31 @@ end
 local function update_scene(dt)
     -- do game-state updates (for current_state) logic here later
     Keyboard.update()           -- ← detects presses → calls handlers → enqueues commands
-    CommandQueue.process()      -- ← THIS executes the commands!
-
-    -- Then other systems (regen, AI, etc.)
-    ResourceSystem.tick()
+    CommandQueue:process_next()      -- ← THIS executes the commands!
 end
 
 current_scene = current_scene or {}
 
 function initGame()
     log_handler.init_error_logging()
-    -- if set_queue setup_command_queue() end
+    local ok, result_or_err = log_handler.safe_call(function()
+        render_scene()
+    end)
 
-    return render_scene()
+    if ok then return result_or_err end
 end
 
 function game_tick(keyboardState)
-    -- Update keyboard table from C# state -- check existence of method to prevent Lua test crash
-    if Keyboard_update_from_csharp then Keyboard_update_from_csharp(keyboardState) end
-    -- Press detection & callbacks
-    Keyboard.update()
+    log_handler.safe_call(function()
+        if Keyboard_update_from_csharp then
+            Keyboard_update_from_csharp(keyboardState)
+        end
 
-    -- Then do resource regen, etc.
-    ResourceBar:tick()
+        if Keyboard.update then
+            Keyboard.update()
+        end
+        update_scene()
+    end)
 end
 
 game = {

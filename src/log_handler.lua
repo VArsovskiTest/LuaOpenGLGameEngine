@@ -16,6 +16,18 @@ local function color(code, text)
     return "\27[" .. code .. "m" .. text .. "\27[0m"
 end
 
+-- Helper function to convert a table to a string for logging
+local function serialize_table(t)
+    if type(t) ~= 'table' then
+        return tostring(t)
+    end
+    local s = '{ '
+    for k, v in pairs(t) do
+        s = s .. tostring(k) .. '=' .. serialize_table(v) .. ', '
+    end
+    return s .. '}\n'
+end
+
 -- Strips the file:line prefix from Lua error messages
 local function clean_error_message(err)
     -- Remove things like "filename.lua:23: " at the start
@@ -34,16 +46,11 @@ local function log_data(msg)
     logFile:flush()
 end
 
--- Helper function to convert a table to a string for logging
-local function serialize_table(t)
-    if type(t) ~= 'table' then
-        return tostring(t)
-    end
-    local s = '{ '
-    for k, v in pairs(t) do
-        s = s .. tostring(k) .. '=' .. serialize_table(v) .. ', '
-    end
-    return s .. '}\n'
+local function log_table(msg)
+    if not logFile then return end
+    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] data: " .. "\n")
+    logFile.write(serialize_table(msg))
+    logFile:flush()
 end
 
 -- The global error handler used by xpcall
@@ -56,8 +63,7 @@ local function global_error_handler(err)
     log_error(clean_msg)
     log_error(debug.traceback("", 2))
 
-    -- Optional: print full stack trace for debugging
-    return clean_msg  -- returned value is passed to the second result of xpcall
+    return clean_msg
 end
 
 function init_logging()
@@ -181,6 +187,7 @@ print("=== Log Handler successfully initialized ===")
 log_handler = {
     log_data = log_data,
     log_error = log_error,
+    log_table = log_table,
     init_logging = init_logging,
     init_error_logging = init_error_logging,
     safe_call = safe_call,

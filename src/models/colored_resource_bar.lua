@@ -1,18 +1,36 @@
--- Define the ColoredResourceBar Subclass
+-- colored_resource_bar.lua
 local ResourceBar = require("models.resource_bar")
-local color_helper = require("helpers/color_helper")
-local ColorHelper = color_helper:new()
+local ColorHelper = require("helpers.color_helper"):new()
+local table_helper = require("helpers.table_helper")
+local color_pallette = require("enums.color_pallette")
 
-local ColoredResourceBar = setmetatable({}, { __index = ResourceBar })
-ColoredResourceBar.__index = ColoredResourceBar
+local ColoredResourceBar = {}
+setmetatable(ColoredResourceBar, { __index = ResourceBar })   -- (1)
+ColoredResourceBar.__index = ColoredResourceBar               -- (2)
 
-function ColoredResourceBar:new(name, color_id)
-    local self = ResourceBar.create(name)  -- Initialize the base class
-    setmetatable(self, ColoredResourceBar)  -- Set the metatable for the new instance
-    self.color_id = color_id or "DEFAULT_COLOR"  -- Add the color_id property
+local function generatePrivateColorData(color_id)
+    local colorData = {
+        color_id = color_id or color_pallette.BLACK
+    }
+    colorData.color = ColorHelper.createColorObject(colorData.color_id)
+    return colorData
+end
 
-    self.color = ColorHelper.createColorObject(self.color_id)
-    return self
+function ColoredResourceBar:getColorId()
+    return self._data.color_id
+end
+
+function ColoredResourceBar:getColorValue()
+    return self._data.color
+end
+
+function ColoredResourceBar:new(name, color_id, maximum, current)
+    local resourceBar = ResourceBar:new(name, maximum, current)   -- call parent constructor
+    local colorData = generatePrivateColorData();
+    local self = table_helper.mergeTables({type = "resource_bar", class = ColoredResourceBar }, resourceBar, colorData)
+    self.__index = ColoredResourceBar
+
+    return setmetatable(self, ColoredResourceBar)
 end
 
 return ColoredResourceBar

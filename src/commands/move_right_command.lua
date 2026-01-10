@@ -20,8 +20,8 @@ function MoveRightCommand.new(entity_id, pos)
     local self = BaseCommand.new("MoveRightCommand", entity_id, params)
     self.class = MoveRightCommand
 
-    function self:getOrigin() return params.initial_pos end
-    function self:getTarget() return params.target_pos end
+    function MoveRightCommand:getOrigin() return params.initial_pos end
+    function MoveRightCommand:getTarget() return params.target_pos end
 
     return setmetatable(self, { __index = MoveRightCommand })
 end

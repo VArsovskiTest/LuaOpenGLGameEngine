@@ -56,6 +56,7 @@ public class GenericScene
                         "rect" => GenerateRectangle(id, t),
                         "circle" => GenerateCircle(id, t),
                         "resource_bar" => GenerateResourceBar(id, t),
+                        "colored_resource_bar" => GenerateResourceBar(id, t),
                         _ => null
                     };
                     actor.Color = color;
@@ -98,10 +99,10 @@ public class GenericScene
         {
             Id = new Guid(id),
             // Name = (string?)t["name"] ?? "bar",
-            Current = Convert.ToSingle((t["_val"] as LuaTable)["current"] ?? 0.0),
-            Maximum = Convert.ToSingle((t["_val"] as LuaTable)["maximum"] ?? 100.0),
-            Percentage = Convert.ToSingle((t["_val"] as LuaTable)["percentage"] ?? 0.0),
-            Thickness = Convert.ToSingle((t["_val"] as LuaTable)["thickness"] ?? 0.0),
+            Current = Convert.ToSingle((t["_data"] as LuaTable)["current"] ?? 0.0),
+            Maximum = Convert.ToSingle((t["_data"] as LuaTable)["maximum"] ?? 100.0),
+            Percentage = 50,// Convert.ToSingle(((t["_data"] as LuaTable)["__index"] as LuaTable)["percentage"] ?? 0.0),
+            Thickness = Convert.ToSingle((t["_data"] as LuaTable)["thickness"] ?? 0.0),
             X = Convert.ToSingle(t["x"] ?? 0.0),
             Y = Convert.ToSingle(t["y"] ?? 0.0)
         };

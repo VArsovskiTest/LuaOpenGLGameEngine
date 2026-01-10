@@ -9,6 +9,16 @@ local function flatten(...)
     return result
 end
 
+local function mergeTables(...)
+    local merged = {}
+    for _, tbl in pairs({...}) do
+        for key, value in pairs(tbl) do
+            merged[key] = value
+        end
+    end
+    return merged
+end
+
 -- Returns the record table if found, or nil if not found
 function selectRecordById(table, id)
     if not table or not id then return nil end
@@ -79,4 +89,11 @@ local function findKeyForValue(t, value)
     return nil
 end
 
-return { containsKey = containsKey, containsValue = containsValue, tryGetValue = tryGetValue, findKeyForValue = findKeyForValue, flatten = flatten, selectRecordById = selectRecordById, updateRecordById = updateRecordById }
+return { containsKey = containsKey
+, containsValue = containsValue
+, tryGetValue = tryGetValue
+, findKeyForValue = findKeyForValue
+, flatten = flatten
+, mergeTables = mergeTables
+, selectRecordById = selectRecordById
+, updateRecordById = updateRecordById }
