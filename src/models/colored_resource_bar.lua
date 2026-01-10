@@ -1,18 +1,23 @@
--- Define the ColoredResourceBar Subclass
+-- colored_resource_bar.lua
 local ResourceBar = require("models.resource_bar")
-local color_helper = require("helpers/color_helper")
-local ColorHelper = color_helper:new()
+local ColorHelper = require("helpers/color_helper"):new()
+local color_pallette = require("enums.color_pallette")
 
-local ColoredResourceBar = setmetatable({}, { __index = ResourceBar })
+local ColoredResourceBar = {}
 ColoredResourceBar.__index = ColoredResourceBar
 
-function ColoredResourceBar:new(name, color_id)
-    local self = ResourceBar.create(name)  -- Initialize the base class
-    setmetatable(self, ColoredResourceBar)  -- Set the metatable for the new instance
-    self.color_id = color_id or "DEFAULT_COLOR"  -- Add the color_id property
+-- Inherit from ResourceBar
+setmetatable(ColoredResourceBar, { __index = ResourceBar })
 
+function ColoredResourceBar:new(name, color_id)
+    local self = ResourceBar:new(name)          -- call parent constructor
+    self.color_id = color_id or color_pallette.BLACK
     self.color = ColorHelper.createColorObject(self.color_id)
-    return self
+    
+    -- Optional: mark as colored
+    self.type = "colored_resource_bar"
+    
+    return setmetatable(self, ColoredResourceBar)
 end
 
 return ColoredResourceBar

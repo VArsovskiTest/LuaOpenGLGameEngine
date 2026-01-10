@@ -96,12 +96,12 @@ namespace LuaOpenGLGameEngine
             _lua["drawRect"] = (Action<float, float, float, float, IColorable>)_graphicsRenderer.DrawRect;
             _lua["update"] = (Action<string>)UpdateState;
 
-            if (!keyboardBindingsSet) SetupKeyboardBindings(Keyboard.GetState());
+            if (!keyboardBindingsSet) SetupKeyboardBindings();
 
             _lua.DoString("current_scene = {}");
             renderTable = _lua["initGame"] as LuaTable;
 
-            LuaTable luaResult = _lua.DoString("return game.render_scene()").First() as LuaTable;
+            LuaTable luaResult = _lua.DoString("return initGame()").First() as LuaTable;
             _currentScene = GenericScene.FromLuaTable(_lua, luaResult);
 
             RedrawScene(_currentScene);
@@ -251,6 +251,7 @@ namespace LuaOpenGLGameEngine
 
             // Get fresh keyboard state
             var state = Keyboard.GetState();
+            _lua["KeyboardState"] = state;
 
             // Call one Lua entry point that does everything for this frame
             _lua.GetFunction("game_tick").Call(state);
@@ -356,25 +357,30 @@ namespace LuaOpenGLGameEngine
             { "0" , Key.Number0 }
         };
 
-        private void SetupKeyboardBindings(OpenTK.Input.KeyboardState state)
+        private void SetupKeyboardBindings()
         {
-            _lua["Keyboard_update_from_csharp"] = new Action(() =>
+            _lua["Keyboard_update_from_csharp"] = new Action<OpenTK.Input.KeyboardState>(state =>
             {
                 var kb = _lua.GetTable("Keyboard.isPressed");
-                var pressedKey = "";
-                foreach (var kbPair in keyMapping)
+                string pressedKey = "";
+
+                foreach (var pair in keyMapping)
                 {
-                    kb[kbPair.Key] = state.IsKeyDown(kbPair.Value);
-                    if (state.IsKeyDown(kbPair.Value)) pressedKey = kbPair.Key;
+                    bool isDown = state.IsKeyDown(pair.Value);
+                    kb[pair.Key] = isDown;
+                    if (isDown) pressedKey = pair.Key;
                 }
 
-                kb["tab"] = state.IsKeyDown(Key.Tab);
+                kb["tab"]   = state.IsKeyDown(Key.Tab);
                 kb["shift"] = state.IsKeyDown(Key.LShift) || state.IsKeyDown(Key.RShift);
-                kb["ctrl"] = state.IsKeyDown(Key.LControl) || state.IsKeyDown(Key.RControl);
-                kb["alt"] = state.IsKeyDown(Key.LAlt) || state.IsKeyDown(Key.RAlt);
+                kb["ctrl"]  = state.IsKeyDown(Key.LControl) || state.IsKeyDown(Key.RControl);
+                kb["alt"]   = state.IsKeyDown(Key.LAlt) || state.IsKeyDown(Key.RAlt);
                 kb["space"] = state.IsKeyDown(Key.Space);
 
-                _lua.DoString(String.Format("game.log_data('Keypress detected: {0})'", pressedKey));
+                if (!string.IsNullOrEmpty(pressedKey))
+                {
+                    _lua.DoString($"game.log_data('Keypress detected: {pressedKey}')");
+                }
             });
 
             keyboardBindingsSet = true;

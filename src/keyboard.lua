@@ -4,33 +4,41 @@ Keyboard = {
     onPress = {}         -- callbacks: onPress["1"] = function() ... end
 }
 
+KeyboardState = {}
+
 -- Call this at the very start of your update/tick
+-- Keyboard.lua
 function Keyboard.update()
-    -- Swap
-    -- Keyboard.wasPressed, Keyboard.isPressed = Keyboard.isPressed, Keyboard.wasPressed
+    -- Prepare fresh state table
+    Keyboard.isPressed = Keyboard.isPressed or {}   -- make sure it exists
+    Keyboard.wasPressed = Keyboard.wasPressed or {}
 
-    -- C# fill
+    -- C# fill the fresh isPressed
     if Keyboard_update_from_csharp then
-        -- Clear the new isPressed (old wasPressed)
-        for k in pairs(Keyboard.isPressed) do
-            Keyboard.isPressed[k] = nil
-        end
+        -- We don't need to manually clear — we'll overwrite anyway
+        -- (or do a shallow clear if you prefer)
+        -- for k in pairs(Keyboard.isPressed) do Keyboard.isPressed[k] = nil end
 
-        Keyboard_update_from_csharp()
+        Keyboard_update_from_csharp(KeyboardState)     -- ←←← PASS THE STATE HERE
     end
 
-    -- Detect
+    -- Now detect new presses
     for key, isDown in pairs(Keyboard.isPressed) do
-        if isDown then
-            if not Keyboard.wasPressed[key] then  -- nil treated as not down
-                local handler = Keyboard.onPress[key]
-                if handler then handler() end
-            end
+        local wasDown = Keyboard.wasPressed[key] or false
+        if isDown and not wasDown then
+            local handler = Keyboard.onPress[key]
+            if handler then handler() end
         end
     end
 
-    -- Update to prevent duplicate/s
-    -- Keyboard.wasPressed = Keyboard.isPressed
+    -- Very important: prepare for next frame
+    -- Keyboard.wasPressed = Keyboard.isPressed     -- reference is enough!
+    -- or deep copy if you really need isolation:
+    -- Keyboard.wasPressed = table.shallowcopy(Keyboard.isPressed)
+    Keyboard.wasPressed = {}
+    for k,v in pairs(Keyboard.isPressed) do
+        Keyboard.wasPressed[k] = v
+    end
 end
 
 -- Helper to bind keys

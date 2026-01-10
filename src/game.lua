@@ -173,19 +173,44 @@ current_scene = current_scene or {}
 
 function initGame()
     log_handler.init_error_logging()
-    -- if set_queue setup_command_queue() end
+    local ok, result_or_err = log_handler.safe_call(function()
+        render_scene()
+    end)
 
-    return render_scene()
+    if ok then return result_or_err end
 end
 
+--Keyboard_update_from_csharp = {}
 function game_tick(keyboardState)
-    -- Update keyboard table from C# state -- check existence of method to prevent Lua test crash
-    if Keyboard_update_from_csharp then Keyboard_update_from_csharp(keyboardState) end
-    -- Press detection & callbacks
-    Keyboard.update()
+    -- print("[DEBUG] game_tick called")
+    -- print("[DEBUG] Keyboard_update_from_csharp exists? ", type(Keyboard_update_from_csharp))
+    -- print("[DEBUG] Keyboard.update exists? ", type(Keyboard.update))
+    -- print("[DEBUG] log_handler.safe_call exists? ", type(log_handler.safe_call))
 
-    -- Then do resource regen, etc.
-    ResourceBar:tick()
+    log_handler.safe_call(function()
+        print("[DEBUG] inside protected function")
+
+        if Keyboard_update_from_csharp then
+            print("[DEBUG] calling Keyboard_update_from_csharp")
+            Keyboard_update_from_csharp(keyboardState)
+        else
+            print("[DEBUG] Keyboard_update_from_csharp is nil — skipping")
+        end
+
+        if Keyboard.update then
+            print("[DEBUG] calling Keyboard.update")
+            Keyboard.update()
+        else
+            print("[DEBUG] Keyboard.update is nil — skipping")
+        end
+
+        -- rest of code...
+                -- Press detection & callbacks
+        Keyboard.update()
+
+        -- Then do resource regen, etc.
+        ResourceBar:tick()
+    end)
 end
 
 game = {

@@ -4,19 +4,13 @@ local guid_generator = require("helpers.guid_helper")
 local ResourceBar = {}
 ResourceBar.__index = ResourceBar
 
--- Constructor with TYPE CHECKING!
-function ResourceBar:new(resource_bar)
-    -- VALIDATE: Must be ResourceBar or nil
-    if resource_bar and getmetatable(resource_bar) ~= ResourceBar then
-        error("resource_bar must be a ResourceBar!")
-    end
-    
+function ResourceBar:new(name)
     local self = setmetatable({
-        _val = resource_bar and resource_bar._val or {
+        _val = {
             id = guid_generator.generate_guid(),
-            name = nil,
+            name = name or "Unnamed",
             current = 0,
-            maximum = 100,  -- Default max
+            maximum = 100,
             regen = 0,
             regen_percentage = 0,
             differential = 0,
@@ -24,17 +18,12 @@ function ResourceBar:new(resource_bar)
         }
     }, ResourceBar)
     
+    self.type = "resource_bar"
     return self
 end
 
-function ResourceBar:create(resource_bar, name)
-    -- VALIDATE: Must be ResourceBar or nil
-    local self = ResourceBar:new(resource_bar)
-    self.class = ResourceBar
-    self._val.name = name
-    self.type = "resource_bar"
-
-    return self
+function ResourceBar:create(name)   -- alias for clarity
+    return self:new(name)
 end
 
 -- GAIN (positive differential)
@@ -77,7 +66,7 @@ end
 
 -- TICK: Apply regen + differential
 function ResourceBar:tick()
-    local v = self._val
+    local v = self._val or {}
     
     -- Apply REGEN
     v.current = v.current + v.regen
