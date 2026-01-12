@@ -8,23 +8,29 @@ Keyboard = {
 KeyboardState = {}
 
 -- Call this at the very start of your update/tick
-function Keyboard.update(KeyboardState)
-    -- Prepare fresh state table
-    Keyboard.isPressed = Keyboard.isPressed or {}   -- make sure it exists
-    Keyboard.wasPressed = Keyboard.wasPressed or {}
+function Keyboard.update(gameState)
+    if gameState then
+        local keyboardState = gameState.KeyboardState or {}
+        Keyboard.isPressed = keyboardState
 
-    -- C# fill the fresh isPressed
-    if Keyboard_update_from_csharp then
-        Keyboard_update_from_csharp(KeyboardState or {})     -- ←←← PASS THE STATE HERE
-    end
+        -- Prepare fresh state table
+        Keyboard.isPressed = Keyboard.isPressed or {}   -- make sure it exists
+        Keyboard.wasPressed = Keyboard.wasPressed or {}
 
-    -- Now detect new presses
-    for key, isDown in pairs(Keyboard.isPressed) do
-        local wasDown = Keyboard.wasPressed[key] or false
-        if isDown and not wasDown then
-            local handler = Keyboard.onPress[key]
-            if handler then handler() end
+        -- -- Reverse hook to pass KeyboardState back to C# (don't need but keep it just in case, for now)
+        -- if Keyboard_update_from_csharp then Keyboard_update_from_csharp(KeyboardState or {}) end
+
+        -- Now detect new presses
+        for key, isDown in pairs(Keyboard.isPressed) do
+            local wasDown = Keyboard.wasPressed[key] or false
+            if isDown and not wasDown then
+                local handler = Keyboard.onPress[key]
+                if handler then
+                    handler(gameState.CurrentActor.ActorId, gameState.CurrentActor)
+                end
+            end
         end
+
     end
 
     Keyboard.wasPressed = {}

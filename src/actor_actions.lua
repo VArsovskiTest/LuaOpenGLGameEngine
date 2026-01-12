@@ -1,39 +1,69 @@
 --actor_actions.lua
 
 local CommandQueue = require("commands.command_queue")
+local MoveToCommand = require("commands.move_to_command")
+local MoveUpCommand = require("commands.move_up_command")
+local MoveDownCommand = require("commands.move_down_command")
+local MoveLeftCommand = require("commands.move_left_command")
+local MoveRightCommand = require("commands.move_right_command")
 local DrinkPotionCommand = require("commands.drink_potion_command")
-local MoveCommand = require("commands.move_to_command")
 
-local function handle_move_up(cmd)
-    MoveCommand:execute(cmd)
-    print ("Actor: moved up")
+local function handle_move_to(id, state)
+    log_handler.log_data("id: " .. tostring(id));
+    log_handler.log_data("Actor: moved up")
+    return MoveToCommand:new(id, state)
 end
-
-local function handle_move_up() print ("Actor: moved up") return MoveCommand:new() end
-local function handle_move_down() print ("Actor: moved down") return MoveCommand:new() end
-local function handle_move_left() print ("Actor: moved left") return MoveCommand:new() end
-local function handle_move_right() print ("Actor: moved right") return MoveCommand:new() end
-local function handle_use_consumable() DrinkPotionCommand:execute() print ("Actor: used consumable") end
-local function handle_jump() print ("Actor: jumped") end
-local function handle_attack() print ("Actor: attacked") end
-local function handle_attack_alt() print ("Actor: attacked with an alt") end
-local function handle_defend() print ("Actor: defended") end
-local function handle_sprint() print ("Actor: sprinted") end
-local function handle_boost() print ("Actor: boosted") end
-local function handle_map() print ("Actor: opened map") end
-local function handle_engage() print ("Actor: engaged") end
-local function handle_swap_main_attack() print ("Actor: swapped main attack") end
-local function handle_swap_alt_attack() print ("Actor: swapped alternate attack") end
-local function handle_select_1() print ("Actor: selected slot 1") end
-local function handle_select_2() print ("Actor: selected slot 2") end
-local function handle_select_3() print ("Actor: selected slot 3") end
-local function handle_select_4() print ("Actor: selected slot 4") end
-local function handle_select_5() print ("Actor: selected slot 5") end
-local function handle_select_6() print ("Actor: selected slot 6") end
-local function handle_select_7() print ("Actor: selected slot 7") end
-local function handle_select_8() print ("Actor: selected slot 8") end
-local function handle_select_9() print ("Actor: selected slot 9") end
-local function handle_select_0() print ("Actor: selected slot 0") end
+local function handle_move_up(id, state)
+    log_handler.log_data("id: " .. tostring(id));
+    log_handler.log_data("Actor: moved up")
+    return MoveUpCommand:new(id, state)
+end
+local function handle_move_down(id, state)
+    log_handler.log_data("id: " .. tostring(id))
+    log_handler.log_data("Actor: moved down")
+    return MoveDownCommand:new(id, state)
+end
+local function handle_move_left(id, state)
+    log_handler.log_data("id: " .. tostring(id))
+    log_handler.log_data("Actor: moved left")
+    return MoveLeftCommand:new(id, state)
+end
+local function handle_move_right(id, state)
+    log_handler.log_data("id: " .. tostring(id))
+    log_handler.log_data("Actor: moved right")
+    return MoveRightCommand:new(id, state)
+end
+local function handle_use_consumable(id, state)
+    log_handler.log_data("id: " .. tostring(id))
+    log_handler.log_data("Actor: used consumable")
+    return DrinkPotionCommand:new(id, state)
+end
+local function handle_jump(id, state)
+    log_handler.log_data("id: " .. tostring(id))
+    log_handler.log_data("Actor: jumped")
+end
+local function handle_attack(id, state)
+    log_handler.log_data("id: " .. tostring(id))
+    log_handler.log_data("Actor: attacked")
+end
+local function handle_attack_alt(id, state) log_handler.log_data("Actor: attacked with an alt") end
+local function handle_defend(id, state) log_handler.log_data("Actor: defended") end
+local function handle_sprint(id, state) log_handler.log_data("Actor: sprinted") end
+local function handle_boost(id, state) log_handler.log_data("Actor: boosted") end
+local function handle_map(id, state) log_handler.log_data("Actor: opened map") end
+local function handle_engage(id, state) log_handler.log_data("Actor: engaged") end
+local function handle_swap_main_attack(id, state) log_handler.log_data("Actor: swapped main attack") end
+local function handle_swap_alt_attack(id, state) log_handler.log_data("Actor: swapped alternate attack") end
+local function handle_select_1(id, state) log_handler.log_data("Actor: selected slot 1") end
+local function handle_select_2(id, state) log_handler.log_data("Actor: selected slot 2") end
+local function handle_select_3(id, state) log_handler.log_data("Actor: selected slot 3") end
+local function handle_select_4(id, state) log_handler.log_data("Actor: selected slot 4") end
+local function handle_select_5(id, state) log_handler.log_data("Actor: selected slot 5") end
+local function handle_select_6(id, state) log_handler.log_data("Actor: selected slot 6") end
+local function handle_select_7(id, state) log_handler.log_data("Actor: selected slot 7") end
+local function handle_select_8(id, state) log_handler.log_data("Actor: selected slot 8") end
+local function handle_select_9(id, state) log_handler.log_data("Actor: selected slot 9") end
+local function handle_select_0(id, state) log_handler.log_data("Actor: selected slot 0") end
 
 local ActorActions = {
     handle_move_up = handle_move_up,

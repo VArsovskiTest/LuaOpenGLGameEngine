@@ -22,10 +22,11 @@ function MoveUpCommand.new(entity_id, pos)
     function MoveUpCommand:getOrigin() return self.params.initial_pos end
     function MoveUpCommand:getTarget() return self.params.target_pos end
 
+    log_handler.log_data("MoveUpCommand successfully created")
     return setmetatable(self, { __index = MoveUpCommand })
 end
 
-function MoveToCommand:execute(engine)
+function MoveUpCommand:execute(engine)
     local pos_comp = engine:GetComponent(self.entity_id, command_type_identifier, "Position")
     if not pos_comp then return end
 
@@ -36,13 +37,13 @@ function MoveToCommand:execute(engine)
         action ="update_position",
         entity_id = self.entity_id,
         from = { x = pos_comp.x, y = pos_comp.y },
-        to = 
+        to = {} -- TODO: pass both From and To from C# properly
     })
 
     BaseCommand.execute(self, engine)
 end
 
-function MoveToCommand:undo(engine)
+function MoveUpCommand:undo(engine)
     if self.from then
         local pos_comp = engine:GetComponent(self.entity_id, "Position")
         pos_comp.x = self.from.x

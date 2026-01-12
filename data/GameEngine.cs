@@ -7,7 +7,6 @@ using NLua;
 using System.Drawing;
 using System.Text.Json;
 using System.Security.Cryptography.X509Certificates;
-using System.Timers;
 
 namespace LuaOpenGLGameEngine
 {
@@ -19,20 +18,20 @@ namespace LuaOpenGLGameEngine
         private string _luaFilePath;
         private LuaTable renderTable;
 
+        private System.Timers.Timer _gameSpanTimer { get; set; }
+        private System.Timers.Timer _periodTimer { get; set; }
+
         private ISizable _viewport { get; set; }// = new ViewPort { Width = 0, Height = 0 };
 
         private EngineState _state { get; set; }
+        public GameState _gameState { get; set; }
         private RedisQueue _redisQueue { get; set; }
 
         private MouseClickHandler _mouseClickHandler { get; set; }
 
         private GenericScene _currentScene { get; set; }
 
-        private Timer _gameSpanTimer { get; set; }
-
-        private Timer _periodTimer { get; set; }
-
-        #region BaseSetup & Rendering
+        #region Base setup
 
         public GameEngine(RedisConfig redisConfig) : base(1024, 768, GraphicsMode.Default, "C# + Lua + OpenGL Engine")
         {
@@ -80,9 +79,10 @@ namespace LuaOpenGLGameEngine
             }
 
             // === Set State ===
+            _gameState = new GameState(_lua);
             _state = new EngineState(_lua);
-            _periodTimer = new System.Threading.Timer(500); //Loop event/update once per 500ms
-            _periodTimer.OnTimedEvent += UpdateTimedEvent();
+            _periodTimer = new System.Timers.Timer(500); //Loop event/update once per 500ms
+            _periodTimer.Elapsed += UpdateTimedEvent;
         }
 
         protected override void OnLoad(EventArgs e)
@@ -99,11 +99,9 @@ namespace LuaOpenGLGameEngine
             _lua.LoadCLRPackage();
 
             // Bind Scripts
-            _lua["clear"] = (Action<IColorable>)_graphicsRenderer.ClearScreen;
-            _lua["drawRect"] = (Action<float, float, float, float, IColorable>)_graphicsRenderer.DrawRect;
-            _lua["update"] = (Action<string>)UpdateState;
-
-            if (!keyboardBindingsSet) SetupKeyboardBindings();
+            // _lua["clear"] = (Action<IColorable>)_graphicsRenderer.ClearScreen;
+            // _lua["drawRect"] = (Action<float, float, float, float, IColorable>)_graphicsRenderer.DrawRect;
+            // _lua["update"] = (Action<string>)UpdateState;
 
             _lua.DoString("current_scene = {}");
             renderTable = _lua["initGame"] as LuaTable;
@@ -112,6 +110,56 @@ namespace LuaOpenGLGameEngine
             _currentScene = GenericScene.FromLuaTable(_lua, luaResult);
 
             RedrawScene(_currentScene);
+        }
+
+        // FIXED: Resize event uses different args in OpenTK 3.3.3
+        protected override void OnResize(EventArgs e)  // ← Changed from ResizeEventArgs
+        {
+            base.OnResize(e);
+
+            // var width = e.target.Bounds.Width;
+            // var height = e.target.Bounds.Height;
+            // var left = e.target.Bounds.Left;
+            // var right = e.target.Bounds.Right;
+
+            _viewport.Width = Width;
+            _viewport.Height = Height;
+            GL.Viewport(0, 0, Width, Height);
+        }
+
+        #endregion
+
+        #region GameState Logic
+
+        // private ActorRGB? hoveredActor = null;
+        // private ActorRGB? selectedActor = null;
+
+        void UpdateState(string state_name)
+        {
+            Console.WriteLine("State updated !");
+        }
+
+        void UpdateTimedEvent(object sender, EventArgs e)
+        {
+            _lua.DoString("game.tick_all_resource_bars()");
+        }
+
+        #endregion
+
+        #region Interaction & Handlers
+
+        #region Graphics
+
+        void SetupGraphics(ISizable viewport)
+        {
+            _viewport = viewport;
+            // Optionally, if you want to ensure the viewport matches the window size:
+            // GL.Viewport(0, 0, viewportWidth, viewportHeight);
+
+            // Output
+            Console.WriteLine("Viewport size: " + viewport.Width + " x " + viewport.Height);
+
+            _graphicsRenderer.InitGraphics();
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -136,33 +184,6 @@ namespace LuaOpenGLGameEngine
             // if (globalStateChange) _lua.DoString("return clear_current_scene()");
 
             SwapBuffers();
-        }
-
-        // FIXED: Resize event uses different args in OpenTK 3.3.3
-        protected override void OnResize(EventArgs e)  // ← Changed from ResizeEventArgs
-        {
-            base.OnResize(e);
-
-            // var width = e.target.Bounds.Width;
-            // var height = e.target.Bounds.Height;
-            // var left = e.target.Bounds.Left;
-            // var right = e.target.Bounds.Right;
-
-            _viewport.Width = Width;
-            _viewport.Height = Height;
-            GL.Viewport(0, 0, Width, Height);
-        }
-
-        void SetupGraphics(ISizable viewport)
-        {
-            _viewport = viewport;
-            // Optionally, if you want to ensure the viewport matches the window size:
-            // GL.Viewport(0, 0, viewportWidth, viewportHeight);
-
-            // Output
-            Console.WriteLine("Viewport size: " + viewport.Width + " x " + viewport.Height);
-
-            _graphicsRenderer.InitGraphics();
         }
 
         void RedrawScene(GenericScene sceneData)
@@ -237,22 +258,6 @@ namespace LuaOpenGLGameEngine
 
         #endregion
 
-        private ActorRGB? hoveredActor = null;
-        private ActorRGB? selectedActor = null;
-        private bool keyboardBindingsSet = false;
-
-        void UpdateState(string state_name)
-        {
-            Console.WriteLine("State updated !");
-        }
-
-        void UpdateTimedEvent()
-        {
-            _lua.DoString("game.tick_all_resource_bars()");
-        }
-
-        #region Interaction & Handlers
-
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             if (Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.F5))  // Or file watcher
@@ -261,37 +266,12 @@ namespace LuaOpenGLGameEngine
             if (Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Escape))
                 Close();
 
-            // Get fresh keyboard state
-            var state = Keyboard.GetState();
-            _lua["KeyboardState"] = state;
-
             // Call one Lua entry point that does everything for this frame
-            _lua.GetFunction("game_tick").Call(state);
+            // _lua.DoString(String.Format("CommandState = {0}", _gameState.GetLuaTableData())); //Update Global "CommandState" variable and let Lua take care on frame
+            LuaTable gameStateTable = _gameState.GetLuaTableData();
+            _lua.GetFunction("game_tick").Call(gameStateTable);
             base.OnUpdateFrame(e);
         }
-
-            // var base_move_speed = 1.9;
-            // var pickedActor = selectedActor ?? null;
-            // _lua.DoString($"Keyboard.isPressed['{keyName}'] = true");
-            // _lua.GetFunction("Keyboard_update_from_csharp")?.Call();
-
-            // if (pickedActor != null)
-            // {
-            //     var move_up = Keyboard.GetState().IsKeyDown(Key.W) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Up);
-            //     var move_down = Keyboard.GetState().IsKeyDown(Key.S) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Down);
-            //     var move_left = Keyboard.GetState().IsKeyDown(Key.A) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Left);
-            //     var move_right = Keyboard.GetState().IsKeyDown(Key.D) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Right);
-
-            //     var move_direction = move_up ? "up"
-            //         : move_down ? "down"
-            //         : move_left ? "left"
-            //         : "right";
-
-            //     if (move_up || move_down || move_left || move_right) {
-            //         _lua.DoString($"game.move_actor_by_id(\"{pickedActor.Id}\", \"{move_direction}\", \"{base_move_speed}\")");
-            //     }
-            // }
-        //}
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -299,17 +279,19 @@ namespace LuaOpenGLGameEngine
 
             if (e.Button == MouseButton.Left && e.IsPressed) // Only on press down
             {
+                var (cx, cy) = _mouseClickHandler.MouseToNdc(e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
                 var pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
                 if (pickedActor != null)
                 {
-                    var actor = _currentScene.Actors.First(i => i.Id == pickedActor.Id);
-                    selectedActor = actor;
-                    bool newSelected = !actor.selected;
-                    actor.selected = newSelected;
+                    var actor = _currentScene.Actors.First(i => i.Id == pickedActor.Id).AsActorState();
+                    actor.TargetX = cx;
+                    actor.TargetY = cy;
 
-                    _lua.DoString(string.Format("game.select_actor_by_id(\"{0}\", {1})",
-                        pickedActor.Id.ToString(),
-                        newSelected ? "true" : "false"));
+                    bool newSelected = !actor.Selected;
+                    actor.Selected = newSelected;
+
+                    _gameState.CurrentActor = actor;
+                    _gameState.UpdateActor(actor);
                 }
             }
         }
@@ -319,16 +301,13 @@ namespace LuaOpenGLGameEngine
         {
             base.OnMouseMove(e);
 
-            ActorRGB? pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
+            // ActorRGB? pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
 
-            if (pickedActor != null)
-            {
-                hoveredActor = pickedActor;
-                // _currentScene.Actors.First(i => i.Id == pickedActor.Id).selected = true;
-            }
-
-            // TODO: Adjust/add mouse cursor manipulation feature
-            // Cursor = pickedActor != null ? MouseCursor.Arrow : MouseCursor.Default;
+            // if (pickedActor != null)
+            // {
+            //     _gameState.CurrentActor = pickedActor;
+            //     _gameState.UpdateHoveredActor(pickedActor.AsActorState());
+            // }
         }
 
         // Keyboard example (you mentioned it's already there)
@@ -336,9 +315,41 @@ namespace LuaOpenGLGameEngine
         {
             base.OnKeyDown(e);
 
-            // if (e.Key == Keys.Escape)
-            //     Close();
-            // // ... other keys
+            // Get fresh keyboard state
+            _gameState.KeyboardState = GetKeyboardState(Keyboard.GetState());            
+
+            var base_move_speed = 1.9;
+            var pickedActor = _gameState.GetSelectedActor();
+            // _lua.DoString($"Keyboard.isPressed['{keyName}'] = true");
+            // _lua.GetFunction("Keyboard_update_from_csharp")?.Call();
+
+            if (pickedActor != null)
+            {
+                pickedActor.Selected = true;
+                var move_up = Keyboard.GetState().IsKeyDown(Key.W) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Up);
+                var move_down = Keyboard.GetState().IsKeyDown(Key.S) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Down);
+                var move_left = Keyboard.GetState().IsKeyDown(Key.A) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Left);
+                var move_right = Keyboard.GetState().IsKeyDown(Key.D) || Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Right);
+
+                var move_direction = move_up ? "up"
+                    : move_down ? "down"
+                    : move_left ? "left"
+                    : "right";
+                
+                var currentX = (pickedActor as IPlaceable).X;
+                var currentY = (pickedActor as IPlaceable).Y;
+
+                var newX = move_direction == "left" ? currentX - base_move_speed : move_direction == "right" ? currentX + base_move_speed : currentX;
+                var newY = move_direction == "up" ? currentY - base_move_speed : move_direction == "down" ? currentY + base_move_speed : currentY;
+
+                if (move_up || move_down || move_left || move_right) {
+                    pickedActor.X = (float)newX;
+                    pickedActor.Y = (float)newY;
+
+                    _gameState.UpdateActor(pickedActor);
+                }
+                _gameState.CurrentActor = pickedActor;
+            }
         }
 
         #endregion
@@ -370,33 +381,14 @@ namespace LuaOpenGLGameEngine
             { "0" , Key.Number0 }
         };
 
-        private void SetupKeyboardBindings()
+        private static KeyboardState GetKeyboardState(OpenTK.Input.KeyboardState state)
         {
-            _lua["Keyboard_update_from_csharp"] = new Action<OpenTK.Input.KeyboardState>(state =>
-            {
-                var kb = _lua.GetTable("Keyboard.isPressed");
-                string pressedKey = "";
+            var keyboardState = new KeyboardState();
 
-                foreach (var pair in keyMapping)
-                {
-                    bool isDown = state.IsKeyDown(pair.Value);
-                    kb[pair.Key] = isDown;
-                    if (isDown) pressedKey = pair.Key;
-                }
+            foreach (var key in keyMapping)
+                keyboardState.Keys.Add(new KeyValuePair<string, bool>(key.Key, state.IsKeyDown(key.Value)));
 
-                kb["tab"]   = state.IsKeyDown(Key.Tab);
-                kb["shift"] = state.IsKeyDown(Key.LShift) || state.IsKeyDown(Key.RShift);
-                kb["ctrl"]  = state.IsKeyDown(Key.LControl) || state.IsKeyDown(Key.RControl);
-                kb["alt"]   = state.IsKeyDown(Key.LAlt) || state.IsKeyDown(Key.RAlt);
-                kb["space"] = state.IsKeyDown(Key.Space);
-
-                if (!string.IsNullOrEmpty(pressedKey))
-                {
-                    _lua.DoString($"game.log_data('Keypress detected: {pressedKey}')");
-                }
-            });
-
-            keyboardBindingsSet = true;
+            return keyboardState;
         }
     }
 }

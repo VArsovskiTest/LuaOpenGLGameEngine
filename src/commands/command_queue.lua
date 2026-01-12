@@ -1,6 +1,6 @@
 -- engine/command_queue.lua
 
-local CommandQueue = {
+CommandQueue = {
     queue = {},
     history = {},
     max_history = 200
@@ -34,6 +34,7 @@ function CommandQueue:process_next(engine)
     end
 
     local cmd = table.remove(self.queue, 1)
+    log_handler.log_table("command", cmd)
     self:execute_and_record(cmd, engine)
 
     return cmd

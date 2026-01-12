@@ -56,7 +56,7 @@ public class GenericScene
                         "rect" => GenerateRectangle(id, t),
                         "circle" => GenerateCircle(id, t),
                         "resource_bar" => GenerateResourceBar(id, t),
-                        "colored_resource_bar" => GenerateResourceBar(id, t),
+                        // "colored_resource_bar" => GenerateResourceBar(id, t),
                         _ => null
                     };
                     actor.Color = color;

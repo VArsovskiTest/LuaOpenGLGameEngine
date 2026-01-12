@@ -46,10 +46,10 @@ local function log_data(msg)
     logFile:flush()
 end
 
-local function log_table(msg)
+local function log_table(tblName, tbl)
     if not logFile then return end
-    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] data: " .. "\n")
-    logFile.write(serialize_table(msg))
+    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "]" .. tostring(tblName) .. ": " .. "\n")
+    logFile:write(serialize_table(tbl))
     logFile:flush()
 end
 

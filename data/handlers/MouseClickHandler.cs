@@ -1,9 +1,10 @@
+using System;
 using System.Drawing;
 using System.Security.Cryptography.X509Certificates;
 
 public class MouseClickHandler
 {
-    private (float ndcX, float ndcY) MouseToNdc(int mouseX, int mouseY, int windowWidth, int windowHeight)
+    public (float ndcX, float ndcY) MouseToNdc(int mouseX, int mouseY, int windowWidth, int windowHeight)
     {
         // Mouse coords: (0,0) = top-left, windowWidth/Height = bottom-right
         // NDC: (-1,1) = top-left, (1,-1) = bottom-right  (y positive up)
@@ -11,7 +12,7 @@ public class MouseClickHandler
         float ndcX = (2.0f * mouseX) / windowWidth - 1.0f;
         float ndcY = 1.0f - (2.0f * mouseY) / windowHeight;  // Flip Y
 
-        return (ndcX, ndcY);
+        return ((float)Math.Round(ndcX, 3), (float)Math.Round(ndcY, 3));
     }
 
     public ActorRGB? SelectActor(GenericScene scene, int mouseX, int mouseY, int windowWidth, int windowHeight)

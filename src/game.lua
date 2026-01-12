@@ -163,12 +163,12 @@ local function get_current_scene()
 end
 
 local function update_scene(dt)
-    -- do game-state updates (for current_state) logic here later
     Keyboard.update()           -- ← detects presses → calls handlers → enqueues commands
-    CommandQueue:process_next()      -- ← THIS executes the commands!
+    CommandQueue:process_next()      -- ← execute the command!
 end
 
 current_scene = current_scene or {}
+-- CommandState = CommandState or {} -- This tracks User interaction from C# and Actors in GameState
 
 function initGame()
     log_handler.init_error_logging()
@@ -179,14 +179,10 @@ function initGame()
     if ok then return result_or_err end
 end
 
-function game_tick(keyboardState)
+function game_tick(gameState) -- This tracks User interaction from C# and Actors in GameState
     log_handler.safe_call(function()
-        if Keyboard_update_from_csharp then
-            Keyboard_update_from_csharp(keyboardState)
-        end
-
         if Keyboard.update then
-            Keyboard.update()
+            Keyboard.update(gameState)
         end
         update_scene()
     end)

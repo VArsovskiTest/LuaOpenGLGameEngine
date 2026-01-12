@@ -22,5 +22,6 @@ function MoveDownCommand:new(entity_id, pos)
     function MoveDownCommand:getOrigin() return params.initial_pos end
     function MoveDownCommand:getTarget() return params.target_pos end
 
+    log_handler.log_data("MoveDownCommand successfully created")
     setmetatable(self, { __index = MoveDownCommand })
 end

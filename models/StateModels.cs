@@ -38,7 +38,7 @@ public class PlayerData : IGenericEntity
     public Armament[] Armaments { get; }
     public IRegen HP { get; set; }
     public IRegen Resource { get; set; }
-    public IPosition Position { get; set; }
+    public IPlaceable Position { get; set; }
 
     public PlayerData(string name, int maxHp, int hp, float hpRegen, int maxResource, int resource, 
                    float resourceRegen, int damage, int spellpower, int sightRange, Armament[] armaments)
@@ -68,7 +68,7 @@ public class MonsterData : IGenericEntity
     public float SightRange { get; set; }
     public IRegen HP { get; set; }
     public IRegen Resource { get; set; }
-    public IPosition Position { get; set; }
+    public IPlaceable Position { get; set; }
 
     public double RetreatThreshold { get; set; }
     public Armament[] Armaments { get; set; }

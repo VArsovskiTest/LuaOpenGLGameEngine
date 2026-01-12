@@ -1,6 +1,7 @@
 local Keyboard = require("keyboard")
 local ActorActions = require("actor_actions")
 local table_helper = require("table_helper")
+local log_handler = require("log_handler")
 
 local DefaultBindings = {
     handle_move_up = "w",
@@ -34,81 +35,31 @@ local DefaultBindings = {
 local CurrentBindings = {}
 
 local ActionHandlers = {
-    handle_move_up = function()
-        CommandQueue.enqueue({ name = "move_up", command = ActorActions.handle_move_up() })
-    end,
-    handle_move_down = function()
-        CommandQueue.enqueue({ name = "move_down", command = ActorActions.handle_move_down() })
-    end,
-    handle_move_left = function()
-        CommandQueue.enqueue({ name = "move_left", command = ActorActions.handle_move_left() })
-    end,
-    handle_move_right = function()
-        CommandQueue.enqueue({ name = "move_right", command = ActorActions.handle_move_right() })
-    end,
-    handle_use_consumable = function()
-        CommandQueue.enqueue({ name = "use_consumable", command = ActorActions.handle_use_consumable() })
-    end,
-    handle_jump = function()
-        CommandQueue.enqueue({ name = "jump", command = ActorActions.handle_jump() })
-    end,
-    handle_attack = function()
-        CommandQueue.enqueue({ name = "attack", command = ActorActions.handle_attack() })
-    end,
-    handle_attack_alt = function()
-        CommandQueue.enqueue({ name = "attack_alt", command = ActorActions.handle_attack_alt() })
-    end,
-    handle_defend = function()
-        CommandQueue.enqueue({ name = "defend", command = ActorActions.handle_defend() })
-    end,
-    handle_sprint = function()
-        CommandQueue.enqueue({ name = "sprint", command = ActorActions.handle_sprint() })
-    end,
-    handle_boost = function()
-        CommandQueue.enqueue({ name = "boost", command = ActorActions.handle_boost() })
-    end,
-    handle_map = function()
-        CommandQueue.enqueue({ name = "map", command = ActorActions.handle_map() })
-    end,
-    handle_engage = function()
-        CommandQueue.enqueue({ name = "engage", command = ActorActions.handle_engage() })
-    end,
-    handle_swap_main_attack = function()
-        CommandQueue.enqueue({ name = "swap_main_attack", command = ActorActions.handle_swap_main_attack() })
-    end,
-    handle_swap_alt_attack = function()
-        CommandQueue.enqueue({ name = "swap_alt_attack", command = ActorActions.handle_swap_alt_attack() })
-    end,
-    handle_select_1 = function()
-        CommandQueue.enqueue({ name = "select_1", command = ActorActions.handle_select_1() })
-    end,
-    handle_select_2 = function()
-        CommandQueue.enqueue({ name = "select_2", command = ActorActions.handle_select_2() })
-    end,
-    handle_select_3 = function()
-        CommandQueue.enqueue({ name = "select_3", command = ActorActions.handle_select_3() })
-    end,
-    handle_select_4 = function()
-        CommandQueue.enqueue({ name = "select_4", command = ActorActions.handle_select_4() })
-    end,
-    handle_select_5 = function()
-        CommandQueue.enqueue({ name = "select_5", command = ActorActions.handle_select_5() })
-    end,
-    handle_select_6 = function()
-        CommandQueue.enqueue({ name = "select_6", command = ActorActions.handle_select_6() })
-    end,
-    handle_select_7 = function()
-        CommandQueue.enqueue({ name = "select_7", command = ActorActions.handle_select_7() })
-    end,
-    handle_select_8 = function()
-        CommandQueue.enqueue({ name = "select_8", command = ActorActions.handle_select_8() })
-    end,
-    handle_select_9 = function()
-        CommandQueue.enqueue({ name = "select_9", command = ActorActions.handle_select_9() })
-    end,
-    handle_select_0 = function()
-        CommandQueue.enqueue({ name = "select_0", command = ActorActions.handle_select_0() })
-    end,
+    handle_move_up = function(id, cmd) CommandQueue.enqueue({ name = "move_up", command = ActorActions.handle_move_up(id, cmd) }) end,
+    handle_move_down = function(id, cmd) CommandQueue.enqueue({ name = "move_down", command = ActorActions.handle_move_down(id, cmd) }) end,
+    handle_move_left = function(id, cmd) CommandQueue.enqueue({ name = "move_left", command = ActorActions.handle_move_left(id, cmd) }) end,
+    handle_move_right = function(id, cmd) CommandQueue.enqueue({ name = "move_right", command = ActorActions.handle_move_right(id, cmd) }) end,
+    handle_use_consumable = function(id, cmd) CommandQueue.enqueue({ name = "use_consumable", command = ActorActions.handle_use_consumable(id, cmd) }) end,
+    handle_jump = function(id, cmd) CommandQueue.enqueue({ name = "jump", command = ActorActions.handle_jump(id, cmd) }) end,
+    handle_attack = function(id, cmd) CommandQueue.enqueue({ name = "attack", command = ActorActions.handle_attack(id, cmd) }) end,
+    handle_attack_alt = function(id, cmd) CommandQueue.enqueue({ name = "attack_alt", command = ActorActions.handle_attack_alt(id, cmd) }) end,
+    handle_defend = function(id, cmd) CommandQueue.enqueue({ name = "defend", command = ActorActions.handle_defend(id, cmd) }) end,
+    handle_sprint = function(id, cmd) CommandQueue.enqueue({ name = "sprint", command = ActorActions.handle_sprint(id, cmd) }) end,
+    handle_boost = function(id, cmd) CommandQueue.enqueue({ name = "boost", command = ActorActions.handle_boost(id, cmd) }) end,
+    handle_map = function(id, cmd) CommandQueue.enqueue({ name = "map", command = ActorActions.handle_map(id, cmd) }) end,
+    handle_engage = function(id, cmd) CommandQueue.enqueue({ name = "engage", command = ActorActions.handle_engage(id, cmd) }) end,
+    handle_swap_main_attack = function(id, cmd) CommandQueue.enqueue({ name = "swap_main_attack", command = ActorActions.handle_swap_main_attack(id, cmd) }) end,
+    handle_swap_alt_attack = function(id, cmd) CommandQueue.enqueue({ name = "swap_alt_attack", command = ActorActions.handle_swap_alt_attack(id, cmd) }) end,
+    handle_select_1 = function(id, cmd) CommandQueue.enqueue({ name = "select_1", command = ActorActions.handle_select_1(id, cmd) }) end,
+    handle_select_2 = function(id, cmd) CommandQueue.enqueue({ name = "select_2", command = ActorActions.handle_select_2(id, cmd) }) end,
+    handle_select_3 = function(id, cmd) CommandQueue.enqueue({ name = "select_3", command = ActorActions.handle_select_3(id, cmd) }) end,
+    handle_select_4 = function(id, cmd) CommandQueue.enqueue({ name = "select_4", command = ActorActions.handle_select_4(id, cmd) }) end,
+    handle_select_5 = function(id, cmd) CommandQueue.enqueue({ name = "select_5", command = ActorActions.handle_select_5(id, cmd) }) end,
+    handle_select_6 = function(id, cmd) CommandQueue.enqueue({ name = "select_6", command = ActorActions.handle_select_6(id, cmd) }) end,
+    handle_select_7 = function(id, cmd) CommandQueue.enqueue({ name = "select_7", command = ActorActions.handle_select_7(id, cmd) }) end,
+    handle_select_8 = function(id, cmd) CommandQueue.enqueue({ name = "select_8", command = ActorActions.handle_select_8(id, cmd) }) end,
+    handle_select_9 = function(id, cmd) CommandQueue.enqueue({ name = "select_9", command = ActorActions.handle_select_9(id, cmd) }) end,
+    handle_select_0 = function(id, cmd) CommandQueue.enqueue({ name = "select_0", command = ActorActions.handle_select_0(id, cmd) }) end,
 }
 
 -- Apply bindings: register all current key → handler with Keyboard system
@@ -117,6 +68,9 @@ local function apply_bindings()
     Keyboard.onPress = {}  -- careful: better to just overwrite
 
     for action_name, key in pairs(CurrentBindings) do
+
+        log_handler.log_data("key: " .. key .. " actoin_name: " .. action_name)
+
         local handler = ActionHandlers[action_name]
         if handler then
             Keyboard.bind(key, handler)
@@ -132,6 +86,10 @@ local function bind_defaults()
     for action, key in pairs(DefaultBindings) do
         CurrentBindings[action] = key
     end
+
+    log_handler.log_data("=== Default key bindings properly initialized ===")
+    log_handler.log_table("current bindings", CurrentBindings)
+
     apply_bindings()
 end
 

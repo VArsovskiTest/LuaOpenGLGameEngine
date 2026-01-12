@@ -22,6 +22,7 @@ function MoveLeftCommand.new(entity_id, pos)
     function MoveLeftCommand:getOrigin() return params.initial_pos end
     function MoveLeftCommand:getTarget() return params.target_pos end
 
+    log_handler.log_data("MoveLeftCommand successfully created")
     return setmetatable(self, { __index = MoveLeftCommand })
 end
 

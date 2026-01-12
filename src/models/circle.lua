@@ -15,6 +15,7 @@ function Circle:new(circle)
         y = circle.y or 0,
         rad = circle.rad or 1,
         color_id = circle.color_id or color_pallette.SEA_GREEN,
+        id = guid_generator.generate_guid(),
     }, Circle)
 
     self.color = ColorHelper.createColorObject(self.color_id)

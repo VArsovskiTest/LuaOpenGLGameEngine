@@ -5,6 +5,9 @@ local command_type_identifier = "Position_Commands"
 local MoveToCommand = {}
 
 function MoveToCommand.new(entity_id, pos)
+    log_handler.log_data("entity_id: " .. entity_id)
+    log_handler.log_table("cmd", pos or {})
+
     local from_x = pos.from_x or 0
     local from_y = pos.from_y or 0
 
@@ -22,6 +25,7 @@ function MoveToCommand.new(entity_id, pos)
     function MoveToCommand:getOrigin() return self.params.initial_pos end
     function MoveToCommand:getTarget() return self.params.target_pos end
 
+    log_handler.log_data("MoveToCommand successfully created")
     return setmetatable(self, { __index = MoveToCommand })
 end
 

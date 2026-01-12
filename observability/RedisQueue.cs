@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using StackExchange.Redis;
 using System.Text.Json;
-using System.Threading;
 
 public class RedisQueue
 {

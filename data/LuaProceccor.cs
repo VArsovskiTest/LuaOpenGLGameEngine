@@ -154,6 +154,8 @@ public class LuaProcessor
     {
         lua.DoString(@"
             function safe_get_id(t)
+                local result = nil
+
                 if type(t) ~= 'table' then
                     return ''
                 end
@@ -167,11 +169,19 @@ public class LuaProcessor
                 if type(val) == 'table' then
                     local inner_id = rawget(val, 'id')
                     if inner_id ~= nil and type(inner_id) == 'string' then
-                        return inner_id
+                        result = inner_id
+                    end
+                end
+
+                local data = rawget(t, '_data')
+                if inner_id == nil then
+                    local inner_id = rawget(data, 'id')
+                    if inner_id ~= nil and type(inner_id) == 'string' then
+                        result = inner_id
                     end
                 end
                 
-                return ''
+                return result or ''
             end
         ");
     }
