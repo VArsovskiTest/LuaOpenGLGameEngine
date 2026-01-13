@@ -1,4 +1,5 @@
 -- engine/command_queue.lua
+local log_handler = require("log_handler")
 
 CommandQueue = {
     queue = {},
@@ -16,10 +17,13 @@ end
 function CommandQueue:execute_and_record(cmd, engine)
     if not cmd or not engine then return end
 
-    cmd:execute(engine)
-    _G.MockEngine:dispatch("command_executed", { command = cmd })
-    table.insert(self.history, cmd)
-    self:trim_history()
+    if cmd.command and cmd.command.execute then
+        log_handler.log_table("Inside CommandQueue: execute", cmd)
+        cmd.command:execute(engine)
+        engine:dispatch("command_executed", cmd)
+        table.insert(self.history, cmd)
+        self:trim_history()
+    end
 end
 
 -- Execute immediately (bypasses queue)
@@ -34,9 +38,17 @@ function CommandQueue:process_next(engine)
     end
 
     local cmd = table.remove(self.queue, 1)
-    log_handler.log_table("command", cmd)
     self:execute_and_record(cmd, engine)
 
+    -- TODO: Move to command on execution itself ?
+    local cmd_name = cmd and cmd.name or "unknown_command"
+    local entity_id = cmd and cmd.id or "unknown_id"
+
+    log_handler.log_data("Before AddComponent")
+    log_handler.log_data("entity_id: " .. tostring(entity_id or "no_entity"))
+    log_handler.log_table("cmd", cmd)
+    
+    engine.AddComponent(entity_id, "Position_Commands", "Position", { cmd and cmd.params or { { x = 0, y = 0 }, { x = 0, y = 0 } } })
     return cmd
 end
 
@@ -84,7 +96,7 @@ function CommandQueue:undo_and_record(cmd, engine)
 
     if cmd.undo then
         cmd:undo(engine)
-        _G.MockEngine:dispatch("command_reverted", { command = cmd })
+        engine:dispatch("command_reverted", cmd)
         table.insert(self.history, cmd)
         self:trim_history()
     end

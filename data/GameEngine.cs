@@ -300,14 +300,13 @@ namespace LuaOpenGLGameEngine
         protected override void OnMouseMove(MouseMoveEventArgs e)
         {
             base.OnMouseMove(e);
+            var pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height)?.AsActorState();
 
-            // ActorRGB? pickedActor = _mouseClickHandler.SelectActor(_currentScene, e.Position.X, e.Position.Y, (int)_viewport.Width, (int)_viewport.Height);
-
-            // if (pickedActor != null)
-            // {
-            //     _gameState.CurrentActor = pickedActor;
-            //     _gameState.UpdateHoveredActor(pickedActor.AsActorState());
-            // }
+            if (pickedActor != null)
+            {
+                _gameState.CurrentActor = pickedActor;
+                _gameState.UpdateActor(pickedActor);
+            }
         }
 
         // Keyboard example (you mentioned it's already there)

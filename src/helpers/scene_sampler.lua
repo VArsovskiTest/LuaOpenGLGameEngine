@@ -18,6 +18,7 @@ local function render_sample_scene()
             width = 0.35,
             height = 0.1,
             color_id = color_pallette.TEAL,
+            speed = 1.1,
         }),
         Rectangle:new({
             name = "R2",            
@@ -26,6 +27,7 @@ local function render_sample_scene()
             width = 0.15,
             height = 0.22,
             color_id = color_pallette.NAVY,
+            speed = 2.4,
         }),
         Rectangle:new({
             name = "R3",
@@ -33,6 +35,7 @@ local function render_sample_scene()
             y = -0.25,
             width = 0.52,
             height = 0.17,
+            speed = 1.9,
         }),
     }
 
@@ -43,12 +46,14 @@ local function render_sample_scene()
             y = 0.55,
             rad = 0.12,
             color_id = color_pallette.SEA_GREEN,
+            speed = 0.5,
         }),
         Circle:new({
             x = 0.92,
             y = 0.85,
             rad = 0.15,
             color_id = color_pallette.RED,
+            speed = 1.9,
         }),
     }
 

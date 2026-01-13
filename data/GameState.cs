@@ -50,6 +50,7 @@ public class GameState
             actor.Y = actorState.Y;
             actor.TargetX = actorState.TargetX;
             actor.TargetY = actorState.TargetY;
+            actor.Tags = actorState.Tags;
         });
         return true;
     }
@@ -58,18 +59,6 @@ public class GameState
     {
         return Actors.FirstOrDefault(actor => actor.Hovered);
     }
-
-    // TODO: Use this after linking everything properly, you'll get extra performance/s
-    // public void UpdateGameState()
-    // {
-    //     _cachedGameStateTable["SceneId"]      = SceneId;
-    //     _cachedGameStateTable["CurrentActor"] = CurrentActor;
-
-    //     foreach (var pair in KeyboardState.Keys)
-    //     {
-    //         _cachedKeyboardStateTable[pair.Key] = pair.Value;
-    //     }
-    // }
 
     public LuaTable GetLuaTableData() {
         foreach(var kvp in KeyboardState.Keys)
@@ -87,26 +76,4 @@ public class GameState
 public class KeyboardState
 {
     public List<KeyValuePair<string, bool>> Keys { get; set; } = new List<KeyValuePair<string, bool>>();
-}
-
-public class ActorState
-{
-    public Guid ActorId { get; set; }
-    public bool Hovered { get; set; }
-    public bool Selected { get; set; }
-    public float X { get; set; }
-    public float Y { get; set; }
-    public float TargetX { get; set; }
-    public float TargetY { get; set; }
-    public LuaTable GetLuaTableData(LuaTable table)
-    {
-        table["ActorId"] = ActorId;
-        table["Hovered"] = Hovered;
-        table["Selected"] = Selected;
-        table["X"] = X;
-        table["Y"] = Y;
-        table["TargetX"] = TargetX;
-        table["TargetY"] = TargetY;
-        return table;
-    }
 }

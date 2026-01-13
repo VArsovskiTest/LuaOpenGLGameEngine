@@ -18,6 +18,7 @@ end
 
 -- Helper function to convert a table to a string for logging
 local function serialize_table(t)
+    if not t then return ": nil" end
     if type(t) ~= 'table' then
         return tostring(t)
     end

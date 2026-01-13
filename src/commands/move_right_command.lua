@@ -1,5 +1,6 @@
 -- commands/move_right_command.lua
-local BaseCommand = require("commands.base_command")
+-- local BaseCommand = require("commands.base_command")
+local MoveToCommand = require("commands.move_to_command")
 local command_type_identifier = "Position_Commands"
 
 local MoveRightCommand = {}
@@ -17,14 +18,17 @@ function MoveRightCommand.new(entity_id, pos)
         target_pos = { x = target_x, y = target_y }
     }
 
-    local self = BaseCommand.new("MoveRightCommand", entity_id, params)
+    local self = MoveToCommand.new("MoveRightCommand", entity_id, params)
     self.class = MoveRightCommand
-
-    function MoveRightCommand:getOrigin() return params.initial_pos end
-    function MoveRightCommand:getTarget() return params.target_pos end
-
-    log_handler.log_data("MoveRightCommand successfully created")
+    self.__index = MoveRightCommand
     return setmetatable(self, { __index = MoveRightCommand })
+end
+
+function MoveRightCommand:getOrigin() return self.params.initial_pos end
+function MoveRightCommand:getTarget() return self.params.target_pos end
+function MoveRightCommand:execute(engine)
+    log_handler.log_data("MoveRightCommand executed")
+    MoveToCommand:execute(engine)
 end
 
 return MoveRightCommand

@@ -130,7 +130,7 @@ describe("MoveToCommmand specific tests:", function()
         _G.MockEngine:AddComponent(entity.id, command_type_identifier, component_name, initial_pos)
 
         local reposition_data = { from_x = 0, from_y = 0, to_x = 15, to_y = 25 }
-        local cmd = MoveToCommand.new(entity.id, reposition_data)
+        local cmd = MoveToCommand:new(entity.id, reposition_data)
 
         CommandQueue:enqueue(cmd)
         CommandQueue:process_next(_G.MockEngine)
@@ -151,7 +151,7 @@ describe("MoveToCommmand specific tests:", function()
         _G.MockEngine:AddComponent(entity.id, command_type_identifier, component_name, initial_pos)
 
         local reposition_data = { to_y = 25 }
-        local cmd = MoveToCommand.new(entity.id, reposition_data)
+        local cmd = MoveToCommand:new(entity.id, reposition_data)
 
         CommandQueue:enqueue(cmd)
         CommandQueue:process_next(_G.MockEngine)
@@ -177,7 +177,7 @@ describe("MoveToCommmand specific tests:", function()
 
         -- Note: We skip _G.MockEngine:AddComponent(..., "Position", ...)
         local reposition_data = { to_x = 100, to_y = 200 }  -- full or partial, doesn't matter
-        local cmd = MoveToCommand.new(entity_no_pos.id, reposition_data)
+        local cmd = MoveToCommand:new(entity_no_pos.id, reposition_data)
 
         CommandQueue:enqueue(cmd)
 
@@ -205,7 +205,7 @@ describe("Command queue: Undo tests", function()
         _G.MockEngine:AddComponent(entity.id, command_type_identifier, "Position", initial_pos)
 
         local reposition_data = { x = 15, y = -5 }
-        local cmd = MoveToCommand.new(entity.id, reposition_data)
+        local cmd = MoveToCommand:new(entity.id, reposition_data)
 
         CommandQueue:enqueue(cmd)
         CommandQueue:process_next(_G.MockEngine)

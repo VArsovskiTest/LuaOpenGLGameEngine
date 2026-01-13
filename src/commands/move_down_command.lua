@@ -1,5 +1,6 @@
 -- commands/move_down_command.lua
-local BaseCommand = require("commands.base_command")
+-- local BaseCommand = require("commands.base_command")
+local MoveToCommand = require("commands.move_to_command")
 local command_type_identifier = "Position_Commands"
 
 local MoveDownCommand = {}
@@ -16,12 +17,17 @@ function MoveDownCommand:new(entity_id, pos)
         target_pos = { x = target_x, y = target_y }
     }
 
-    local self = BaseCommand.new("MoveDownCommand", entity_id, params)
+    local self = MoveToCommand.new("MoveDownCommand", entity_id, params)
     self.class = MoveDownCommand
-
-    function MoveDownCommand:getOrigin() return params.initial_pos end
-    function MoveDownCommand:getTarget() return params.target_pos end
-
-    log_handler.log_data("MoveDownCommand successfully created")
+    self.__index = MoveDownCommand
     setmetatable(self, { __index = MoveDownCommand })
 end
+
+function MoveDownCommand:getOrigin() return self.params.initial_pos end
+function MoveDownCommand:getTarget() return self.params.target_pos end
+function MoveDownCommand:execute(engine)
+    log_handler.log_data("MoveDownCommand executed")
+    MoveToCommand:execute(engine)
+end
+
+return MoveDownCommand

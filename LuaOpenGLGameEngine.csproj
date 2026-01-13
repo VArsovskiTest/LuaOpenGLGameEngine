@@ -24,6 +24,7 @@
     <Compile Include="*.cs" />
     <Compile Include="conversion\**\*.cs" />
     <Compile Include="data\**\*.cs" />
+    <Compile Include="enums\**\*.cs" />
     <Compile Include="graphics\**\*.cs" />
     <Compile Include="models\**\*.cs" />
     <Compile Include="observability\**\*.cs" />
