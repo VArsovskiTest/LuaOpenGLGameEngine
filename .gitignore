@@ -1,6 +1,8 @@
 # Ignore everything in the vs & vscode folders
 .vs/*
 .vscode/*
+app/editor/.vs/*
+app/editor/.vscode/*
 
 # Ignore plugin & bin/obj folders
 lua-debug/
