@@ -10,14 +10,14 @@ function MoveDownCommand:new(entity_id, pos)
     local from_y = pos.y or 0
 
     local target_x = from_x
-    local target_y = from_y - (pos.speed or 0)
+    local target_y = from_y - (pos.speed or 3)
 
     local params = {
         initial_pos = { x = from_x, y = from_y },
         target_pos = { x = target_x, y = target_y }
     }
 
-    local self = MoveToCommand.new("MoveDownCommand", entity_id, params)
+    local self = MoveToCommand:new(entity_id, "MoveDownCommand", params)
     self.class = MoveDownCommand
     self.__index = MoveDownCommand
     setmetatable(self, { __index = MoveDownCommand })
@@ -26,7 +26,6 @@ end
 function MoveDownCommand:getOrigin() return self.params.initial_pos end
 function MoveDownCommand:getTarget() return self.params.target_pos end
 function MoveDownCommand:execute(engine)
-    log_handler.log_data("MoveDownCommand executed")
     MoveToCommand:execute(engine)
 end
 

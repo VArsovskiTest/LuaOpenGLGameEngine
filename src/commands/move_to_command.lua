@@ -16,7 +16,7 @@ function MoveToCommand:new(entity_id, cmd)
         target_pos  = { x = target_x, y = target_y }
     }
 
-    local self = BaseCommand.new("MoveToCommand", entity_id, params)
+    local self = BaseCommand:new(entity_id, "MoveToCommand", params)
     self.class = MoveToCommand
     self.__index = MoveToCommand
     return setmetatable(self, { __index = MoveToCommand })
@@ -25,9 +25,25 @@ end
 function MoveToCommand:getOrigin() return self.params.initial_pos end
 function MoveToCommand:getTarget() return self.params.target_pos end
 
+function getDataFromInheritance(obj)
+    local originCoordinates = obj.getOrigin and obj.getOrigin() or nil
+    local targetCoordinates = obj.getTarget and obj.getTarget() or nil
+
+    log_handler.log_table("originCoordinates", originCoordinates)
+    log_handler.log_table("targetCoordinates", targetCoordinates)
+
+    return { originCoordinates, targetCoordinates }
+end
+
 function MoveToCommand:execute(engine)
-    -- log_handler.log_table("MoveToCommand: engine", engine)
+    log_handler.log_data("MoveToCommand executed")
+    log_handler.log_table("MoveToCommand:self", self)
+
     local pos_comp = engine:GetComponent(self.entity_id, command_type_identifier, "Position")
+
+    if not pos_comp then pos_comp = getDataFromInheritance(self) end -- If Command was Move Up/Down/Left/Right it would've already been dispatched, take it from existing data already
+    log_handler.log_table("MoveToCommand:pos_comp", pos_comp)
+
     if not pos_comp then return end
 
     if self.params.target_pos.x ~= nil then pos_comp[2].x = self.params.target_pos.x end
@@ -41,13 +57,10 @@ function MoveToCommand:execute(engine)
     })
 
     log_handler.log_table("Adding Component to engine", self)
+    engine:AddComponent(self.entity_id, "Position_Commands", "Position", { self:getOrigin(), self:getTarget() }) -- _G.MockEngine
 
-    -- TODO: looks like the whole enqueue command system doesn't work unless I do this ?
-    engine:AddComponent(self.id, "Position_Commands", "Position", { self:getOrigin(), self:getTarget() }) -- _G.MockEngine
-
-    log_handler.log_data("Moving actor: " .. tostring(self.id))
-    -- TODO: Invoke this from here ?
-    game.move_actor_by_id(self.id, self.params.target_pos)
+    log_handler.log_data("Moving actor: " .. tostring(self.entity_id))
+    game.move_actor_by_id(self.entity_id, self.params.target_pos)
 
     BaseCommand.execute(self, engine)
 end

@@ -162,33 +162,50 @@ local function get_current_scene()
     return current_scene
 end
 
+function getByEntityId(sub, guid)
+    local results = {}
+
+    if sub then
+        for _, entry in ipairs(sub) do
+            if entry[1] == guid then  -- Direct comparison on the "first column"
+                table.insert(results, entry[2])
+            end
+        end
+    end
+    return results
+end
+
 local function update_scene(dt)
     Keyboard.update()           -- ← detects presses → calls handlers → enqueues commands
     local mock_engine = {
         calls = { ["Position_Commands"] = {} },
         -- enqueue = function(cmd) table.insert(self.calls["Position_commands"], cmd) end
-        GetComponent = function(self, comp) log_handler.log_table("GetComponent: calls", self.calls) return self.calls[comp] end,
+        GetComponent = function(self, comp) log_handler.log_table("GetComponent: self", self) log_handler.log_table("GetComponent: comp", comp) return self.calls[comp] end,
         AddComponent = function(entity_id, table_name, component_name, data)
-            log_handler.log_data("Inside AddComponent:")
-            log_handler.log_data("entity_id: " .. tostring(entity_id or "no_entity"))
-            log_handler.log_data("table_name: " .. tostring(table_name or "no_table"))
-            table_name = table_name or "Position_Commands"
+            log_handler.log_table("AddComponent", {
+                ["entity_id"] = entity_id,
+                ["table_name"] = table_name,
+                ["component_name"] = component_name,
+                ["data"] = data
+            })
             if table_name then
                 if not self then self = {} end
                 if not self.calls then self.calls = {} end
                 if not self.calls[table_name] then
-                    log_handler.log_data("inserting entity: " .. tostring(entity_id or "no_entity"))
                     self.calls[table_name] = {}
-                    table.insert(self.calls[table_name], { ["entity_id"] = entity_id })
-                    log_handler.log_table("after insert ", self.calls)
+                    table.insert(self.calls[table_name], { entity_id, { ["entity_id"] = entity_id } })
                 end
 
-                local entity = self.calls[table_name][entity_id]
+                local sub = self.calls and self.calls[table_name] or {}
+                local entity = getByEntityId(sub, entity_id)
+                
                 if not entity then error("Entity not found") end
+                log_handler.log_table("entity", entity)
+
                 entity[component_name] = data
             end
         end,
-        dispatch = function(cmd) log_handler.log_table("dispatching command inside mock_engine: ", cmd) end
+        dispatch = function(identifier, cmd) log_handler.log_data("dispatching:" .. tostring(identifier)) end
     }
 
     CommandQueue:process_next(mock_engine) -- _G.MockEngine

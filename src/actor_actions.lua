@@ -8,32 +8,32 @@ local MoveLeftCommand = require("commands.move_left_command")
 local MoveRightCommand = require("commands.move_right_command")
 local DrinkPotionCommand = require("commands.drink_potion_command")
 
-local function handle_move_to(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) return MoveToCommand:new(id, state) end
-local function handle_move_up(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) return MoveUpCommand:new(id, state) end
-local function handle_move_down(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) return MoveDownCommand:new(id, state) end
-local function handle_move_left(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) return MoveLeftCommand:new(id, state) end
-local function handle_move_right(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) return MoveRightCommand:new(id, state) end
-local function handle_use_consumable(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) return DrinkPotionCommand:new(id, state) end
-local function handle_jump(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_attack(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_attack_alt(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_defend(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_sprint(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_boost(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_map(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_engage(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_swap_main_attack(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_swap_alt_attack(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_1(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_2(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_3(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_4(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_5(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_6(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_7(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_8(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_9(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
-local function handle_select_0(id, state) log_handler.log_data("inside ActorActions: " .. tostring(id)) end
+local function handle_move_to(id, state) return MoveToCommand:new(id, state) end
+local function handle_move_up(id, state) return MoveUpCommand:new(id, state) end
+local function handle_move_down(id, state) return MoveDownCommand:new(id, state) end
+local function handle_move_left(id, state) return MoveLeftCommand:new(id, state) end
+local function handle_move_right(id, state) return MoveRightCommand:new(id, state) end
+local function handle_use_consumable(id, state) return DrinkPotionCommand:new(id, state) end
+local function handle_jump(id, state) end
+local function handle_attack(id, state) end
+local function handle_attack_alt(id, state) end
+local function handle_defend(id, state) end
+local function handle_sprint(id, state) end
+local function handle_boost(id, state) end
+local function handle_map(id, state) end
+local function handle_engage(id, state) end
+local function handle_swap_main_attack(id, state) end
+local function handle_swap_alt_attack(id, state) end
+local function handle_select_1(id, state) end
+local function handle_select_2(id, state) end
+local function handle_select_3(id, state) end
+local function handle_select_4(id, state) end
+local function handle_select_5(id, state) end
+local function handle_select_6(id, state) end
+local function handle_select_7(id, state) end
+local function handle_select_8(id, state) end
+local function handle_select_9(id, state) end
+local function handle_select_0(id, state) end
 
 local ActorActions = {
     handle_move_up = handle_move_up,

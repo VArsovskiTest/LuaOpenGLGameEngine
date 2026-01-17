@@ -11,17 +11,14 @@ function MoveUpCommand:new(entity_id, cmd)
     local from_y = cmd.y or 0
 
     local target_x = from_x
-    local target_y = from_y + (cmd.speed or 0)
+    local target_y = from_y + (cmd.speed or 3)
 
     local params = {
         initial_pos = { x = from_x, y = from_y },
         target_pos  = { x = target_x, y = target_y }
     }
 
-    log_handler.log_data("Inside MoveUpCommand: " .. tostring(entity_id))
-    log_handler.log_table("Inside MoveUpCommand: ", cmd)
-
-    local self = MoveToCommand:new("MoveUpCommand", entity_id, params)
+    local self = MoveToCommand:new(entity_id, "MoveUpCommand", params)
     self.class = MoveUpCommand
     self.__index = MoveUpCommand
     return setmetatable(self, { __index = MoveUpCommand })

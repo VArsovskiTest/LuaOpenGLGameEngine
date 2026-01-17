@@ -320,7 +320,7 @@ local engine_modules = require("enums.engine_modules")
 _G.EngineModules = engine_modules
 
 _G.CommandQueue = require("commands.command_queue")
-_G.CommandQueue:clear()
+_G.CommandQueue:reset()
 
 local function init(context)
     if context == _G.EngineModules.AI then
