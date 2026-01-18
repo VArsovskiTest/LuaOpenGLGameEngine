@@ -327,7 +327,7 @@ local function init(context)
         _G.MockEngine = require("mocks.ai_mock_engine")
         print("TestInit: Initialized with AI Mock Engine.")
     elseif context == _G.EngineModules.COMMAND then
-        _G.MockEngine = require("mocks.command_mock_engine")
+        _G.MockEngine = require("engines.mock_command_engine")
 
         -- Subscribe enqueue and process events of _G.MockEngine globally:
         _G.MockEngine:subscribe("enqueue", function(c)

@@ -177,42 +177,62 @@ end
 
 local function update_scene(dt)
     Keyboard.update()           -- ← detects presses → calls handlers → enqueues commands
-    local mock_engine = {
-        calls = { ["Position_Commands"] = {} },
-        -- enqueue = function(cmd) table.insert(self.calls["Position_commands"], cmd) end
-        GetComponent = function(self, comp) log_handler.log_table("GetComponent: self", self) log_handler.log_table("GetComponent: comp", comp) return self.calls[comp] end,
-        AddComponent = function(entity_id, table_name, component_name, data)
-            log_handler.log_table("AddComponent", {
-                ["entity_id"] = entity_id,
-                ["table_name"] = table_name,
-                ["component_name"] = component_name,
-                ["data"] = data
-            })
-            if table_name then
-                if not self then self = {} end
-                if not self.calls then self.calls = {} end
-                if not self.calls[table_name] then
-                    self.calls[table_name] = {}
-                    table.insert(self.calls[table_name], { entity_id, { ["entity_id"] = entity_id } })
-                end
+    -- local mock_engine = {
+    --     calls = { ["Position_Commands"] = {} },
+    --     -- enqueue = function(cmd) table.insert(self.calls["Position_commands"], cmd) end
+    --     GetComponent = function(self, comp) log_handler.log_table("GetComponent: self", self) log_handler.log_table("GetComponent: comp", comp) return self.calls[comp] end,
+    --     AddComponent = function(entity_id, table_name, component_name, data)
+    --         log_handler.log_table("AddComponent", {
+    --             ["entity_id"] = entity_id,
+    --             ["table_name"] = table_name,
+    --             ["component_name"] = component_name,
+    --             ["data"] = data
+    --         })
+    --         if table_name then
+    --             if not self then self = {} end
+    --             if not self.calls then self.calls = {} end
+    --             if not self.calls[table_name] then
+    --                 self.calls[table_name] = {}
+    --                 table.insert(self.calls[table_name], { entity_id, { ["entity_id"] = entity_id } })
+    --             end
 
-                local sub = self.calls and self.calls[table_name] or {}
-                local entity = getByEntityId(sub, entity_id)
+    --             local sub = self.calls and self.calls[table_name] or {}
+    --             local entity = getByEntityId(sub, entity_id)
                 
-                if not entity then error("Entity not found") end
-                log_handler.log_table("entity", entity)
+    --             if not entity then error("Entity not found") end
+    --             log_handler.log_table("entity", entity)
 
-                entity[component_name] = data
-            end
-        end,
-        dispatch = function(identifier, cmd) log_handler.log_data("dispatching:" .. tostring(identifier)) end
-    }
+    --             entity[component_name] = data
+    --         end
+    --     end,
+    --     dispatch = function(identifier, cmd) log_handler.log_data("dispatching: " .. tostring(identifier)) end
+    -- }
 
-    CommandQueue:process_next(mock_engine) -- _G.MockEngine
+    CommandQueue:process_next(_G.MockEngine) -- _G.MockEngine
 end
 
 current_scene = current_scene or {}
 -- CommandState = CommandState or {} -- This tracks User interaction from C# and Actors in GameState
+
+function initEngine() -- Initialize from Engine (not for Tests)
+    local engine = require("engines.mock_command_engine")
+    engine:subscribe("enqueue", function(c)
+        log_handler.log_data("command issued: ".. tostring(c))
+    end)
+    engine:subscribe("execute_immediately", function(c)
+        log_handler.log_data("command executed: ".. tostring(c))
+    end)
+
+    _G.MockEngine = engine
+
+    entity = _G.MockEngine:CreateEntity("entities", "AttackActions")
+    entity = _G.MockEngine:CreateEntity("entities", "PositionCommands")
+
+    -- _G.MockEngine:AddComponent(entity.id, "AttackActions", "Position", initial_pos)
+    -- _G.MockEngine:AddComponent(entity.id, "PositionCommands", "Position", initial_pos)
+
+    log_handler.log_data("Game: Initialized with Command Mock Engine.")
+end
 
 function initGame()
     log_handler.init_error_logging()

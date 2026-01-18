@@ -102,9 +102,10 @@ namespace LuaOpenGLGameEngine
             // _lua["clear"] = (Action<IColorable>)_graphicsRenderer.ClearScreen;
             // _lua["drawRect"] = (Action<float, float, float, float, IColorable>)_graphicsRenderer.DrawRect;
             // _lua["update"] = (Action<string>)UpdateState;
+            // renderTable = _lua["initGame"] as LuaTable;
 
+            _lua.DoString("initEngine()"); // Initialize ONCE
             _lua.DoString("current_scene = {}");
-            renderTable = _lua["initGame"] as LuaTable;
 
             LuaTable luaResult = _lua.DoString("return initGame()").First() as LuaTable;
             _currentScene = GenericScene.FromLuaTable(_lua, luaResult);

@@ -1,32 +1,45 @@
 -- commands/move_right_command.lua
--- local BaseCommand = require("commands.base_command")
 local MoveToCommand = require("commands.move_to_command")
-local command_type_identifier = "Position_Commands"
+local log_handler   = require("log_handler")
+
+local command_type_identifier = "PositionCommands"
 
 local MoveRightCommand = {}
+MoveRightCommand.super = MoveToCommand
 
-function MoveRightCommand.new(entity_id, pos)
-    local from_x = pos.x or 0
-    local from_y = pos.y or 0
-
-    local target_x = from_x + (pos.speed or 3)
-    local target_y = from_y
+function MoveRightCommand:new(entity_id, cmd)
+    local from_x = cmd.x or cmd.from_x or 0
+    local from_y = cmd.y or cmd.from_y or 0
+    local speed  = cmd.speed or 3
 
     local params = {
         initial_pos = { x = from_x, y = from_y },
-        target_pos = { x = target_x, y = target_y }
+        target_pos  = { x = from_x + speed, y = from_y },
     }
 
-    local self = MoveToCommand:new(entity_id, "MoveRightCommand", params)
-    self.class = MoveRightCommand
-    self.__index = MoveRightCommand
-    return setmetatable(self, { __index = MoveRightCommand })
+    -- Pass the subclass name so logs/debug show "MoveRightCommand"
+    local self = MoveToCommand:new(
+        entity_id,
+        "MoveRightCommand",
+        command_type_identifier,
+        "Position",
+        params
+    )
+
+    return self
 end
 
-function MoveRightCommand:getOrigin() return self.params.initial_pos end
-function MoveRightCommand:getTarget() return self.params.target_pos end
-function MoveRightCommand:execute(engine)
-    MoveToCommand:execute(engine)
+function MoveRightCommand:_call_execute(engine, entry)
+    log_handler.log_data("MoveRightCommand:_call_execute → calling MoveToCommand")
+    MoveRightCommand.super._call_execute(self, engine, entry)
+end
+
+function MoveRightCommand:undo(engine)
+    if self.from then
+        local pos_comp = engine:GetComponent(self.entity_id, "Position")
+        pos_comp.x = self.from.x
+        pos_comp.y = self.from.y
+    end
 end
 
 return MoveRightCommand

@@ -71,15 +71,69 @@ function CommandQueue:set_status(id, status)
     return nil
 end
 
-
 function CommandQueue:process_one(entry, engine)
-    local entity_id = entry[1]
+    if not entry or not engine then
+        log_handler.log_error("process_one: missing entry or engine")
+        return false
+    end
+
+    -- Extract the actual command object
     local cmd = entry[2]
-    if not (cmd and cmd.execute) then return false end
+    if not cmd then
+        log_handler.log_error("process_one: entry[2] is nil")
+        return false
+    end
 
-    local success, err = pcall(cmd.execute, cmd, engine)
+    -- Support both direct command and wrapped { command = ... } structures
+    local command = cmd.command or cmd
+    if type(command) ~= "table" then
+        log_handler.log_error("process_one: command is not a table")
+        return false
+    end
 
-    engine:AddComponent(entity_id, "Position_Commands", "Position", cmd.params)
+    log_handler.log_table("process_one: command", command)
+
+    local cmd_execute = command._call_execute
+    if type(cmd_execute) ~= "function" then
+        log_handler.log_error("process_one: command has no _call_execute function")
+        return false
+    end
+
+    entry[3] = "processing"
+
+    -- ────────────────────────────────────────────────
+    -- Entity & component setup
+    -- ────────────────────────────────────────────────
+    local entity_id   = command.entity_id
+    local params      = command.params or {}
+    local queue_name  = command.command_queue_name or "PositionCommands"   -- fallback
+
+    if not entity_id then
+        log_handler.log_error("process_one: command missing entity_id")
+        entry[3] = "failed"
+        return false
+    end
+
+    -- Use provided GUID instead of auto-generating int
+    local entity = _G.MockEngine:CreateEntity(
+        "entities",
+        queue_name,
+        command   -- pass whole command as overrides → includes .id = GUID
+    )
+
+    -- Add the intended position component (initial → target)
+    engine:AddComponent(entity_id, queue_name, "Position", params)
+
+    -- ────────────────────────────────────────────────
+    -- Execute the command itself (no entry passed)
+    -- ────────────────────────────────────────────────
+    local success, err = pcall(cmd_execute, command, engine)
+
+    log_handler.log_data("_call_execute success: " .. tostring(success))
+    if not success then
+        log_handler.log_error("_call_execute error: " .. tostring(err))
+    end
+
     engine:dispatch("command_executed", entry, success, err)
 
     if success then
@@ -88,7 +142,7 @@ function CommandQueue:process_one(entry, engine)
         self:trim_history()
     else
         entry[3] = "failed"
-        cmd.error = tostring(err) or "Unknown error"   -- attach to command itself
+        command.error = tostring(err) or "Unknown error"
     end
 
     return success, err
@@ -97,14 +151,13 @@ end
 function CommandQueue:process_next(engine)
     if not engine then return false end
 
-    local entry = CommandQueue:get_next_pending()
+    local entry = self:get_next_pending()
     if entry then
         local entity_id = entry[1]
         local cmd = entry[2]
-        if not (cmd and cmd.execute) then return false end
 
-        CommandQueue:set_status(entity_id, "processing")
-        return CommandQueue:process_one(entry, engine)
+        self:set_status(entity_id, "processing")
+        return self:process_one(entry, engine)
         -- return CommandQueue:resolve(entity_id, success) -- TODO: We don't do automatically Resolve on Process to allow usage of Inheritance
     end
     return false, "Entry not found"
@@ -122,11 +175,11 @@ function CommandQueue:execute_immediately(entity_id, cmd, engine)
         "processing"   -- start directly in processing
     }
 
-    local success, err = CommandQueue:process_one(temp_entry, engine)
+    local success, err = self:process_one(temp_entry, engine)
 
     if success then
         local params = cmd.params or {}
-        engine:AddComponent(entity_id, "Position_Commands", "Position", params)
+        engine:AddComponent(entity_id, "PositionCommands", "Position", params)
     end
 
     return success, err, temp_entry   -- optional: return entry-like for tests
@@ -138,7 +191,7 @@ function CommandQueue:process_all(engine)
 
     while #self.queue > 0 do
         local cmd = self:dequeue()
-        self:process_next(cmd, engine)
+        self:process_one(cmd, engine)
         processed = processed + 1
     end
     return processed
@@ -171,16 +224,6 @@ function CommandQueue:get_commands_for_entity(entity_id, only_active)
     end
     return results
 end
-
--- function CommandQueue:get_history_by_type(type_name)
---     local filtered = {}
---     for _, cmd in ipairs(self.history) do
---         if cmd.type == type_name then
---             table.insert(filtered, cmd)
---         end
---     end
---     return filtered
--- end
 
 function CommandQueue:get_queue_size()
     return #self.queue

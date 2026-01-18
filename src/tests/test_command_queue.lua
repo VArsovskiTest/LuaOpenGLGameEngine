@@ -8,27 +8,27 @@ local CommandQueue = require("commands.command_queue")
 local MoveToCommand = require("commands.move_to_command")
 
 local mock_command_type_identifier = "mock_command"
+local mock_component_name = "Position"
 
 -- Helper: Dummy command factory for generic queue tests
-local function create_dummy_command(type_name, payload, custom_execute)
-    type_name = type_name or "DummyCommand"
+local function create_dummy_command(entity_id, command_queue_name, component_name, payload, custom_execute)
+    command_queue_name = command_queue_name or "DummyCommands"
     payload = payload or {}
-
-    local BaseCommand = require("commands.base_command")
-    local cmd = BaseCommand.new(type_name, -1, payload)
-
+    
+    local cmd = BaseCommand:new(entity_id, mock_command_type_identifier, command_queue_name, component_name, payload)
+    
     cmd.was_executed = false
     cmd.engine_received = nil
-
-    cmd.execute = function(self, engine)  -- Use dot syntax to override
+    
+    -- Override execute (subclass-style implementation)
+    cmd.execute = function(self, engine, entry)
         self.was_executed = true
         self.engine_received = engine
         if custom_execute then
-            custom_execute(self, engine)
+            custom_execute(self, engine)  -- Pass self and engine (adjust if custom_execute needs entry)
         end
-        BaseCommand.execute(self, engine)
+        -- REMOVED: BaseCommand._call_execute(...) – this caused the loop
     end
-
     return cmd
 end
 
@@ -39,13 +39,18 @@ describe("Generic command Queue Tests", function()
         CommandQueue:reset()
         _G.MockEngine:Reset()
         entity = _G.MockEngine:CreateEntity("entities", "Position_Commands")
+        entity = _G.MockEngine:CreateEntity("entities", "JumpActions")
+        entity = _G.MockEngine:CreateEntity("entities", "AttackActions")
+        entity = _G.MockEngine:CreateEntity("entities", "InstantCast")        
         
-        -- This line is critical for the immediate execution test too:
         _G.MockEngine:AddComponent(entity.id, "Position_Commands", "Position", initial_pos)
+        _G.MockEngine:AddComponent(entity.id, "JumpActions", "Position", initial_pos)
+        _G.MockEngine:AddComponent(entity.id, "AttackActions", "Position", initial_pos)
+        _G.MockEngine:AddComponent(entity.id, "InstantCast", "Position", initial_pos)
     end)
 
     it("Test 1: Enqueue + get_next_pending + process_next", function()
-        local cmd1 = create_dummy_command("LoginAction", { user = "player1" })
+        local cmd1 = create_dummy_command(entity.id, "Position_Commands", mock_component_name, { user = "player1" })
         CommandQueue:enqueue(cmd1.entity_id, cmd1)   -- assuming new enqueue(entity_id, cmd)
 
         expect(#CommandQueue.queue).to_equal(1, "Command enqueued")
@@ -71,8 +76,8 @@ describe("Generic command Queue Tests", function()
     end)
 
     it("Test 2: Multiple commands + process_all", function()
-        local cmd2 = create_dummy_command("JumpAction")
-        local cmd3 = create_dummy_command("AttackAction", nil, function(self)
+        local cmd2 = create_dummy_command(entity.id, "JumpActions", mock_component_name)
+        local cmd3 = create_dummy_command(entity.id, "AttackActions", mock_component_name, nil, function(self)
             self.side_effect = "boom!"
         end)
 
@@ -97,7 +102,7 @@ describe("Generic command Queue Tests", function()
 
     -- If you still have execute_immediately (bypass queue completely)
     it("Test 3: execute_immediately (bypass queue)", function()
-        local cmd4 = create_dummy_command("InstantCast")
+        local cmd4 = create_dummy_command(entity.id, "InstantCast", mock_component_name)
         
         -- Pass entity_id + wrapper
         local success, err = CommandQueue:execute_immediately(entity.id, cmd4, _G.MockEngine)
@@ -131,15 +136,15 @@ describe("MoveToCommand specific tests", function()
         expect(success).to_be_truthy()
 
         local final_pos = _G.MockEngine:GetComponent(entity.id, "Position_Commands", "Position")
-        expect(final_pos.target_pos.x).to_equal(15)
-        expect(final_pos.target_pos.y).to_equal(25)
+        expect(final_pos[2].x).to_equal(15)
+        expect(final_pos[2].y).to_equal(25)
 
         local entry = CommandQueue:get_commands_for_entity(entity.id)
         expect(entry[3]).to_equal("done")
         expect(#CommandQueue.queue).to_equal(1)   -- still there
         expect(#CommandQueue.history).to_equal(1)
 
-        local history_log = _G.MockEngine.calls.Position_Commands or {}
+        local history_log = _G.MockEngine.calls.PositionCommands or {}
         expect(#history_log).to_equal(1)
         expect(history_log[1].action).to_equal("update_position")
     end)
@@ -162,7 +167,7 @@ describe("MoveToCommand specific tests", function()
 
         expect(entry[3]).to_equal("failed")     -- ← important new assertion
 
-        local history_log = _G.MockEngine.calls.Position_Commands or {}
+        local history_log = _G.MockEngine.calls.PositionCommands or {}
         expect(#history_log).to_equal(0, "No logging when failed due to missing component")
     end)
     summary()

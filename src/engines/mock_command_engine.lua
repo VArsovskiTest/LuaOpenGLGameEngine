@@ -1,4 +1,5 @@
 -- engine/mock_command_engine.lua
+local log_handler = require("log_handler")
 
 local MockCommandEngine = {
     tables = {},
@@ -12,37 +13,65 @@ local function get_or_create_table(name)
     if not MockCommandEngine.tables[name] then
         MockCommandEngine.tables[name] = {}
         MockCommandEngine.calls[name] = {}
-        MockCommandEngine.next_id[name] = 1
+        -- MockCommandEngine.next_id[name] = 1
     end
     return MockCommandEngine.tables[name], MockCommandEngine.calls[name]
 end
 
 -- Create a new entity/command with automatic unique ID
-function MockCommandEngine:CreateEntity(table_name, commmand_log_name, overrides)
+function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
     table_name = table_name or "default"
-    local history_log_identifier = commmand_log_name or table_name
-
+    local history_log_identifier = command_log_name or table_name
     local storage, calls_log = get_or_create_table(history_log_identifier)
-    local next_id = MockCommandEngine.next_id[history_log_identifier]
+
+    -- ────────────────────────────────
+    -- Determine final ID to use
+    -- ────────────────────────────────
+    local id
+
+    if overrides and overrides.entity_id then
+        id = overrides.entity_id                      -- ← prefer the GUID coming from the command
+    elseif overrides and overrides.id then
+        id = overrides.id                             -- fallback if someone passes .id instead
+    else
+        -- only auto-generate if nothing was provided (for pure mock/test cases)
+        id = self.next_id[history_log_identifier] or 1
+        self.next_id[history_log_identifier] = id + 1
+    end
+
+    if storage[id] then
+        log_handler.log_error(string.format(
+            "CreateEntity: collision on ID %s in %s",
+            tostring(id), history_log_identifier
+        ))
+        -- Decide policy: error / overwrite / generate new / etc.
+        -- For now → error to force correct usage
+        error("Entity ID already exists: " .. tostring(id))
+    end
 
     local entity = {
-        id = next_id,
-        -- Default fields — customize as needed
-        type = "command",
+        id       = id,          -- store the GUID / key we actually used
+        type     = "command",
         executed = false,
-        payload = {},
+        payload  = {},
     }
 
+    -- Apply all overrides (including params, command_name, etc.)
     if overrides then
         for k, v in pairs(overrides) do
             entity[k] = v
         end
     end
 
-    storage[next_id] = entity
-    MockCommandEngine.next_id[table_name] = next_id + 1
+    storage[id] = entity
 
-    --table.insert(calls_log, { action = "create", id = next_id, data = entity })
+    log_handler.log_data(string.format(
+        "Created entity with real ID: %s in %s",
+        tostring(id), history_log_identifier
+    ))
+
+    -- table.insert(calls_log, { action = "create", id = id, data = entity })
+
     return entity
 end
 
@@ -50,12 +79,12 @@ function MockCommandEngine:AddComponent(entity_id, table_name, component_name, d
     local entity = self:Get(table_name, entity_id)
     if not entity then error("Entity not found") end
 
-    entity[component_name] = data or {}
+    entity.payload[component_name] = data or {}
     --table.insert(self.calls[table_name], { action = "add_component", entity_id = entity_id, component = component_name })
 end
 
-function MockCommandEngine:GetComponent(entity_id, command_type_identifier, component_name)
-    return self:Get(command_type_identifier, entity_id)[component_name]
+function MockCommandEngine:GetComponent(entity_id, identifier, component_name)
+    return self:Get(identifier, entity_id).payload[component_name]
 end
 
 -- Subscribe a handler to an event
@@ -92,6 +121,10 @@ end
 function MockCommandEngine:Get(table_name, id)
     table_name = table_name or "default"
     local storage = self.tables[table_name]
+
+    -- log_handler.log_data("AddComponent for entity_id: " .. tostring(id) .. ", for table: " .. table_name)
+    -- log_handler.log_table("AddComponent storage: ", self.tables[table_name])
+
     if not storage then
         error("MockCommandEngine: table '" .. table_name .. "' does not exist")
     end

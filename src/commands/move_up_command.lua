@@ -1,35 +1,50 @@
 -- commands/move_up_command.lua
--- local BaseCommand = require("commands.base_command")
 local MoveToCommand = require("commands.move_to_command")
-local command_type_identifier = "Position_Commands"
-local log_handler = require("log_handler")
+local log_handler   = require("log_handler")
+
+local command_type_identifier = "PositionCommands"
 
 local MoveUpCommand = {}
+MoveUpCommand.super = MoveToCommand
 
 function MoveUpCommand:new(entity_id, cmd)
-    local from_x = cmd.x or 0
-    local from_y = cmd.y or 0
-
-    local target_x = from_x
-    local target_y = from_y + (cmd.speed or 3)
+    local from_x = cmd.x or cmd.from_x or 0
+    local from_y = cmd.y or cmd.from_y or 0
+    local speed  = cmd.speed or 3
 
     local params = {
         initial_pos = { x = from_x, y = from_y },
-        target_pos  = { x = target_x, y = target_y }
+        target_pos  = { x = from_x, y = from_y + speed },
     }
 
-    local self = MoveToCommand:new(entity_id, "MoveUpCommand", params)
-    self.class = MoveUpCommand
-    self.__index = MoveUpCommand
-    return setmetatable(self, { __index = MoveUpCommand })
+    -- Pass the subclass name so logs/debug show "MoveUpCommand"
+    local self = MoveToCommand:new(
+        entity_id,
+        "MoveUpCommand",
+        command_type_identifier,
+        "Position",
+        params
+    )
+
+    -- No need to setmetatable again — we inherit the metatable from MoveToCommand
+
+    return self
 end
 
-function MoveUpCommand:getOrigin() return self.params.initial_pos end
-function MoveUpCommand:getTarget() return self.params.target_pos end
+-- No need to override getOrigin/getTarget — uses parent's
 
-function MoveUpCommand:execute(engine)
-    MoveToCommand:execute(engine)
+-- No need to override execute — uses MoveToCommand:execute
+
+function MoveUpCommand:_call_execute(engine, entry)
+    log_handler.log_data("MoveUpCommand:_call_execute → calling MoveToCommand")
+    MoveUpCommand.super._call_execute(self, engine, entry)
 end
+
+-- If you ever need special MoveUp logic (rare):
+-- function MoveUpCommand:execute(engine, entry)
+--     log_handler.log_data("MoveUp extra logic here")
+--     MoveUpCommand.super.execute(self, engine, entry)
+-- end
 
 function MoveUpCommand:undo(engine)
     if self.from then
