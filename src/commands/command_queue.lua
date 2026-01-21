@@ -76,23 +76,16 @@ function CommandQueue:process_one(entry, engine)
         log_handler.log_error("process_one: missing entry or engine")
         return false
     end
-
-    -- Extract the actual command object
     local cmd = entry[2]
     if not cmd then
         log_handler.log_error("process_one: entry[2] is nil")
         return false
     end
-
-    -- Support both direct command and wrapped { command = ... } structures
     local command = cmd.command or cmd
     if type(command) ~= "table" then
         log_handler.log_error("process_one: command is not a table")
         return false
     end
-
-    log_handler.log_table("process_one: command", command)
-
     local cmd_execute = command._call_execute
     if type(cmd_execute) ~= "function" then
         log_handler.log_error("process_one: command has no _call_execute function")
@@ -113,13 +106,6 @@ function CommandQueue:process_one(entry, engine)
         entry[3] = "failed"
         return false
     end
-
-    -- Use provided GUID instead of auto-generating int
-    local entity = _G.MockEngine:CreateEntity(
-        "entities",
-        queue_name,
-        command   -- pass whole command as overrides → includes .id = GUID
-    )
 
     -- Add the intended position component (initial → target)
     engine:AddComponent(entity_id, queue_name, "Position", params)

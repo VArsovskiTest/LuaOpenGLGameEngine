@@ -32,8 +32,6 @@ function BaseCommand:_call_execute(engine)
     local comp = engine:GetComponent(self.entity_id, self.command_queue_name, self.component_name)
     self.INITIAL_STATE = comp or {}
 
-    log_handler.log_table("INITIAL_STATE", self.INITIAL_STATE)
-
     self:execute(engine)          -- ← also update :execute to take only engine
     self.executed = true
 end

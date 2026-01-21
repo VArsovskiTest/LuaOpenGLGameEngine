@@ -40,12 +40,7 @@ function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
     end
 
     if storage[id] then
-        log_handler.log_error(string.format(
-            "CreateEntity: collision on ID %s in %s",
-            tostring(id), history_log_identifier
-        ))
-        -- Decide policy: error / overwrite / generate new / etc.
-        -- For now → error to force correct usage
+        log_handler.log_error(string.format("CreateEntity: collision on ID %s in %s", tostring(id), history_log_identifier))
         error("Entity ID already exists: " .. tostring(id))
     end
 
@@ -65,17 +60,12 @@ function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
 
     storage[id] = entity
 
-    log_handler.log_data(string.format(
-        "Created entity with real ID: %s in %s",
-        tostring(id), history_log_identifier
-    ))
-
-    -- table.insert(calls_log, { action = "create", id = id, data = entity })
-
+    log_handler.log_data(string.format("Created entity with real ID: %s in %s", tostring(id), history_log_identifier))
     return entity
 end
 
 function MockCommandEngine:AddComponent(entity_id, table_name, component_name, data)
+    log_handler.log_data("Adding component for: " .. tostring(entity_id))
     local entity = self:Get(table_name, entity_id)
     if not entity then error("Entity not found") end
 

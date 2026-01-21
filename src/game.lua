@@ -10,8 +10,8 @@ if not math.clamp then
 end
 
 local color_pallette = require("enums.color_pallette")
-local table_helper = require("helpers.table_helper")
 local scene_sampler = require("helpers.scene_sampler")
+local game_state = require("game_state")
 
 local Clear = require("models.clear")
 local Rectangle = require("models.rectangle")
@@ -100,119 +100,52 @@ end
 
 -- # endregion
 
-local function find_actor_by_id(id)
-    return table_helper.selectRecordById(current_scene.actors or {}, id)
-end
+local function update_scene(gameState)
+    local entity_id = gameState.CurrentActor.entity_id
+    local dt             = gameState and gameState.dt or 0
+    local selected_actor = game_state.find_selected_actor(entity_id)
 
-local function update_actor_by_id(id, prop, value)
-    table_helper.updateRecordById(current_scene.actors or {}, id, prop, value)
-end
+    log_handler.log_data("entity_id: " .. tostring(entity_id))
+    local input_command  = Keyboard.get_current_command()   -- returns nil if no command this frame
 
-local function action_select_actor_by_id(id, value)
-    local selected_actor = find_actor_by_id(id)
-    if selected_actor then
-        update_actor_by_id(id, "selected", value)
-        return true
+    if not input_command then
+        CommandQueue:process_next(_G.MockEngine)   -- still drain the queue if there are delayed commands
+        return
     end
 
-    return false
+    if not selected_actor or not selected_actor.Id then
+        log_handler.log_data("No selected actor → ignoring input command")
+        CommandQueue:process_next(_G.MockEngine)
+        return
+    end
+
+    local entity = game_state.ensure_entity_exists(selected_actor.Id, selected_actor)
+    log_handler.log_table("entity", entity)
+
+    local command = create_command_from_input(
+        input_command,
+        entity.Id,                -- ← the real GUID
+        selected_actor            -- optional: pass more context if needed
+    )
+
+    if command then
+        CommandQueue:enqueue(command)
+    end
+
+    CommandQueue:process_next(_G.MockEngine)
 end
 
-local function action_move_actor_by_id(id, direction, speed)
-    speed = speed or 1
-    local delta = speed / 100  -- convert to normalized units
-
-    local actor = find_actor_by_id(id)
-    if not actor then
-        return false
-    end
-
-    -- Map direction to coordinate change
-    local dir = string.lower(direction)
-    local dx, dy = 0, 0
-    if dir == "up" then
-        dy = delta
-    elseif dir == "down" then
-        dy = -delta
-    elseif dir == "left" then
-        dx = -delta
-    elseif dir == "right" then
-        dx = delta
-    else
-        -- Optional: warn or ignore invalid direction
-        print("Warning: Invalid direction '" .. tostring(direction) .. "' for move_actor_by_id")
-        return false
-    end
-
-    -- Clamp to [-1, 1] range and update
-    if dx ~= 0 then
-        local new_x = math.clamp(actor.x + dx, -1, 1)
-        update_actor_by_id(id, "x", new_x)
-    end
-
-    if dy ~= 0 then
-        local new_y = math.clamp(actor.y + dy, -1, 1)
-        update_actor_by_id(id, "y", new_y)
-    end
-
-    return true
-end
-
-local function get_current_scene()
-    return current_scene
-end
-
-function getByEntityId(sub, guid)
-    local results = {}
-
-    if sub then
-        for _, entry in ipairs(sub) do
-            if entry[1] == guid then  -- Direct comparison on the "first column"
-                table.insert(results, entry[2])
-            end
+function game_tick(gameState)
+    log_handler.log_data("game_tick: gameState")
+    log_handler.log_table("game_tick: gameState", gameState)
+    log_handler.safe_call(function()
+        if Keyboard.update then
+            Keyboard.update(gameState) -- ← pass gameState if it needs dt, mouse, etc.
         end
-    end
-    return results
+
+        update_scene(gameState)
+    end)
 end
-
-local function update_scene(dt)
-    Keyboard.update()           -- ← detects presses → calls handlers → enqueues commands
-    -- local mock_engine = {
-    --     calls = { ["Position_Commands"] = {} },
-    --     -- enqueue = function(cmd) table.insert(self.calls["Position_commands"], cmd) end
-    --     GetComponent = function(self, comp) log_handler.log_table("GetComponent: self", self) log_handler.log_table("GetComponent: comp", comp) return self.calls[comp] end,
-    --     AddComponent = function(entity_id, table_name, component_name, data)
-    --         log_handler.log_table("AddComponent", {
-    --             ["entity_id"] = entity_id,
-    --             ["table_name"] = table_name,
-    --             ["component_name"] = component_name,
-    --             ["data"] = data
-    --         })
-    --         if table_name then
-    --             if not self then self = {} end
-    --             if not self.calls then self.calls = {} end
-    --             if not self.calls[table_name] then
-    --                 self.calls[table_name] = {}
-    --                 table.insert(self.calls[table_name], { entity_id, { ["entity_id"] = entity_id } })
-    --             end
-
-    --             local sub = self.calls and self.calls[table_name] or {}
-    --             local entity = getByEntityId(sub, entity_id)
-                
-    --             if not entity then error("Entity not found") end
-    --             log_handler.log_table("entity", entity)
-
-    --             entity[component_name] = data
-    --         end
-    --     end,
-    --     dispatch = function(identifier, cmd) log_handler.log_data("dispatching: " .. tostring(identifier)) end
-    -- }
-
-    CommandQueue:process_next(_G.MockEngine) -- _G.MockEngine
-end
-
-current_scene = current_scene or {}
--- CommandState = CommandState or {} -- This tracks User interaction from C# and Actors in GameState
 
 function initEngine() -- Initialize from Engine (not for Tests)
     local engine = require("engines.mock_command_engine")
@@ -228,14 +161,10 @@ function initEngine() -- Initialize from Engine (not for Tests)
     entity = _G.MockEngine:CreateEntity("entities", "AttackActions")
     entity = _G.MockEngine:CreateEntity("entities", "PositionCommands")
 
-    -- _G.MockEngine:AddComponent(entity.id, "AttackActions", "Position", initial_pos)
-    -- _G.MockEngine:AddComponent(entity.id, "PositionCommands", "Position", initial_pos)
-
-    log_handler.log_data("Game: Initialized with Command Mock Engine.")
+    log_handler.log_data("=== Game: Initialized with Command Mock Engine. ===")
 end
 
 function initGame()
-    log_handler.init_error_logging()
     local ok, result_or_err = log_handler.safe_call(function()
         render_scene()
     end)
@@ -244,11 +173,12 @@ function initGame()
 end
 
 function game_tick(gameState) -- This tracks User interaction from C# and Actors in GameState
+    -- log_handler.log_table("gameState", gameState)
     log_handler.safe_call(function()
         if Keyboard.update then
             Keyboard.update(gameState)
         end
-        update_scene()
+        update_scene(gameState)
     end)
 end
 
@@ -260,9 +190,11 @@ game = {
     setup_command_queue = setup_command_queue,
     render_scene_with_params = render_scene_with_params,
     render_scene = render_scene,
-    find_actor_by_id = find_actor_by_id,
-    select_actor_by_id = action_select_actor_by_id,
-    move_actor_by_id = action_move_actor_by_id,
+    find_actor_by_id = game_state.find_actor_by_id,
+    find_selected_actor = game_state.find_selected_actor,
+    select_actor_by_id = game_state.select_actor_by_id,
+    move_actor_by_id = game_state.move_actor_by_id,
+    update_actor_by_id = game_state.update_actor_by_id,
     get_current_scene = get_current_scene,
     game_tick = game_tick,
     tick_all_resource_bars = tick_all_resource_bars

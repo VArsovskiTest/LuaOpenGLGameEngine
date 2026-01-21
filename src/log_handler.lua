@@ -189,6 +189,7 @@ log_handler = {
     log_data = log_data,
     log_error = log_error,
     log_table = log_table,
+    serialize_table = serialize_table,
     init_logging = init_logging,
     init_error_logging = init_error_logging,
     safe_call = safe_call,

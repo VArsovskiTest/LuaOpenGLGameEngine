@@ -40,8 +40,6 @@ function MoveToCommand:execute(engine, entry)
         error("MoveToCommand: no valid starting position state")
     end
 
-    log_handler.log_table("Current pos_comp", pos_comp)
-
     -- Apply target if provided
     if not self.params.target_pos then
         self.params.target_pos = pos_comp.params.target_pos
@@ -68,14 +66,14 @@ function MoveToCommand:undo(engine)
     local pos_comp = engine:GetComponent(self.entity_id, command_type_identifier, "Position")
     if not pos_comp then return end
 
-    if self.params.initial_pos.x ~= nil then pos_comp[2].x = self.params.initial_pos.x end
-    if self.params.initial_pos.y ~= nil then pos_comp[2].y = self.params.initial_pos.y end
+    if self.params.initial_pos.x ~= nil then pos_comp.target_pos.x = self.params.initial_pos.x end
+    if self.params.initial_pos.y ~= nil then pos_comp.target_pos.y = self.params.initial_pos.y end
 
     table.insert(engine.calls[command_type_identifier], {
         action = "update_position",
         entity_id = self.entity_id,
-        from = { x = pos_comp[2].x, y = pos_comp[2].y },
-        to = { x = pos_comp[1].x, y = pos_comp[1].y }
+        from = self.params.target_pos,
+        to = self.params.initial_pos,
     })
 
     BaseCommand.undo(self, engine)

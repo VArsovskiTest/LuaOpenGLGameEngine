@@ -85,9 +85,7 @@ local function render_sample_scene()
         bar.thickness = 0.02
     end
 
-    local actors = tableHelper.flatten(rects, resource_bars, circles)
-
-    return { clears = clears, actors = actors }
+    return { clears = clears, actors = tableHelper.flatten(rects, resource_bars, circles) }
 end
 
 return { render_sample_scene = render_sample_scene }

@@ -102,7 +102,7 @@ namespace LuaOpenGLGameEngine
             // _lua["clear"] = (Action<IColorable>)_graphicsRenderer.ClearScreen;
             // _lua["drawRect"] = (Action<float, float, float, float, IColorable>)_graphicsRenderer.DrawRect;
             // _lua["update"] = (Action<string>)UpdateState;
-            // renderTable = _lua["initGame"] as LuaTable;
+            renderTable = _lua["initGame"] as LuaTable;
 
             _lua.DoString("initEngine()"); // Initialize ONCE
             _lua.DoString("current_scene = {}");
@@ -267,8 +267,6 @@ namespace LuaOpenGLGameEngine
             if (Keyboard.GetState().IsKeyDown(OpenTK.Input.Key.Escape))
                 Close();
 
-            // Call one Lua entry point that does everything for this frame
-            // _lua.DoString(String.Format("CommandState = {0}", _gameState.GetLuaTableData())); //Update Global "CommandState" variable and let Lua take care on frame
             LuaTable gameStateTable = _gameState.GetLuaTableData();
             _lua.GetFunction("game_tick").Call(gameStateTable);
             base.OnUpdateFrame(e);
@@ -292,7 +290,7 @@ namespace LuaOpenGLGameEngine
                     actor.Selected = newSelected;
 
                     _gameState.CurrentActor = actor;
-                    _gameState.UpdateActor(actor);
+                    _gameState.UpdateActor(actor);  
                 }
             }
         }
