@@ -2,6 +2,7 @@ using NLua;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Security.AccessControl;
 
 public class SceneEmpty { }
@@ -15,59 +16,66 @@ public class GenericScene
     {
         var scene = new GenericScene();
 
-        // ---------- Parse clears ----------
-        if (table != null && table["clears"] is LuaTable clearsTable)
+        var actors = new List<ActorRGB>();
+        var clears = new List<ClearRGB>();
+
+        if (table != null)
         {
-            foreach (object key in clearsTable.Keys)
+            var actorsClearsTable = table["actors"] as LuaTable;
+            var actorsTable = actorsClearsTable["actors"] as LuaTable;
+            var clearsTable = (actorsClearsTable["clears"] as LuaTable)[1];
+
+            // ---------- Parse clears ----------
+            string id = GetSafeId(lua, (clearsTable as LuaTable));
+            var color = new RGBColor
             {
-                if (clearsTable[key] is LuaTable t)
+                r = Convert.ToSingle(((clearsTable as LuaTable)["color"] as LuaTable)?["r"] ?? 1.0f),
+                g = Convert.ToSingle(((clearsTable as LuaTable)["color"] as LuaTable)?["g"] ?? 1.0f),
+                b = Convert.ToSingle(((clearsTable as LuaTable)["color"] as LuaTable)?["b"] ?? 1.0f)
+            };
+
+            var clear = GenerateBackground(id, color);
+            if (clear != null) clears.Add(clear);
+
+            // ---------- Parse actors ----------
+            foreach (var key in actorsTable.Keys)
+            {
+                var actorData = actorsTable[key] as LuaTable;
+                string type = (string?)(actorData as LuaTable)["type"] ?? "";
+                id = GetSafeId(lua, (actorData as LuaTable));
+
+                color = new RGBColor
                 {
-                    scene.Clears.Add(new ClearRGB(new RGBColor
-                    {
-                        r = Convert.ToSingle(t["r"] ?? 0.0)
-                        ,
-                        g = Convert.ToSingle(t["g"] ?? 0.0)
-                        ,
-                        b = Convert.ToSingle(t["b"] ?? 0.0)
-                    }));
-                }
+                    r = Convert.ToSingle(((actorData as LuaTable)["color"] as LuaTable)?["r"] ?? 1.0f),
+                    g = Convert.ToSingle(((actorData as LuaTable)["color"] as LuaTable)?["g"] ?? 1.0f),
+                    b = Convert.ToSingle(((actorData as LuaTable)["color"] as LuaTable)?["b"] ?? 1.0f)
+                };
+
+                ActorRGB? actor = type switch
+                {
+                    // "clear" => GenerateBackground(id, (actorData as LuaTable)),
+                    "rect" => GenerateRectangle(id, (actorData as LuaTable)),
+                    "circle" => GenerateCircle(id, (actorData as LuaTable)),
+                    "resource_bar" => GenerateResourceBar(id, (actorData as LuaTable)),
+                    // "colored_resource_bar" => GenerateResourceBar(id, t),
+                    _ => null
+                };
+
+                actor.Color = color;
+
+                if (actor != null) actors.Add(actor);
             }
         }
 
-        // ---------- Parse actors ----------
-        if (table != null && table["actors"] is LuaTable actorsTable)
-        {
-            foreach (object key in actorsTable.Keys)
-            {
-                if (actorsTable[key] is LuaTable t)
-                {
-                    string type = (string?)t["type"] ?? "";
-                    string id = GetSafeId(lua, t);
-
-                    var color = new RGBColor
-                    {
-                        r = Convert.ToSingle((t["color"] as LuaTable)?["r"] ?? 1.0f),
-                        g = Convert.ToSingle((t["color"] as LuaTable)?["g"] ?? 1.0f),
-                        b = Convert.ToSingle((t["color"] as LuaTable)?["b"] ?? 1.0f)
-                    };
-
-                    ActorRGB? actor = type switch
-                    {
-                        "rect" => GenerateRectangle(id, t),
-                        "circle" => GenerateCircle(id, t),
-                        "resource_bar" => GenerateResourceBar(id, t),
-                        // "colored_resource_bar" => GenerateResourceBar(id, t),
-                        _ => null
-                    };
-                    actor.Color = color;
-
-                    if (actor != null)
-                        scene.Actors.Add(actor);
-                }
-            }
-        }
+        scene.Clears = clears;
+        scene.Actors = actors;
 
         return scene;
+    }
+
+    private static ClearRGB GenerateBackground(string id, RGBColor color)
+    {
+        return new ClearRGB(color);
     }
 
     private static RectangleRGB GenerateRectangle(string id, LuaTable t)

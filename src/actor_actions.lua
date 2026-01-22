@@ -8,11 +8,11 @@ local MoveLeftCommand = require("commands.move_left_command")
 local MoveRightCommand = require("commands.move_right_command")
 local DrinkPotionCommand = require("commands.drink_potion_command")
 
-local function handle_move_to(id, state) return MoveToCommand:new(id, state) end
-local function handle_move_up(id, state) return MoveUpCommand:new(id, state) end
-local function handle_move_down(id, state) return MoveDownCommand:new(id, state) end
-local function handle_move_left(id, state) return MoveLeftCommand:new(id, state) end
-local function handle_move_right(id, state) return MoveRightCommand:new(id, state) end
+local function handle_move_to(id, state) return MoveToCommand:new(id, state) end -- -- Required Params = from_x, from_y, speed
+local function handle_move_up(id, state) return MoveUpCommand:new(id, state) end -- -- Required Params = from_x, from_y, speed
+local function handle_move_down(id, state) return MoveDownCommand:new(id, state) end -- -- Required Params = from_x, from_y, speed
+local function handle_move_left(id, state) return MoveLeftCommand:new(id, state) end -- -- Required Params = from_x, from_y, speed
+local function handle_move_right(id, state) return MoveRightCommand:new(id, state) end -- -- Required Params = from_x, from_y, speed
 local function handle_use_consumable(id, state) return DrinkPotionCommand:new(id, state) end
 local function handle_jump(id, state) end
 local function handle_attack(id, state) end

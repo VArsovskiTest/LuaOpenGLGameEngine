@@ -16,29 +16,16 @@ local function color(code, text)
     return "\27[" .. code .. "m" .. text .. "\27[0m"
 end
 
--- Helper function to convert a table to a string for logging
-local function serialize_table(t)
-    if not t then return ": nil" end
-    if type(t) ~= 'table' then
-        return tostring(t)
-    end
-    local s = '{ '
-    for k, v in pairs(t) do
-        s = s .. tostring(k) .. '=' .. serialize_table(v) .. ', '
-    end
-    return s .. '}\n'
-end
-
--- Strips the file:line prefix from Lua error messages
-local function clean_error_message(err)
-    -- Remove things like "filename.lua:23: " at the start
-    return tostring(err):gsub("^[^:]+:%d+:%s*", "")
-end
-
 local function log_error(msg)
     if not errorLogFile then return end
     errorLogFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(msg) .. "\n")
     errorLogFile:flush()
+end
+
+local function log_warn(msg)
+    if not errorLogFile then return end
+    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] WARN: " .. tostring(msg) .. "\n")
+    logFile:flush()
 end
 
 local function log_data(msg)
@@ -47,10 +34,45 @@ local function log_data(msg)
     logFile:flush()
 end
 
+-- Helper function to convert a table to a string for logging
+local function serialize_table(t, seen)
+    seen = seen or {}   -- track visited tables
+    if seen[t] then return "<cycle>" end  -- handle cycle
+    if t then seen[t] = true end     -- mark as seen
+    -- else print(t) end
+
+    if not t then return "nil" end
+    local tt = type(t)
+    if tt ~= 'table' then
+        if tt == "function" then return "<fn>" end
+        if tt == "string"   then return '"' .. t .. '"' end
+        return tostring(t)
+    end
+
+    local s = "{ "
+    for k, v in pairs(t) do
+        if type(v) ~= "function" then
+            local key = type(k) == "string" and ('"' .. k .. '"') or tostring(k)
+            s = s .. key .. " = " .. serialize_table(v, seen) .. ", "
+        end
+    end
+    if #s > 2 then
+        s = s:sub(1, -3)   -- remove last ", "
+    end
+    return s .. " }"
+end
+
+-- Strips the file:line prefix from Lua error messages
+local function clean_error_message(err)
+    -- Remove things like "filename.lua:23: " at the start
+    return tostring(err):gsub("^[^:]+:%d+:%s*", "")
+end
+
 local function log_table(tblName, tbl)
     if not logFile then return end
-    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "]" .. tostring(tblName) .. ": " .. "\n")
+    logFile:write("[" .. os.date("%Y-%m-%d %H:%M:%S") .. "] " .. tostring(tblName) .. ": " .. "\n")
     logFile:write(serialize_table(tbl))
+    logFile:write("\n")
     logFile:flush()
 end
 
@@ -187,6 +209,7 @@ print("=== Log Handler successfully initialized ===")
 
 log_handler = {
     log_data = log_data,
+    log_warn = log_warn,
     log_error = log_error,
     log_table = log_table,
     serialize_table = serialize_table,

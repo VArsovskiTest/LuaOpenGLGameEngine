@@ -22,13 +22,11 @@ end
 function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
     table_name = table_name or "default"
     local history_log_identifier = command_log_name or table_name
+
+    log_handler.log_data("creating storage for: " .. history_log_identifier)
     local storage, calls_log = get_or_create_table(history_log_identifier)
 
-    -- ────────────────────────────────
-    -- Determine final ID to use
-    -- ────────────────────────────────
     local id
-
     if overrides and overrides.entity_id then
         id = overrides.entity_id                      -- ← prefer the GUID coming from the command
     elseif overrides and overrides.id then
@@ -41,7 +39,8 @@ function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
 
     if storage[id] then
         log_handler.log_error(string.format("CreateEntity: collision on ID %s in %s", tostring(id), history_log_identifier))
-        error("Entity ID already exists: " .. tostring(id))
+        -- error("Entity ID already exists: " .. tostring(id))
+        return storage[id]
     end
 
     local entity = {
@@ -112,8 +111,8 @@ function MockCommandEngine:Get(table_name, id)
     table_name = table_name or "default"
     local storage = self.tables[table_name]
 
-    -- log_handler.log_data("AddComponent for entity_id: " .. tostring(id) .. ", for table: " .. table_name)
-    -- log_handler.log_table("AddComponent storage: ", self.tables[table_name])
+    log_handler.log_data("AddComponent for entity_id: " .. tostring(id) .. ", for table: " .. table_name)
+    log_handler.log_table("AddComponent storage: ", self.tables[table_name])
 
     if not storage then
         error("MockCommandEngine: table '" .. table_name .. "' does not exist")

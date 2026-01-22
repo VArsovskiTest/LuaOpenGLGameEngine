@@ -7,7 +7,7 @@ local command_type_identifier = "PositionCommands"
 local MoveUpCommand = {}
 MoveUpCommand.super = MoveToCommand
 
-function MoveUpCommand:new(entity_id, cmd)
+function MoveUpCommand:new(entity_id, cmd) -- Required Params = from_x, from_y, speed
     local from_x = cmd.x or cmd.from_x or 0
     local from_y = cmd.y or cmd.from_y or 0
     local speed  = cmd.speed or 3

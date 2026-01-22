@@ -7,7 +7,6 @@ CommandQueue = {
     max_history = 200
 }
 
--- Enqueue with separate column containing entity_id so can search/filter better later on
 function CommandQueue:enqueue(entity_id, cmd)
     if not entity_id or not cmd then return end
     table.insert(self.queue, { entity_id, cmd, "pending" })
@@ -72,6 +71,8 @@ function CommandQueue:set_status(id, status)
 end
 
 function CommandQueue:process_one(entry, engine)
+    log_handler.log_data("process_one")
+
     if not entry or not engine then
         log_handler.log_error("process_one: missing entry or engine")
         return false
@@ -87,6 +88,10 @@ function CommandQueue:process_one(entry, engine)
         return false
     end
     local cmd_execute = command._call_execute
+
+    log_handler.log_table("process_one: command", command)
+    log_handler.log_table("process_one: cmd_execute", cmd_execute)
+
     if type(cmd_execute) ~= "function" then
         log_handler.log_error("process_one: command has no _call_execute function")
         return false
@@ -94,9 +99,6 @@ function CommandQueue:process_one(entry, engine)
 
     entry[3] = "processing"
 
-    -- ────────────────────────────────────────────────
-    -- Entity & component setup
-    -- ────────────────────────────────────────────────
     local entity_id   = command.entity_id
     local params      = command.params or {}
     local queue_name  = command.command_queue_name or "PositionCommands"   -- fallback
@@ -110,11 +112,7 @@ function CommandQueue:process_one(entry, engine)
     -- Add the intended position component (initial → target)
     engine:AddComponent(entity_id, queue_name, "Position", params)
 
-    -- ────────────────────────────────────────────────
-    -- Execute the command itself (no entry passed)
-    -- ────────────────────────────────────────────────
     local success, err = pcall(cmd_execute, command, engine)
-
     log_handler.log_data("_call_execute success: " .. tostring(success))
     if not success then
         log_handler.log_error("_call_execute error: " .. tostring(err))
@@ -136,8 +134,14 @@ end
 
 function CommandQueue:process_next(engine)
     if not engine then return false end
-
     local entry = self:get_next_pending()
+
+    -- if entry then
+    --     log_handler.log_table("process_next: entry", entry)
+    -- else
+    --     log_handler.log_table("process_next: entry not found", self.queue)
+    -- end
+
     if entry then
         local entity_id = entry[1]
         local cmd = entry[2]
@@ -149,7 +153,6 @@ function CommandQueue:process_next(engine)
     return false, "Entry not found"
 end
 
--- Does not contain all command data so pass id separately from the wrapper
 function CommandQueue:execute_immediately(entity_id, cmd, engine)
     if not entity_id or not cmd or not engine then
         return false, "Missing entity_id, cmd or engine"

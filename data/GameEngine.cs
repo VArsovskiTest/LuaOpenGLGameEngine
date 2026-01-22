@@ -105,7 +105,7 @@ namespace LuaOpenGLGameEngine
             renderTable = _lua["initGame"] as LuaTable;
 
             _lua.DoString("initEngine()"); // Initialize ONCE
-            _lua.DoString("current_scene = {}");
+            _lua.DoString("game_state.state.current_scene = {}");
 
             LuaTable luaResult = _lua.DoString("return initGame()").First() as LuaTable;
             _currentScene = GenericScene.FromLuaTable(_lua, luaResult);
@@ -176,7 +176,7 @@ namespace LuaOpenGLGameEngine
             GL.Clear(ClearBufferMask.ColorBufferBit);
 
             // Pull the latest scene state from Lua — this reflects all updates!
-            LuaTable luaResult = _lua.DoString("return game.get_current_scene()").First() as LuaTable;
+            LuaTable luaResult = _lua.DoString("return game_state.state.current_scene").First() as LuaTable;
             _currentScene = GenericScene.FromLuaTable(_lua, luaResult);
 
             RedrawScene(_currentScene);

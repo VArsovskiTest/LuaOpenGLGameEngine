@@ -1,5 +1,4 @@
 -- resource_bar.lua
-
 local guid_generator = require("helpers.guid_helper")
 
 local ResourceBar = {}
@@ -138,12 +137,14 @@ end
     -- ────────────────────────────────────────────────────────────────
     -- Read-only getters
     -- ────────────────────────────────────────────────────────────────
-    function ResourceBar:id()          return self._data.id end
-    function ResourceBar:name()        return self._data.name end
-    function ResourceBar:current()     return self._data.current end
-    function ResourceBar:maximum()     return self._data.maximum end
+    function ResourceBar:id()          return self and self.data and self._data.id end
+    function ResourceBar:name()        return self and self.data and self._data.name end
+    function ResourceBar:current()     return self and self.data and self._data.current end
+    function ResourceBar:maximum()     return self and self.data and self._data.maximum end
     function ResourceBar:percentage()
-        if self._data.maximum <= 0 then return 0 end
+        if self and self.data then
+            if  self._data.maximum <= 0 then return 0 end
+        end
         return (self._data.current / self._data.maximum) * 100
     end
 

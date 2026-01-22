@@ -1,4 +1,6 @@
 -- Keyboard.lua
+local log_handler = require("log_handler")
+
 Keyboard = {
     isPressed = {},      -- current frame: true if down
     wasPressed = {},     -- previous frame
@@ -26,7 +28,7 @@ function Keyboard.update(gameState)
     for key, isDown in pairs(Keyboard.isPressed) do
         local wasDown = Keyboard.wasPressed[key] or false
         if isDown and not wasDown then
-            currentKey = key
+            Keyboard.currentKey = key
             local handler = Keyboard.onPress[key]
             if handler then
                 if gameState then
@@ -57,7 +59,7 @@ function Keyboard.init()
     Keyboard.onPress = {}
 end
 
-function Keyboard.get_current_command()
+function Keyboard.get_current_command_handler()
     return Keyboard.currentKey and Keyboard.onPress[Keyboard.currentKey] or nil
 end
 

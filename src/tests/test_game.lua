@@ -21,8 +21,11 @@ describe("State actor functions, selection: ", function()
         local mock_scene = sample_scene
         local original_render_scene = game.render_scene
 
+        game.ensure_actor_registered = function() end -- Omit entity generation for this test, not needed
+
         game.render_scene = function()
-            current_scene = game.render_scene_with_params(mock_scene.clears, mock_scene.actors)
+            local current_scene = game.render_scene_with_params(mock_scene.clears, mock_scene.actors)
+            game_state.state.current_scene = current_scene
             return current_scene
         end
 

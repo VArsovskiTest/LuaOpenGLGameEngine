@@ -1,5 +1,5 @@
 [JsonType("clear")]
-public class ClearRGB : ModelRGB
+public class ClearRGB : ModelRGB//, IActor
 {
     public ClearRGB(IColorable color) { Color = color; }
 }

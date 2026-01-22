@@ -1,5 +1,3 @@
-using System.Drawing;
-
 public class ModelEmpty {}
 
 public class RGBColor : IColorable

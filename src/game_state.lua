@@ -2,12 +2,55 @@
 local table_helper = require("helpers.table_helper")
 local log_handler = require("log_handler")
 
+local ENTITY_BUCKET     = "entities"
+local LIFECYCLE_LOG     = "EntityLifecycle"   -- or "Lifecycle" or "Actors"
+
+state = { current_scene = { actors = {} } }
+
+local function add_actors(actors)
+    if actors then
+        state.current_scene.actors = actors
+    else
+        log_handler.warn("Attempted to scene without actors")
+    end
+end
+
 local function find_actor_by_id(id)
-    return table_helper.selectRecordById(current_scene.actors or {}, id)
+    local uuid = (tostring(id):match("^[^:]+") or ""):match("^%s*(.-)%s*$")
+    local actors_clears = state.current_scene.actors or {}
+    for _, actor in ipairs(actors_clears.actors) do
+        -- id = type(id) == "table" or type(id) == "function" and id() or tostring(id)
+        if uuid == actor.id then return actor end
+    end
+    -- return table_helper.selectRecordById(state.current_scene.actors or {}, id)
+
+    return nil
+end
+
+function ensure_actor_registered(guid, actor_hint)
+    local engine = _G.MockEngine
+    local existing_entity = engine:Get(ENTITY_BUCKET, guid)
+    log_handler.log_table("existing_entity", existing_entity)
+
+    if not existing_entity then
+        engine:CreateEntity(
+            ENTITY_BUCKET,       -- current state storage
+            LIFECYCLE_LOG,       -- lifecycle event log (spawn happened)
+            {
+                id    = guid,
+                type  = "actor",
+                name  = actor_hint.name or "Actor",
+                -- x     = actor_hint.x or 0,
+                -- y     = actor_hint.y or 0,
+                -- ... copy useful initial state
+            }
+        )
+    end
+    return guid
 end
 
 local function update_actor_by_id(id, prop, value)
-    table_helper.updateRecordById(current_scene.actors or {}, id, prop, value)
+    table_helper.updateRecordById(state and state.current_scene.actors or {}, id, prop, value)
 end
 
 local function action_select_actor_by_id(id, value)
@@ -16,6 +59,9 @@ local function action_select_actor_by_id(id, value)
 
     if selected_actor then
         update_actor_by_id(id, "selected", value)
+        -- self.CurrentActor = actor
+        state.current_scene.CurrentActor = actor
+        ensure_actor_registered(guid, actor)   -- one-time setup
         return true
     end
 
@@ -71,16 +117,9 @@ function getByEntityId(sub, guid)
     return results
 end
 
-current_scene = current_scene or {}
--- CommandState = CommandState or {} -- This tracks User interaction from C# and Actors in GameState
-
-function get_current_scene()
-    return current_scene
-end
-
 -- Returns the currently selected actor (or nil)
 local function find_selected_actor(gameState)
-    local actors = gameState and gameState.actors or current_scene.actors or {}
+    local actors = gameState and gameState.actors or state.current_scene.actors or {}
     for _, actor in ipairs(actors) do
         if actor.selected then
             return actor
@@ -89,55 +128,17 @@ local function find_selected_actor(gameState)
     return nil
 end
 
--- Make sure the mock entity exists for this GUID
-local function ensure_entity_exists(guid, actor_hint)
-    local engine = _G.MockEngine
-    local existing = engine:Get("entities", guid)
-
-    if not existing then
-        log_handler.log_data("Creating mock entity for actor: " .. tostring(guid))
-
-        engine:CreateEntity(
-            "entities",
-            "PositionCommands",     -- or actor.type or something more specific
-            {
-                id          = guid,
-                type        = "actor",
-                name        = actor_hint and actor_hint.name or "Actor",
-                -- you can copy initial position, rotation, etc. here if useful
-            }
-        )
-    end
-
-    return guid
-end
-
 -- Factory: turn raw input into a proper command object
-local function create_command_from_input(input_cmd, entity_id, actor)
-    if not input_cmd or not input_cmd.type then
-        return nil
-    end
 
-    local cmd_type = input_cmd.type   -- e.g. "move_up", "move_left", "attack", etc.
-
-    if cmd_type == "move_up" then
-        return MoveUpCommand:new(entity_id, {
-            speed = input_cmd.speed or 3,
-            -- maybe actor-specific modifiers
-        })
-    elseif cmd_type == "move_left" then
-        return MoveLeftCommand:new(entity_id, { speed = 3 })
-    -- elseif cmd_type == "..." then ...
-    else
-        log_handler.log_data("Unknown input command type: " .. tostring(cmd_type))
-        return nil
-    end
-end
-
-return {
+game_state = {
+    state = state,
+    add_actors = add_actors,
     find_actor_by_id = find_actor_by_id,
     find_selected_actor = find_selected_actor,
+    ensure_actor_registered = ensure_actor_registered,
     select_actor_by_id = action_select_actor_by_id,
     move_actor_by_id = action_move_actor_by_id,
     update_actor_by_id = update_actor_by_id,
 }
+
+return game_state

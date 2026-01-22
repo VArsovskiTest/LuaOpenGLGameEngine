@@ -33,7 +33,7 @@ function MoveToCommand:_call_execute(engine, entry)
 end
 
 function MoveToCommand:execute(engine, entry)
-    log_handler.log_data("MoveToCommand:execute started")
+    log_handler.log_data("MoveToCommand:execute")
 
     local pos_comp = self.INITIAL_STATE
     if not pos_comp or type(pos_comp) ~= "table" then
