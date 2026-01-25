@@ -59,7 +59,6 @@ function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
     end
 
     storage[id] = entity
-
     log_handler.log_data(string.format("Created entity with real ID: %s in %s", tostring(id), history_log_identifier))
     return entity
 end
@@ -73,22 +72,16 @@ function MockCommandEngine:AddComponent(entity_id, table_name, component_name, d
     end
 
     if not entity then error("Entity not found") end
-
     entity.payload[component_name] = data or {}
 end
 
 function MockCommandEngine:AddMetadata(entity_id, table_name, data)
-    log_handler.log_data("Adding metadata for: " .. tostring(entity_id))
     local entity = self:Get(table_name, entity_id)
-
-    log_handler.log_table("entity", entity)
     if not entity then error("Entity for metadata not found") end
-
     entity.metadata = data or {}
 end
 
 function MockCommandEngine:UpdateComponent(entity_id, table_name, component_name, updater)
-    log_handler.log_data("Updating component for: " .. tostring(entity_id) .. " → " .. tostring(component_name or "missing component_name") .. " in " .. tostring(table_name))
     local entity = self:Get(table_name, entity_id)
     if not entity then 
         log_handler.log_error("Entity not found for update: " .. tostring(entity_id))
@@ -113,7 +106,6 @@ function MockCommandEngine:UpdateComponent(entity_id, table_name, component_name
 end
 
 function MockCommandEngine:UpdateMetadata(entity_id, table_name, updater)
-    log_handler.log_data("Updating metadata for: " .. tostring(entity_id) .. " → " .. tostring(table_name))
     local entity = self:Get(table_name, entity_id)
     if not entity then
         log_handler.log_error("Entity not found for metadata update: " .. tostring(entity_id))

@@ -97,7 +97,7 @@ public class GraphicsRenderer
     public void DrawBar(string name, float current, float max, float percentage, float thickness, float x, float y, IColorable color)
     {
         DrawPercentageLine(percentage, thickness, x, y, true, color);
-        // DrawText(name + ": " + current + "/" + max, x, y, 1, r, g, b);
+        DrawText(name + ": " + current + "/" + max, x, y, 1, color);
     }
 
     public void DrawText(string text, float x, float y, float scale, IColorable color)

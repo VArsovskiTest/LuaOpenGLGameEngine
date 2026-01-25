@@ -26,7 +26,7 @@ end
 
 function ColoredResourceBar:new(name, color_id, maximum, current)
     local resourceBar = ResourceBar:new(name, maximum, current)   -- call parent constructor
-    local colorData = generatePrivateColorData();
+    local colorData = generatePrivateColorData(color_id);
     local self = table_helper.mergeTables({type = "resource_bar", class = ColoredResourceBar }, resourceBar, colorData)
     self.id = resourceBar._data.id -- TODO: looks like if I don't do this, id gets initialized as a function
     self.__index = ColoredResourceBar

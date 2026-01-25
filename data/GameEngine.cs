@@ -214,12 +214,13 @@ namespace LuaOpenGLGameEngine
                         break;
 
                     case ResourceBarRGB bar:
+                        var thickness = 0.02f;
                         _graphicsRenderer.DrawBar(
                             bar.Name,
                             bar.Current,
                             bar.Maximum,
-                            bar.Percentage / 500f,
-                            bar.Thickness,
+                            bar.Percentage / 200f,
+                            thickness,
                             bar.X,
                             bar.Y,
                             bar.Color);

@@ -9,11 +9,11 @@ Clear.__index = Clear
 
 function Clear:new(clear)
     local self = setmetatable({
-        id = guid_generator.generate_guid(),
         class = Clear,
         type = "clear",
         name = clear.name or "unnamed_clear",
-        color_id = clear.color_id or color_pallette.BLACK
+        color_id = clear.color_id or color_pallette.BLACK,
+        id = guid_generator.generate_guid(),
     }, Clear)
 
     self.color = ColorHelper.createColorObject(self.color_id)

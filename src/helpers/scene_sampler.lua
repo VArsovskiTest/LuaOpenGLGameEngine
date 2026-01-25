@@ -17,7 +17,7 @@ local function render_sample_scene()
             y = 0.1,
             width = 0.35,
             height = 0.1,
-            color_id = color_pallette.TEAL,
+            color_id = color_pallette.ORANGE,
             speed = 1.1,
         }),
         Rectangle:new({
