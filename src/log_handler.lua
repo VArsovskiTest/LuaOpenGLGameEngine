@@ -56,6 +56,8 @@ local function serialize_table(t, seen)
             s = s .. key .. " = " .. serialize_table(v, seen) .. ", "
         end
     end
+    s = s .. "\n"
+
     if #s > 2 then
         s = s:sub(1, -3)   -- remove last ", "
     end

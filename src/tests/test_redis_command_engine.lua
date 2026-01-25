@@ -1,6 +1,7 @@
 --tests/test_redis.lua
-
 local init = require("../src/tests/test_init")
+--init.init(_G.EngineModules.COMMAND)
+
 local Queue = require("engines.redis_command_engine")
 
 -- Simple handler for testing

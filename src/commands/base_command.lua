@@ -9,8 +9,9 @@ function BaseCommand:new(entity_id, command_name, command_queue_name, component_
         entity_id          = entity_id,
         command_name       = command_name or "BaseCommand",
         params             = params or {},
-        command_queue_name = command_queue_name,
-        component_name     = component_name or "Position",
+        command_queue_name = "Commands", -- Prevent requirement for special treatment for groups of commands, all storages are initialized in game_state.ensure_entity_exists (for now at least)
+        alternate_queue_name = command_queue_name or "Commands",
+        component_name     = component_name or "Data",
         executed           = false,
         reverted           = false,
         INITIAL_STATE      = nil,   -- we'll set it later - nil means "not fetched yet"
@@ -20,7 +21,7 @@ function BaseCommand:new(entity_id, command_name, command_queue_name, component_
         "BaseCommand:new → %s | entity:%s | queue:%s | comp:%s",
         self.command_name,
         tostring(entity_id),
-        tostring(command_queue_name),
+        "Commands", -- tostring(command_queue_name),
         tostring(component_name)
     ))
 
@@ -38,7 +39,7 @@ function BaseCommand:_call_execute(engine)
         tostring(self.command_queue_name),
         tostring(self.component_name)
     ))
-    self.INITIAL_STATE = comp or {}
+    self.INITIAL_STATE = comp.params or {}
 
     self:execute(engine)          -- ← also update :execute to take only engine
     self.executed = true

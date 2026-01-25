@@ -8,6 +8,7 @@ local CommandQueue = require("commands.command_queue")
 local MoveToCommand = require("commands.move_to_command")
 
 local mock_command_type_identifier = "mock_command"
+local mock_command_queue_name = "mock_command_queue_name"
 local mock_component_name = "Position"
 
 -- Helper: Dummy command factory for generic queue tests
@@ -32,26 +33,23 @@ local function create_dummy_command(entity_id, command_queue_name, component_nam
     return cmd
 end
 
-local initial_pos = { { x = 0, y = 0 }, { x = 0, y = 0 } }
+local initial_pos = { x = 0, y = 0 }
+local pos_data = { initial_pos = initial_pos, target_pos = { x = 0, y = 0 } }
 
 describe("Generic command Queue Tests", function()
     before_each(function()
         CommandQueue:reset()
         _G.MockEngine:Reset()
-        entity = _G.MockEngine:CreateEntity("entities", "Position_Commands")
-        entity = _G.MockEngine:CreateEntity("entities", "JumpActions")
-        entity = _G.MockEngine:CreateEntity("entities", "AttackActions")
-        entity = _G.MockEngine:CreateEntity("entities", "InstantCast")        
-        
-        _G.MockEngine:AddComponent(entity.id, "Position_Commands", "Position", initial_pos)
-        _G.MockEngine:AddComponent(entity.id, "JumpActions", "Position", initial_pos)
-        _G.MockEngine:AddComponent(entity.id, "AttackActions", "Position", initial_pos)
-        _G.MockEngine:AddComponent(entity.id, "InstantCast", "Position", initial_pos)
+        entity = _G.MockEngine:CreateEntity(mock_command_queue_name)
+        entity = _G.MockEngine:CreateEntity("Commands")
+
+        _G.MockEngine:AddComponent(entity.id, mock_command_queue_name, "Position", pos_data)
+        _G.MockEngine:AddComponent(entity.id, "Commands", "Position", pos_data)
     end)
 
     it("Test 1: Enqueue + get_next_pending + process_next", function()
-        local cmd1 = create_dummy_command(entity.id, "Position_Commands", mock_component_name, { user = "player1" })
-        CommandQueue:enqueue(cmd1.entity_id, cmd1)   -- assuming new enqueue(entity_id, cmd)
+        local cmd1 = create_dummy_command(entity.id, mock_command_queue_name, mock_component_name, { user = "player1" })
+        CommandQueue:enqueue(_G.MockEngine, cmd1.entity_id, cmd1)   -- assuming new enqueue(entity_id, cmd)
 
         expect(#CommandQueue.queue).to_equal(1, "Command enqueued")
         expect(CommandQueue.queue[1][3]).to_equal("pending", "Initial status is pending")
@@ -81,12 +79,12 @@ describe("Generic command Queue Tests", function()
             self.side_effect = "boom!"
         end)
 
-        CommandQueue:enqueue(cmd2.entity_id, cmd2)
-        CommandQueue:enqueue(cmd3.entity_id, cmd3)
+        CommandQueue:enqueue(_G.MockEngine, cmd2.entity_id, cmd2)
+        CommandQueue:enqueue(_G.MockEngine, cmd3.entity_id, cmd3)
 
         expect(#CommandQueue.queue).to_equal(2)
 
-        local processed_count = CommandQueue:process_all(_G.MockEngine)
+        local processed_count = CommandQueue:process_next_batch(_G.MockEngine)
 
         expect(processed_count).to_equal(2, "Two commands were processed")
         -- expect(#CommandQueue.queue).to_equal(2, "Queue still contains processed commands")
@@ -122,41 +120,42 @@ describe("MoveToCommand specific tests", function()
     before_each(function()
         CommandQueue:reset()
         _G.MockEngine:Reset()
-        entity = _G.MockEngine:CreateEntity("entities", "Position_Commands")
-        _G.MockEngine:AddComponent(entity.id, "Position_Commands", "Position", initial_pos)
+        entity = _G.MockEngine:CreateEntity("Commands")
+        _G.MockEngine:AddComponent(entity.id, "Commands", "Position", pos_data)
     end)
 
     it("Test 1: Full move via queue", function()
-        local reposition_data = { from_x = 0, from_y = 0, to_x = 15, to_y = 25 }
-        local cmd = MoveToCommand:new(entity.id, reposition_data)
+        local reposition_data = { initial_pos = { x = 0, y = 0 }, target_pos = { x = 15, y = 25 } }
+        local cmd = MoveToCommand:create(entity.id, reposition_data, "Commands")
 
-        CommandQueue:enqueue(entity.id, cmd)
+        CommandQueue:enqueue(_G.MockEngine, entity.id, cmd)
 
         local success = CommandQueue:process_next(_G.MockEngine)
         expect(success).to_be_truthy()
 
-        local final_pos = _G.MockEngine:GetComponent(entity.id, "Position_Commands", "Position")
-        expect(final_pos[2].x).to_equal(15)
-        expect(final_pos[2].y).to_equal(25)
+        local final_pos = _G.MockEngine:GetComponent(entity.id, "Commands", "Position")
+        expect(final_pos.target_pos.x).to_equal(15)
+        expect(final_pos.target_pos.y).to_equal(25)
 
         local entry = CommandQueue:get_commands_for_entity(entity.id)
-        expect(entry[3]).to_equal("done")
+        expect(entry[1][3]).to_equal("done")
         expect(#CommandQueue.queue).to_equal(1)   -- still there
         expect(#CommandQueue.history).to_equal(1)
 
-        local history_log = _G.MockEngine.calls.PositionCommands or {}
+        local history_log = _G.MockEngine.calls["Commands"] or {}
         expect(#history_log).to_equal(1)
         expect(history_log[1].action).to_equal("update_position")
     end)
 
     it("Test 3: Handles missing Position component gracefully (silent fail)", function()
-        local entity_no_pos = _G.MockEngine:CreateEntity("entities", "Position_Commands")
+        _G.MockEngine:Reset()
+        local entity_no_pos = _G.MockEngine:CreateEntity("entities", mock_command_queue_name)
         -- No Position component added on purpose
 
         local reposition_data = { to_x = 100, to_y = 200 }
-        local cmd = MoveToCommand:new(entity_no_pos.id, reposition_data)
+        local cmd = MoveToCommand:create(entity_no_pos.id, reposition_data)
 
-        CommandQueue:enqueue(entity_no_pos.id, cmd)
+        CommandQueue:enqueue(_G.MockEngine, entity_no_pos.id, cmd)
 
         local entry = CommandQueue:get_next_pending()
         local success, err = CommandQueue:process_next(entry, _G.MockEngine)
@@ -178,19 +177,19 @@ end)
 -- For now — minimal update assuming undo works on history:
 describe("Command queue: Undo tests (preliminary)", function()
     local entity = {}
-    local initial_pos = { { x = 0, y = 0 }, { x = 0, y = 0 } }
+    local reposition_data = { initial_pos = { x = 0, y = 0 }, target_pos = { x = 15, y = 25 } }
 
     before_each(function()
         CommandQueue:reset()
         _G.MockEngine:Reset()
-        entity = _G.MockEngine:CreateEntity("entities", "Position_Commands")
-        _G.MockEngine:AddComponent(entity.id, "Position_Commands", "Position", initial_pos)
+        entity = _G.MockEngine:CreateEntity("entities", mock_command_queue_name)
+        _G.MockEngine:AddComponent(entity.id, mock_command_queue_name, "Position", pos_data)
     end)
 
     it("undo works properly (basic check)", function()
         -- Enqueue → process → undo
-        local cmd = MoveToCommand:new(entity.id, { x = 15, y = -5 })
-        CommandQueue:enqueue(entity.id, cmd)
+        local cmd = MoveToCommand:create(entity.id, reposition_data)
+        CommandQueue:enqueue(_G.MockEngine, entity.id, cmd)
 
         expect(#CommandQueue.queue).to_equal(1)
         expect(CommandQueue.queue[1][3]).to_equal("pending")

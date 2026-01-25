@@ -21,6 +21,7 @@ local Keyboard = require("keyboard")
 local KeyBindings = require("key_bindings")
 local CommandQueue = require("commands.command_queue")
 
+local table_helper = require("helpers.table_helper")
 local log_handler = require("log_handler")
 
 local function setup_command_queue()
@@ -63,9 +64,9 @@ local function clear_current_scene()
     -- or simply: current_scene = {}
 end
 
-local function render_scene_with_params(clearColors, actors)
+local function render_scene_with_params(clears, actors)
     clear_current_scene()
-    return { clears = clearColors, actors = actors }
+    return table_helper.flatten(clears, actors)
 end
 
 -- Public functions (for Binding with GameEngine in C#)
@@ -83,10 +84,13 @@ function render_scene(scene_id)
 
         local current_scene = game_state.state.current_scene
 
+        log_handler.log_table("state", game_state.state)
+
         -- Ensure EVERY actor in the freshly rendered scene is registered
         for _, actor in ipairs(current_scene.actors or {}) do
             if actor.entity_id then
                 game_state.ensure_actor_registered(
+                    _G.MockEngine,
                     actor.entity_id,
                     actor   -- pass the whole actor table as hint
                 )
@@ -95,7 +99,7 @@ function render_scene(scene_id)
             end
         end
 
-        log_handler.log_data("Scene rendered & " .. #current_scene.actors .. " actors registered")
+        log_handler.log_data("Scene rendered & " .. #current_scene .. " actors registered")
         return current_scene
     end, 5, 250)
 
@@ -118,7 +122,6 @@ local function update_scene(gameState)
         return
     end
 
-    -- (gameStateTable["CurrentActor"] as LuaTable)["ActorId"]
     local entity_id = gameState.CurrentActor.ActorId
     local selected_actor = game_state.find_actor_by_id(entity_id)
     if selected_actor then
@@ -133,15 +136,13 @@ local function update_scene(gameState)
 
     -- Safety net: make sure engine knows about this entity
     local entity_guid = game_state.ensure_actor_registered(
+        _G.MockEngine,
         selected_actor.id,    -- or selected_actor.Id — pick the correct field
         selected_actor
     )
 
-    -- Optional: you can now use entity_guid if needed
-    -- (though usually selected_actor.entity_id is already correct)
-
     local state = {
-        entity_id = selected_actor.id,
+        entity_id = entity_guid,
         from_x    = selected_actor.x,
         from_y    = selected_actor.y,
         speed     = selected_actor.move_speed or 3,
@@ -155,11 +156,10 @@ local function update_scene(gameState)
         return
     end
 
-    log_handler.log_table("Command generated", state)
-    local command = mappedCommand(selected_actor.entity_id, state)
+    local command = mappedCommand(entity_guid, state)
 
     if command then
-        CommandQueue:enqueue(selected_actor.entity_id, {
+        CommandQueue:enqueue(_G.MockEngine, entity_guid, {
             name    = cmd_type,
             command = command
         })
@@ -195,22 +195,25 @@ end
 -- # endregion
 
 local ENTITY_BUCKET     = "entities"
-local LIFECYCLE_LOG     = "EntityLifecycle"   -- or "Lifecycle" or "Actors"
 
 function initEngine()
     local engine = require("engines.mock_command_engine")
-    
+
     engine:subscribe("enqueue", function(c)
         log_handler.log_data("command enqueued: " .. tostring(c))
     end)
-    
+
     engine:subscribe("execute_immediately", function(c)
         log_handler.log_data("command executed: " .. tostring(c))
     end)
-    
+
     _G.MockEngine = engine
+
     -- TODO: figure out why without this the storage initializations don't work..
-    _G.MockEngine:CreateEntity(ENTITY_BUCKET, LIFECYCLE_LOG)
+    _G.MockEngine:CreateEntity(ENTITY_BUCKET)
+    _G.MockEngine:CreateEntity("Commands")
+    _G.MockEngine:CreateEntity("PositionCommands")
+
     log_handler.log_data("=== Game: Initialized with Command Mock Engine. ===")
 end
 
@@ -235,6 +238,7 @@ game = {
     init_logging = log_handler.init_logging,
     init_error_logging = log_handler.init_error_logging,
     move_actor_by_id = game_state.move_actor_by_id,
+    move_actor_by_id_relative = game_state.move_actor_by_id_relative,
     log_data = log_handler.log_data,
     log_error = log_handler.log_error,
     render_scene_with_params = render_scene_with_params,

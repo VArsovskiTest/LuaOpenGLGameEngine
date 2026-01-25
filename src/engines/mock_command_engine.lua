@@ -20,7 +20,7 @@ end
 
 -- Create a new entity/command with automatic unique ID
 function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
-    table_name = table_name or "default"
+    -- table_name = table_name or "default"
     local history_log_identifier = command_log_name or table_name
 
     log_handler.log_data("creating storage for: " .. history_log_identifier)
@@ -48,6 +48,7 @@ function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
         type     = "command",
         executed = false,
         payload  = {},
+        metadata = {}
     }
 
     -- Apply all overrides (including params, command_name, etc.)
@@ -64,16 +65,81 @@ function MockCommandEngine:CreateEntity(table_name, command_log_name, overrides)
 end
 
 function MockCommandEngine:AddComponent(entity_id, table_name, component_name, data)
-    log_handler.log_data("Adding component for: " .. tostring(entity_id))
+    -- TODO: must do it this way, either I keep one table/entity in DB ("Commands") and change all Tests or do it this way
     local entity = self:Get(table_name, entity_id)
+    if not (entity or {payload = nil}).payload[component_name] then
+        local storage, calls_log = self:CreateEntity(entity_id, table_name)
+        log_handler.log_data("created storage for: " .. tostring(table_name))
+    end
+
     if not entity then error("Entity not found") end
 
     entity.payload[component_name] = data or {}
-    --table.insert(self.calls[table_name], { action = "add_component", entity_id = entity_id, component = component_name })
+end
+
+function MockCommandEngine:AddMetadata(entity_id, table_name, data)
+    log_handler.log_data("Adding metadata for: " .. tostring(entity_id))
+    local entity = self:Get(table_name, entity_id)
+
+    log_handler.log_table("entity", entity)
+    if not entity then error("Entity for metadata not found") end
+
+    entity.metadata = data or {}
+end
+
+function MockCommandEngine:UpdateComponent(entity_id, table_name, component_name, updater)
+    log_handler.log_data("Updating component for: " .. tostring(entity_id) .. " → " .. tostring(component_name or "missing component_name") .. " in " .. tostring(table_name))
+    local entity = self:Get(table_name, entity_id)
+    if not entity then 
+        log_handler.log_error("Entity not found for update: " .. tostring(entity_id))
+        error("Entity not found")
+        return 
+    end
+    
+    local current = entity.payload[component_name]
+    if current == nil then -- If doesn't exist yet → initialize as empty table
+        current = {}
+        entity.payload[component_name] = current
+    end
+    
+    -- Apply the update
+    local result = updater(current)
+    
+    -- If updater returned a new value/table → overwrite
+    if result ~= nil and result ~= current then entity.payload[component_name] = result end
+    
+    -- Optional: log the new state
+    -- log_handler.log_table("Updated component " .. component_name, entity.payload[component_name])
+end
+
+function MockCommandEngine:UpdateMetadata(entity_id, table_name, updater)
+    log_handler.log_data("Updating metadata for: " .. tostring(entity_id) .. " → " .. tostring(table_name))
+    local entity = self:Get(table_name, entity_id)
+    if not entity then
+        log_handler.log_error("Entity not found for metadata update: " .. tostring(entity_id))
+        error("Entity not found for metadata")
+        return 
+    end
+    
+    local current = entity.metadata
+    if current == nil then -- If doesn't exist yet → initialize as empty table
+        current = {}
+        entity.metadata = current
+    end
+    
+    -- Apply the update
+    local result = updater(current)
+    
+    -- If updater returned a new value/table → overwrite
+    if result ~= nil and result ~= current then entity.metadata = result end
+    
+    -- Optional: log the new state
+    -- log_handler.log_table("Updated metadata for " .. tostring(entity_id))
 end
 
 function MockCommandEngine:GetComponent(entity_id, identifier, component_name)
-    return self:Get(identifier, entity_id).payload[component_name]
+    local entity = self:Get(identifier, entity_id)
+    return entity.payload[component_name]
 end
 
 -- Subscribe a handler to an event
@@ -111,12 +177,7 @@ function MockCommandEngine:Get(table_name, id)
     table_name = table_name or "default"
     local storage = self.tables[table_name]
 
-    log_handler.log_data("AddComponent for entity_id: " .. tostring(id) .. ", for table: " .. table_name)
-    log_handler.log_table("AddComponent storage: ", self.tables[table_name])
-
-    if not storage then
-        error("MockCommandEngine: table '" .. table_name .. "' does not exist")
-    end
+    if not storage then error("MockCommandEngine: table '" .. table_name .. "' does not exist") end
     return storage[id]
 end
 

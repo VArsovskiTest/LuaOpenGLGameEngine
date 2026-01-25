@@ -2,21 +2,20 @@
 local log_handler = require("log_handler")
 local BaseCommand = require("commands.base_command")
 
-local command_type_identifier = "PositionCommands"
+-- local command_type_identifier = "Position_Commands"
 
 local MoveToCommand = {}
 MoveToCommand.super = BaseCommand
 
 function MoveToCommand:new(entity_id, command_name, command_queue_name, component_name, params)
     -- command_name is usually "MoveToCommand" or subclass name like "MoveUpCommand"
-    local self = BaseCommand:new(entity_id, command_name or "MoveToCommand",
-                                 command_queue_name, component_name, params)
-
-    -- Optional: add MoveTo-specific fields if needed
-    -- self.move_duration = 0.5  -- example
-
+    local self = BaseCommand:new(entity_id, command_name or "MoveToCommand", command_queue_name, component_name, params)
     setmetatable(self, { __index = MoveToCommand })
     return self
+end
+
+function MoveToCommand:create(entity_id, params, queue_name)
+    return MoveToCommand:new(entity_id, "MoveToCommand", queue_name, "Position", params)
 end
 
 function MoveToCommand:getOrigin()
@@ -42,34 +41,37 @@ function MoveToCommand:execute(engine, entry)
 
     -- Apply target if provided
     if not self.params.target_pos then
-        self.params.target_pos = pos_comp.params.target_pos
+        self.params.target_pos = pos_comp.target_pos
     end
 
     -- Record the change (your engine.calls pattern)
-    table.insert(engine.calls[command_type_identifier] or {}, {
+    table.insert(engine.calls[self.command_queue_name] or {}, {
         action     = "update_position",
         entity_id  = self.entity_id,
-        from       = self.params.initial_pos.x or { x = 0, y = 0 },
-        to         = self.params.target_pos.x or { x = 0, y = 0 },
+        from       = self.params.initial_pos or { x = 0, y = 0 },
+        to         = self.params.target_pos or { x = 0, y = 0 },
     })
 
+    -- TODO: Is this even really necessary ?, this step was done even before applicaiton of the command.. ?
     -- Apply / commit
-    engine:AddComponent(self.entity_id, command_type_identifier, "Position",
-        { self:getOrigin(), self:getTarget() })
+    engine:AddComponent(self.entity_id, self.command_queue_name, "Position",
+        { initial_pos = self:getOrigin(), target_pos = self:getTarget() })
 
     log_handler.log_data("Moving actor: " .. tostring(self.entity_id))
     log_handler.log_table("to a new position: ", self.params.target_pos)
-    game.move_actor_by_id(self.entity_id, self.params.target_pos)
+
+    local target = self:getTarget()
+    game.move_actor_by_id_relative(self.entity_id, target.x, target.y)
 end
 
 function MoveToCommand:undo(engine)
-    local pos_comp = engine:GetComponent(self.entity_id, command_type_identifier, "Position")
+    local pos_comp = engine:GetComponent(self.entity_id, self.command_queue_name, "Position")
     if not pos_comp then return end
 
     if self.params.initial_pos.x ~= nil then pos_comp.target_pos.x = self.params.initial_pos.x end
     if self.params.initial_pos.y ~= nil then pos_comp.target_pos.y = self.params.initial_pos.y end
 
-    table.insert(engine.calls[command_type_identifier], {
+    table.insert(engine.calls[self.command_queue_name], {
         action = "update_position",
         entity_id = self.entity_id,
         from = self.params.target_pos,

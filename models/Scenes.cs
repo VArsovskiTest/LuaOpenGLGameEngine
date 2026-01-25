@@ -21,30 +21,14 @@ public class GenericScene
 
         if (table != null)
         {
-            var actorsClearsTable = table["actors"] as LuaTable;
-            var actorsTable = actorsClearsTable["actors"] as LuaTable;
-            var clearsTable = (actorsClearsTable["clears"] as LuaTable)[1];
-
-            // ---------- Parse clears ----------
-            string id = GetSafeId(lua, (clearsTable as LuaTable));
-            var color = new RGBColor
-            {
-                r = Convert.ToSingle(((clearsTable as LuaTable)["color"] as LuaTable)?["r"] ?? 1.0f),
-                g = Convert.ToSingle(((clearsTable as LuaTable)["color"] as LuaTable)?["g"] ?? 1.0f),
-                b = Convert.ToSingle(((clearsTable as LuaTable)["color"] as LuaTable)?["b"] ?? 1.0f)
-            };
-
-            var clear = GenerateBackground(id, color);
-            if (clear != null) clears.Add(clear);
-
             // ---------- Parse actors ----------
-            foreach (var key in actorsTable.Keys)
+            foreach (var key in table.Keys)
             {
-                var actorData = actorsTable[key] as LuaTable;
+                var actorData = table[key] as LuaTable;
                 string type = (string?)(actorData as LuaTable)["type"] ?? "";
-                id = GetSafeId(lua, (actorData as LuaTable));
+                var id = GetSafeId(lua, (actorData as LuaTable));
 
-                color = new RGBColor
+                var color = new RGBColor
                 {
                     r = Convert.ToSingle(((actorData as LuaTable)["color"] as LuaTable)?["r"] ?? 1.0f),
                     g = Convert.ToSingle(((actorData as LuaTable)["color"] as LuaTable)?["g"] ?? 1.0f),
@@ -53,7 +37,7 @@ public class GenericScene
 
                 ActorRGB? actor = type switch
                 {
-                    // "clear" => GenerateBackground(id, (actorData as LuaTable)),
+                    // "clear" => GenerateBackground(id, color),
                     "rect" => GenerateRectangle(id, (actorData as LuaTable)),
                     "circle" => GenerateCircle(id, (actorData as LuaTable)),
                     "resource_bar" => GenerateResourceBar(id, (actorData as LuaTable)),
@@ -61,9 +45,12 @@ public class GenericScene
                     _ => null
                 };
 
-                actor.Color = color;
-
-                if (actor != null) actors.Add(actor);
+                if (actor != null)
+                {
+                    actor.Color = color;
+                    actors.Add(actor);
+                }
+                else if (type == "clear") clears.Add(GenerateBackground(id, color));
             }
         }
 

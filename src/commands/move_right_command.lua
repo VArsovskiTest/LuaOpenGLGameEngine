@@ -10,7 +10,7 @@ MoveRightCommand.super = MoveToCommand
 function MoveRightCommand:new(entity_id, cmd)
     local from_x = cmd.x or cmd.from_x or 0
     local from_y = cmd.y or cmd.from_y or 0
-    local speed  = cmd.speed or 3
+    local speed  = ((cmd.speed or 0) / 100) or 0.03
 
     local params = {
         initial_pos = { x = from_x, y = from_y },
