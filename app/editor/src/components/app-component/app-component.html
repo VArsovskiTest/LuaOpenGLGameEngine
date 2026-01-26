@@ -1,17 +1,24 @@
-<main class="main">
-  <div class="content">
-    <div class="left-side">
-      <h1>GL HF editor 🎉</h1>
-      <p>Click on the menu to start editting and running your game</p>
-    </div>
-    <div class="divider" role="separator" aria-label="Divider"></div>
-    <div class="right-side">
+<div class="app-shell">
+  <div class="ribbon">
+    <div class="navbar">
       <editor-menu></editor-menu>
-      <scene-editor-component></scene-editor-component>
-    </div>
-    <div class="social-links">
     </div>
   </div>
-</main>
+
+  <div class="main">
+    <aside class="toolbar">
+      <div class="main-content">
+        <h1>GL HF editor 🎉</h1>
+        <p>Click on the menu to start editting and running your game</p>
+      </div>
+    </aside>
+    <div class="divider" role="separator" aria-label="Divider"></div>
+    <aside class="canvas">
+      @if (showEditor) {
+        <scene-editor-component></scene-editor-component>
+      }
+    </aside>
+  </div>
+</div>
 
 <router-outlet />

@@ -1,1 +1,12 @@
-<p>scene-editor-component works!</p>
+<div>
+    <div class="canvas-toolbar">
+        <button (click)="addRectangle()">Add Rectangle</button>
+        <button (click)="addCircle()">Add Circle</button>
+        <!-- Color picker later -->
+    </div>
+    <div #stageContainer> <!-- ← Konva canvas -->
+        @if (selectedActor$ | async; as selected) {
+            <input type="color" [value]="selected.color" (change)="updateColor(selected.id, $event.target.value)" />
+        }
+    </div>
+</div>

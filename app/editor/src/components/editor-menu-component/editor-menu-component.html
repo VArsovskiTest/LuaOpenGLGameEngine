@@ -1,17 +1,16 @@
-<mat-toolbar color="primary">           <!-- primary | accent | warn | undefined -->
-  <!-- Spacer pushes next items to the right -->
-  <span class="spacer"></span>
-
-  <!-- Your dynamic items as flat buttons (or menu items) -->
-  <ng-container *ngFor="let item of items">
+<mat-toolbar color="primary">
+  <div *ngFor="let item of items">
     <ng-container *ngFor="let pair of item | keyvalue">
-      <button mat-button>
+      <button mat-button (click)="handleSelected(pair)">
         <strong>{{ pair.key }}</strong>: {{ pair.value }}
       </button>
     </ng-container>
-  </ng-container>
+  </div>
+  <!-- <a href="#">Home</a>
+  <a href="#">Projects</a>
+  <a href="#">Settings</a>
+  <button>Logout</button> -->
 
-  <!-- Optional right-side actions (icons, user menu, etc.) -->
   <button mat-icon-button aria-label="Settings">
     <mat-icon>settings</mat-icon>
   </button>

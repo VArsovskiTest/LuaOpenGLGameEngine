@@ -1,27 +1,29 @@
+import { Component, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, output } from '@angular/core';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { MATERIAL_IMPORTS } from '../../material.imports';
+// other imports...
 
 @Component({
   selector: 'editor-menu',
   standalone: true,
-  imports: [CommonModule, MATERIAL_IMPORTS],
-  templateUrl: './editor-menu-component.html',
-  styleUrl: './editor-menu-component.scss',
+  imports: [MatToolbarModule, MatButtonModule, MatIconModule, CommonModule /* + KeyValuePipe if needed */],
+  templateUrl: "./editor-menu-component.html" ,
+  schemas: [
+    CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA
+  ]
 })
+
 export class EditorMenuComponent {
-protected items: Record<number, string>[] = [
-       { 1: 'Explore the Docs' },
-       { 2: 'Learn with Tutorials' }
-   ];
+    protected items: Record<number, string>[] = [
+        { 1: 'File' },
+        { 2: 'Editor' }
+    ];
 
-   addItem(key: number, value: string): void {
-       this.items.push({ [key]: value });
-   }
+    selectedMenuItem = output<Record<number, string>>();
 
-   someAction() {
-       this.addItem(3, 'CLI Docs');
-       this.addItem(4, 'Angular Language Service');
-       console.log(this.items);
-   }
+    handleSelected(item: Record<number, string>) {
+        this.selectedMenuItem.emit(item);
+    }
 }
