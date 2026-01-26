@@ -8,6 +8,9 @@ export interface Actor {
   height?: number;
   radius?: number;          // circle
   color: string;            // hex or named
+  percentage?: number;
+  thickness?: number;
+  name?: string;
   // you can add later: rotation, scale, name/label, zIndex, locked, etc.
 }
 
@@ -16,4 +19,3 @@ export interface ActorsState {
     entities: { [id: string]: Actor };
     selectedId: string | null;
 }
-

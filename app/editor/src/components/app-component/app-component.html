@@ -1,13 +1,23 @@
 <main class="main">
   <div class="content">
+    <div class="menu-bar">
+      <editor-menu></editor-menu>
+    </div>
     <div class="left-side">
-      <h1>GL HF editor 🎉</h1>
-      <p>Click on the menu to start editting and running your game</p>
+      <div class="landing-area">
+        <div class="row">
+          <h1>GL HF editor 🎉</h1>
+        </div>
+        <div class="row">
+          <p>Click on the menu to start editting and running your game</p>
+        </div>
+      </div>
     </div>
     <div class="divider" role="separator" aria-label="Divider"></div>
     <div class="right-side">
-      <editor-menu></editor-menu>
-      <scene-editor-component></scene-editor-component>
+      @if (showEditor) {
+        <scene-editor-component></scene-editor-component>
+      }
     </div>
     <div class="social-links">
     </div>

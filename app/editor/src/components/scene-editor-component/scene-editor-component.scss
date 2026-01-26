@@ -1,0 +1,13 @@
+:host {
+  display: block;
+  position: fixed;           // or sticky, depending on your needs
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;             // high enough to stay above content
+  height: 48px;              // typical modern menu bar height
+  background: #f8f9fa;        // light placeholder - change later
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  user-select: none;         // prevents text selection when dragging
+}

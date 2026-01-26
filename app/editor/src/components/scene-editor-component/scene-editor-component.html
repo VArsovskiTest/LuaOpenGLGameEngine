@@ -1,1 +1,13 @@
-<p>scene-editor-component works!</p>
+<div class="content">
+    <p>scene-editor-component works!</p>
+    <div class="toolbar">
+        <button (click)="addRectangle()">Add Rectangle</button>
+        <button (click)="addCircle()">Add Circle</button>
+        <!-- Color picker later -->
+    </div>
+    <!-- In template, under toolbar -->
+    @if (selectedActor$ | async; as selected) {
+    <input type="color" [value]="selected.color" (change)="updateColor(selected.id, $event.target.value)" />
+    }
+    <div #stageContainer style="border: 1px solid #ccc; width: 800px; height: 600px;"></div>  <!-- ← Container for Konva -->
+</div>
