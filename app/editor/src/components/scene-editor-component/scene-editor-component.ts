@@ -1,18 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { v4 as uuidv4 } from 'uuid';
 import * as ActorActions from '../../store/actors/actors.actions'
 import { Actor } from '../../models/actor.model'
 import { selectAllActors, selectSelectedActor } from '../../store/actors/actors.selectors';
-import { update } from '@ngrx/store-devtools'
-
 
 @Component({
-  selector: 'app-scene-editor-component',
+  selector: 'scene-editor-component',
   imports: [],
+  standalone: true,
   templateUrl: './scene-editor-component.html',
   styleUrl: './scene-editor-component.scss',
 })
+
 export class SceneEditorComponent {
   private store = inject(Store);
 
@@ -21,7 +20,7 @@ export class SceneEditorComponent {
 
   addRectangle() {
     const newActor: Actor = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       type: "rectangle",
       x: 200,
       y: 150,
@@ -34,7 +33,7 @@ export class SceneEditorComponent {
 
   onActorMoved(id: string, newX: number, newY: number) {
     this.store.dispatch(ActorActions.updateActor({
-      update: { id, changes: { x: newX, y: newY} }
+      actorUpdate: { id, changes: { x: newX, y: newY} }
     }))
   }
 
