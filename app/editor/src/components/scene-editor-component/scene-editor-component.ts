@@ -7,6 +7,7 @@ import * as ActorActions from '../../store/actors/actors.actions'
 import { Actor } from '../../models/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { Container } from 'konva/lib/Container';
+import { BehaviorSubject, find, map, mergeMap, Subject, tap } from 'rxjs';
 
 @Component({
   selector: 'scene-editor-component',
@@ -21,33 +22,48 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
   actors$ = this.store.select(selectAllActors);
   selectedId$ = this.store.select(selectSelectedActorId);
   selectedActor$ = this.store.select(selectSelectedActor);
+  actors = new BehaviorSubject<Actor[]>([]);
+  selectedActor = new BehaviorSubject<Actor | null | undefined>(undefined);
 
   @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
 
   private stage!: Konva.Stage;
   private layer!: Konva.Layer;
   private shapes: { [id: string]: Konva.Shape } = {};
+  private VISIBLE_WIDTH = 1120;  // Container div width
+  private VISIBLE_HEIGHT = 600; // Container div height
 
   ngAfterViewInit(): void {
     this.stage = new Konva.Stage({
       container: this.stageCongainer.nativeElement,
-      width: 800,
-      height: 600
+      width: this.VISIBLE_WIDTH,
+      height: this.VISIBLE_HEIGHT
+    });
+
+    this.stage.draggable(true);
+    this.stage.dragBoundFunc((pos) => {
+      const x = Math.max(this.VISIBLE_WIDTH, Math.min(0, pos.x));
+      const y = Math.max(this.VISIBLE_HEIGHT, Math.min(0, pos.y));
+      return { x, y };
     });
 
     this.layer = new Konva.Layer();
     this.stage.add(this.layer);
 
-    this.actors$.subscribe(actors => this.redrawShapes(actors));
-
-    this.selectedId$.subscribe(id => this.highlightSelected(id));
+    this.actors$.subscribe(actors => {
+      this.actors.next(actors);
+      this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT)
+    });
+    this.selectedId$.subscribe(id => {
+      this.highlightSelected(id)
+    });
   }
 
   ngOnDestroy(): void {
     this.stage.destroy();
   }
 
-  private redrawShapes(actors: Actor[]) {
+  private redrawShapes(actors: Actor[], vw: number, vh: number) {
     this.layer.destroyChildren();
     this.shapes = {};
 
@@ -64,7 +80,13 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
             fill: actor.color,
             stroke: 'black',
             strokeWidth: 2,
-            draggable: true
+            draggable: true,
+            resizable: true,
+            dragBoundFunc: function(pos) {
+              const newX = Math.max(0, Math.min(pos.x, vw - this.width()));
+              const newY = Math.max(0, Math.min(pos.y, vh - this.height()));
+              return { x: newX, y: newY };
+            }
           });
           break;
         }
@@ -77,7 +99,13 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
             fill: actor.color,
             stroke: "black",
             strokeWidth: 2,
-            draggable: true
+            draggable: true,
+            resizable: true,
+            dragBoundFunc: function(pos) {
+              const newX = Math.max(0, Math.min(pos.x, vw - (actor.radius ?? 0)));
+              const newY = Math.max(0, Math.min(pos.y, vh - (actor.radius ?? 0)));
+              return { x: newX, y: newY };
+            }
           })
           break;
         }
@@ -88,7 +116,8 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
             y: actor.y ?? 50,
             width: (actor.percentage ?? 100)/100 * 500,
             thickness: actor.thickness ?? 20,
-            name: actor.name
+            name: actor.name,
+            draggable: false
           })
         }
       }
@@ -98,15 +127,16 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
       });
 
       shape.on("dragend", () => {
-        this.store.dispatch(ActorActions.updateActor({
-          actorUpdate: { id: actor.id, changes: { x: shape.x(), y: shape.y() } }
-        }))
+        this.onActorMoved(actor.id, shape.x(), shape.y())
       });
 
       this.layer.add(shape);
       this.shapes[actor.id] = shape;
     });
 
+    this.layer.on("dragmove", (event) => {
+      // TODO: deny/propagate when draggin empty
+    })
     this.layer.draw();
   }
 
@@ -144,19 +174,34 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   updateColor(id: string, newColor: string) {
+    this.selectedActor.next(this.findById(id, this.actors.getValue()));
     this.store.dispatch(ActorActions.updateActor({
       actorUpdate: { id, changes: { color: newColor }}
     }));
   }
 
   onActorMoved(id: string, newX: number, newY: number) {
-    this.store.dispatch(ActorActions.updateActor({
-      actorUpdate: { id, changes: { x: newX, y: newY} }
-    }))
+    this.selectedActor.next(this.findById(id, this.actors.getValue()));
+    this.store.dispatch(ActorActions.updateActor({ actorUpdate: { id, changes: { x: newX, y: newY } } }))
+  }
+
+  private findById(id: string, list: Actor[]): Actor {
+    return (list.filter(actor => actor.id == id) || [null])[0];
+  }
+
+  undo() {
+    const previous = this.selectedActor.getValue();
+    if (previous) {
+      this.store.dispatch(ActorActions.updateActor({actorUpdate: { id: previous.id, changes: previous }}))
+    }
+  }
+
+  clearAll() {
+    this.store.dispatch(ActorActions.clearScene());
   }
 
   saveScene() {
-    // TODO: later: serialize selectAllActors() to JSON and save to backend/file
+    alert(JSON.stringify(this.actors.getValue()));
   }
 
   loadScene(json: any) {

@@ -6,6 +6,22 @@
   user-select: none;         // prevents text selection when dragging
 }
 
+.stage-container {
+  display: flex;
+  flex-direction: column;
+}
+.stage-toolbar {
+  background-color: white;
+  padding: 0rem, 1.5rem;
+  display: flex;
+  // justify-content: space-between;
+  align-items: center; /* vertical center */
+}
+.stage-canvas {
+  display: flex;
+}
+
 #stage-container {
+  overflow: auto; /* Adds a Scrollbar to allow larger canvas area*/
   border: 1px solid #ccc; width: 1000px; height: 600px;
 }

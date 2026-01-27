@@ -19,7 +19,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     if (this.editorMenu?.selectedMenuItem) {
       this.outputSub = this.editorMenu.selectedMenuItem.subscribe((item) => {
-        console.log('Menu item selected (manual sub):', item);
         this.showEditor = (item as any)["value"] == 'Editor';
       });
     } else {
