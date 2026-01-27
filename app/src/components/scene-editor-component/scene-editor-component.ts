@@ -1,7 +1,7 @@
 import { AsyncPipe } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
-import Konva from "konva"; // => TODO: need the whole lib ?
+import Konva from "konva";
 
 import * as ActorActions from '../../store/actors/actors.actions'
 import { Actor } from '../../models/actor.model'

@@ -44,7 +44,7 @@ namespace LuaOpenGLGameEngine
             _redisQueue.SetupBindings();
 
             // Get the current working directory
-            string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+            string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
             if (projectRoot.Contains(@"\bin\Debug\net8.0"))
             {
                 projectRoot = Path.GetFullPath(Path.Combine(projectRoot, Path.DirectorySeparatorChar.ToString()
