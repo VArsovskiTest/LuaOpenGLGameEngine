@@ -8,6 +8,7 @@ import { Actor } from '../../models/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { Container } from 'konva/lib/Container';
 import { BehaviorSubject, find, map, mergeMap, Subject, tap } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'scene-editor-component',
@@ -19,6 +20,11 @@ import { BehaviorSubject, find, map, mergeMap, Subject, tap } from 'rxjs';
 
 export class SceneEditorComponent implements AfterViewInit, OnDestroy {
   private store = inject(Store);
+  private http = inject(HttpClient);
+
+  // TODO: create new, load for the GUID
+  private sceneId = crypto.randomUUID();
+
   actors$ = this.store.select(selectAllActors);
   selectedId$ = this.store.select(selectSelectedActorId);
   selectedActor$ = this.store.select(selectSelectedActor);
@@ -201,7 +207,8 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   saveScene() {
-    alert(JSON.stringify(this.actors.getValue()));
+    var url = `http://localhost:4400/api/${this.sceneId}`
+    this.http.post(url, this.actors.getValue()).subscribe(resp => {})
   }
 
   loadScene(json: any) {

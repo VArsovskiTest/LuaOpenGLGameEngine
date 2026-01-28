@@ -1,17 +1,17 @@
 <mat-toolbar color="primary">
-  <div *ngFor="let item of items">
-    <ng-container *ngFor="let pair of item | keyvalue">
-      <button mat-button (click)="handleSelected(pair)">
-        <strong>{{ pair.key }}</strong>: {{ pair.value }}
-      </button>
-    </ng-container>
-  </div>
-  <!-- <a href="#">Home</a>
-  <a href="#">Projects</a>
-  <a href="#">Settings</a>
-  <button>Logout</button> -->
+  <button class="menu-button" mat-button [matMenuTriggerFor]="fileMenu">File</button>
+  <button class="menu-button" mat-button [matMenuTriggerFor]="editorMenu">Editor</button>
 
-  <button mat-icon-button aria-label="Settings">
-    <mat-icon>settings</mat-icon>
-  </button>
+  <mat-menu #fileMenu="matMenu">
+    <button mat-menu-item (click)="handleMenuItemClick('New scene')">New scene</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Load scene')">Load scene</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Save scene')">Save scene</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Launch scene')">Launch scene</button>
+  </mat-menu>
+
+  <mat-menu #editorMenu="matMenu">
+    <button mat-menu-item (click)="handleMenuItemClick('Add actor')">Add actor</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Remove actor')">Remove actor</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Modify actor')">Modify actor</button>
+  </mat-menu>
 </mat-toolbar>
