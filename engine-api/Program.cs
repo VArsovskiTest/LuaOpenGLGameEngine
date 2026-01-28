@@ -7,10 +7,26 @@ using MinimalEngineApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Add services ────────────────────────────────────────────────
+// Add this early in the services section
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowEditorFrontend", policy =>
+    {
+        policy.WithOrigins(
+            "http://localhost:4200",          // Angular port
+            "https://localhost:4200",
+            "http://127.0.0.1:4200",          // sometimes browsers use this
+            "http://your-machine-name:4200"   // if accessing via network
+            // Add production origins later, e.g. "https://minimal-api-engine-domain.com"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
+    });
+});
+
 builder.Services.AddControllers();
 
-// EF Core + SQLite (file will be created in bin/Debug/net8.0/)
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=scenes.db"));
 
@@ -32,6 +48,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+app.UseCors("AllowEditorFrontend");  // ← MUST come before UseAuthorization / MapControllers
 app.MapControllers();
 
 // ── Simple test endpoint ────────────────────────────────────────
