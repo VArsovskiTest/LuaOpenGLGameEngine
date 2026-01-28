@@ -1,3 +1,8 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MinimalEngineApi.Data;
+using MinimalEngineApi.Models;
+
 [ApiController]
 [Route("api/[controller]")]
 public class ScenesController : ControllerBase
@@ -7,6 +12,12 @@ public class ScenesController : ControllerBase
     public ScenesController(AppDbContext context)
     {
         _context = context;
+    }
+
+    [HttpGet]
+    public async Task<IEnumerable<Scene>> GetScenes()
+    {
+        return _context.Scenes.ToList();
     }
 
     [HttpPost("{id?}")]   // POST /api/scenes or /api/scenes/5 for update
