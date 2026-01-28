@@ -2,17 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
-// using MinimalSceneEditorApi.Data;
-// using MinimalSceneEditorApi.Models;
+using MinimalEngineApi.Data;
+using MinimalEngineApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Add services ────────────────────────────────────────────────
 builder.Services.AddControllers();
 
-// // EF Core + SQLite (file will be created in bin/Debug/net8.0/)
-// builder.Services.AddDbContext<AppDbContext>(options =>
-//     options.UseSqlite("Data Source=scenes.db"));
+// EF Core + SQLite (file will be created in bin/Debug/net8.0/)
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite("Data Source=scenes.db"));
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
