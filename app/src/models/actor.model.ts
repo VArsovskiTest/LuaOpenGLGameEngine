@@ -1,12 +1,12 @@
 // src/app/models/actor.model.ts
 export interface Actor {
-  id: string;               // uuid or your own id generator
+  id: string;
   type: 'rectangle' | 'circle' | 'resource-bar';
   x: number;
   y: number;
-  width?: number;           // rectangle & resource-bar
+  width?: number;
   height?: number;
-  radius?: number;          // circle
+  radius?: number;
   color: string;            // hex or named
   percentage?: number;
   thickness?: number;

@@ -1,17 +1,54 @@
 <mat-toolbar color="primary">
-  <div *ngFor="let item of items">
-    <ng-container *ngFor="let pair of item | keyvalue">
-      <button mat-button (click)="handleSelected(pair)">
-        <strong>{{ pair.key }}</strong>: {{ pair.value }}
-      </button>
-    </ng-container>
-  </div>
-  <!-- <a href="#">Home</a>
-  <a href="#">Projects</a>
-  <a href="#">Settings</a>
-  <button>Logout</button> -->
+  <button class="menu-button" mat-button [matMenuTriggerFor]="fileMenu">File</button>
+  <button class="menu-button" mat-button [matMenuTriggerFor]="editorMenu">Editor</button>
 
-  <button mat-icon-button aria-label="Settings">
-    <mat-icon>settings</mat-icon>
+  <mat-menu #fileMenu="matMenu">
+    <button [appDialogLoader]="{message: 'Create new Scene.', title: 'New Scene', okText: 'Create', cancelText: 'Cancel',
+  }" mat-menu-item (click)="handleMenuItemClick('New scene')">New scene
+    <ng-template #appDialogLoaderContent>
+      <mat-radio-group [(ngModel)]="selectedSize" (change)="onSizeChange()">
+        <mat-radio-button value="s">Small (1800×1200)</mat-radio-button>
+        <mat-radio-button value="m">Medium (3000×2000)</mat-radio-button>
+        <mat-radio-button value="l">Large (4500×3000)</mat-radio-button>
+        <mat-radio-button value="xl">XL (6000×4000)</mat-radio-button>
+      </mat-radio-group>
+    </ng-template>
   </button>
+    <button mat-menu-item (click)="handleMenuItemClick('Load scene')">Load scene</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Save scene')">Save scene</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Launch scene')">Launch scene</button>
+  </mat-menu>
+
+  <mat-menu #editorMenu="matMenu">
+    <button mat-menu-item (click)="handleMenuItemClick('Add actor')">Add actor</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Remove actor')">Remove actor</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Modify actor')">Modify actor</button>
+  </mat-menu>
 </mat-toolbar>
+
+<button [appDialogLoader]="{
+    message: 'This will permanently remove the user.',
+    title: 'Delete user?',
+    okText: 'Delete anyway',
+    cancelText: 'Keep user',
+    innerContent: '<small>Warning: also removes associated files</small>'
+  }">
+  Delete User
+</button>
+
+<div appDialogLoaderInline="data=
+{
+    message: 'This will permanently remove the user.',
+    title: 'Delete user?',
+    okText: 'Delete anyway',
+    cancelText: 'Keep user',
+    innerContent: '<small>Warning: also removes associated files</small>'
+}
+" style="border: 1px solid black; padding: 10px; cursor: pointer;">
+  Click me to append custom HTML!
+  <ng-template #appDialogLoaderInlineContent>
+    <div class="content">
+      <p>ASDFASDFASDFASDF</p>
+    </div>
+  </ng-template>
+</div>

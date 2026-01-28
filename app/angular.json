@@ -6,7 +6,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "editor": {
+    "minimal-editor": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -61,10 +61,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "editor:build:production"
+              "buildTarget": "minimal-editor:build:production"
             },
             "development": {
-              "buildTarget": "editor:build:development"
+              "buildTarget": "minimal-editor:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -72,6 +72,26 @@
         "test": {
           "builder": "@angular/build:unit-test"
         }
+      //   "test": {
+      //     "builder": "@angular/build:unit-test",
+      //     "options": {
+      //       "polyfills": ["src/polyfills.ts"],
+      //       "tsConfig": "tsconfig.spec.json",
+      //       "include": ["src/**/*.spec.ts", "src/**/*.d.ts"],
+      //       "exclude": ["src/test-setup.ts"],
+      //       "assets": ["src/favicon.ico", "src/assets"],
+      //       "styles": ["src/styles.scss"],
+      //       "scripts": []
+      //     },
+      //     "configurations": {
+      //       "development": {
+      //         "buildTarget": "minimal-editor:build:development"
+      //       },
+      //       "production": {
+      //         "buildTarget": "minimal-editor:build:production"
+      //       }
+      //     }
+      //   }
       }
     }
   }
