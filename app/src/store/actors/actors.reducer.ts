@@ -7,7 +7,7 @@ import { Update } from "@ngrx/entity";
 export const initialState: ActorsState = adapter.getInitialState({selectedId: null})
 
 export const actorsReducer = createReducer(initialState
-    , on(ActorActions.loadScene,
+    , on(ActorActions.loadActors,
         (state, { actors }) => adapter.setAll(actors, { ...state, selectedId: null }))
     , on(ActorActions.addActor,
         (state, { actor }) => adapter.addOne(actor, state))

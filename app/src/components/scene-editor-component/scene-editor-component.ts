@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
 import Konva from "konva";
 
@@ -9,21 +9,26 @@ import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../
 import { Container } from 'konva/lib/Container';
 import { BehaviorSubject, find, map, mergeMap, Subject, tap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+// import { selectCurrentScene } from '../../store/scenes/scenes.selectors';
+import { Scene } from '../../models/scene.model';
 
 @Component({
   selector: 'scene-editor-component',
   imports: [AsyncPipe],
-  standalone: true,
   templateUrl: './scene-editor-component.html',
   styleUrl: './scene-editor-component.scss',
 })
 
 export class SceneEditorComponent implements AfterViewInit, OnDestroy {
+  // // TODO: create new, load for the GUID
+  // private currentScene = new BehaviorSubject<Scene | null>(null);
+
+  // ngOnInit(): void {
+  //   this.currentScene$.subscribe(scene => this.currentScene.next(scene));
+  // }
+
   private store = inject(Store);
   private http = inject(HttpClient);
-
-  // TODO: create new, load for the GUID
-  private sceneId = crypto.randomUUID();
 
   actors$ = this.store.select(selectAllActors);
   selectedId$ = this.store.select(selectSelectedActorId);
@@ -207,12 +212,12 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   saveScene() {
-    var url = `http://localhost:4400/api/${this.sceneId}`
-    this.http.post(url, this.actors.getValue()).subscribe(resp => {})
+    // var url = `http://localhost:4400/api/${this.currentScene.getValue()?.id}`
+    // this.http.post(url, this.actors.getValue()).subscribe(resp => {})
   }
 
-  loadScene(json: any) {
+  loadActors(json: any) {
     const actors = json.actors as Actor[];
-    this.store.dispatch(ActorActions.loadScene({ actors }))
+    this.store.dispatch(ActorActions.loadActors({ actors }))
   }
 }

@@ -11,7 +11,6 @@ import { DialogLoaderInlineDirective } from '../../helpers/dialog-loader-inline-
 
 @Component({
   selector: 'editor-menu',
-  standalone: true,
   imports: [
     MatToolbarModule,
     MatButtonModule,
