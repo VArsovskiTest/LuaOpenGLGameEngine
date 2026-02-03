@@ -1,37 +1,46 @@
-import { AfterViewInit, Component, inject, OnDestroy, OnInit, OutputRefSubscription, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit, OutputRefSubscription, ViewChild } from '@angular/core';
 import { EditorMenuComponent } from '../editor-menu-component/editor-menu-component';
-import { SceneEditorComponent } from '../scene-editor-component/scene-editor-component';
 import { Store } from '@ngrx/store';
 import { selectCurrentScene } from '../../store/scenes/scenes.selectors';
-import { AsyncPipe } from '@angular/common';
+import { ofType } from '@ngrx/effects';
+import { tap } from 'rxjs';
+import * as SceneActions from '../../store/scenes/scenes.actions';
 
 @Component({
   selector: 'main-component',
+  standalone: false,
   templateUrl: './main-component.html',
-  imports: [ EditorMenuComponent, SceneEditorComponent, AsyncPipe],
 })
 
-export class MainComponent implements AfterViewInit, OnDestroy, OnInit {
+export class MainComponent implements OnDestroy, OnInit {
   @ViewChild(EditorMenuComponent) editorMenu!: EditorMenuComponent;
+
   private store = inject(Store);
-
-  private currentScene$ = this.store.select(selectCurrentScene);
-
+  protected currentScene$ = this.store.select(selectCurrentScene);
   protected showEditor = false;
   private outputSub?: OutputRefSubscription;
 
-  ngOnInit(): void {
-    this.currentScene$.subscribe(scene => this.showEditor = scene != null);
+  private cdr = inject(ChangeDetectorRef);
+
+  constructor() {
+    console.log("MainComponent constructor called");
+    this.store.select(selectCurrentScene).subscribe(() => {
+      console.log("Selector emitted → forcing CD");
+      this.cdr.markForCheck();  // or detectChanges() if isolated
+    });
   }
 
-  ngAfterViewInit() {
-    if (this.editorMenu?.selectedMenuItem) {
-      this.outputSub = this.editorMenu.selectedMenuItem.subscribe((item) => {
-        this.showEditor = (item as any)["value"] == 'Editor';
-      });
-    } else {
-      console.warn('EditorMenu not found');
-    }
+  ngOnInit() {
+    console.log("Main component init:");
+    console.log(this.store);
+    this.store.select(selectCurrentScene).subscribe(scene => {
+      console.log("Current scene updated:", scene);
+      this.showEditor = scene != null;
+    });
+    this.store.pipe(
+      ofType(SceneActions.setCurrentScene),
+      tap(a => console.log("setCurrentScene action received in component:", a))
+    ).subscribe();
   }
 
   ngOnDestroy() {

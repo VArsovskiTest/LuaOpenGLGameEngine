@@ -14,10 +14,10 @@
     </aside>
     <div class="divider" role="separator" aria-label="Divider"></div>
     <aside class="canvas">
-      <ng-container *ngIf="currentScene$ | async as scene">
+      @if (currentScene$ | async; as scene) {
         <h2>Editing: {{ scene.name }} ({{ scene.size }})</h2>
         <scene-editor-component></scene-editor-component>
-      </ng-container>
+      }
     </aside>
   </div>
 </div>

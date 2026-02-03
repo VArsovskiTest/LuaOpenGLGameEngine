@@ -3,9 +3,11 @@ import { Directive, HostListener, ContentChild, TemplateRef, ElementRef, Rendere
 import { AfterContentInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogData, InlineDialogContentComponent } from "./inline-dialog-content-component";
+import { Store } from "@ngrx/store";
+import * as SceneActions from '../store/scenes/scenes.actions';
 
 @Directive({
-  standalone: true,
+  standalone: false,
   selector: '[appDialogLoader]'
 })
 
@@ -15,7 +17,7 @@ export class DialogLoaderDirective implements AfterContentInit {
     private dialog: MatDialog,   // if still needed
   ) {}
 
-  injector = inject(EnvironmentInjector);
+  store = inject(Store);
 
   @Input('appDialogLoader') data!: ConfirmDialogData | null;
   @ContentChild('appDialogLoaderContent') customTemplate?: TemplateRef<any>;
@@ -39,7 +41,10 @@ export class DialogLoaderDirective implements AfterContentInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) console.log(result);
+      this.store.dispatch(SceneActions.startNewScene({
+        size: "s",
+        name: "Sample scene (New) – " + Date.now()   // ← makes name unique
+      }));
     });
   }
 

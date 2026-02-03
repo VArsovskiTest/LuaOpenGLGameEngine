@@ -4,7 +4,7 @@ import { AfterContentInit } from '@angular/core';
 import { InlineDialogContentComponent } from "./inline-dialog-content-component";
 
 @Directive({
-  standalone: true,
+  standalone: false,// Screw this c*ap
   selector: '[appDialogLoaderInline]'
 })
 

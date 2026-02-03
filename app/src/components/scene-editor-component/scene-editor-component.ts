@@ -1,5 +1,4 @@
-import { AsyncPipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
 import Konva from "konva";
 
@@ -7,22 +6,20 @@ import * as ActorActions from '../../store/actors/actors.actions'
 import { Actor } from '../../models/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { Container } from 'konva/lib/Container';
-import { BehaviorSubject, find, map, mergeMap, Subject, tap } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 // import { selectCurrentScene } from '../../store/scenes/scenes.selectors';
 import { Scene } from '../../models/scene.model';
 
 @Component({
   selector: 'scene-editor-component',
-  imports: [AsyncPipe],
+  standalone: false,
   templateUrl: './scene-editor-component.html',
   styleUrl: './scene-editor-component.scss',
 })
 
 export class SceneEditorComponent implements AfterViewInit, OnDestroy {
-  // // TODO: create new, load for the GUID
   // private currentScene = new BehaviorSubject<Scene | null>(null);
-
   // ngOnInit(): void {
   //   this.currentScene$.subscribe(scene => this.currentScene.next(scene));
   // }

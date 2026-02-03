@@ -21,7 +21,7 @@ export const sceneReducer = createReducer(
 
   on(SceneActions.setCurrentScene, (state, { scene }) => ({
     ...state,
-    current: scene,
+    currentScene: scene,
     isLoading: false,
     error: null,
   })),
@@ -29,7 +29,7 @@ export const sceneReducer = createReducer(
   // ── Editor updates (sync, immediate) ─────────────────────
   on(SceneActions.updateCurrentScene, (state, { changes }) => ({
     ...state,
-    current: state.currentScene ? { ...state.currentScene, ...changes } : null,
+    currentScene: state.currentScene ? { ...state.currentScene, ...changes } : null,
   })),
 
   // ── Load ─────────────────────────────────────────────────

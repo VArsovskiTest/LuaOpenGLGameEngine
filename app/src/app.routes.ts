@@ -1,24 +1,19 @@
-// app.routes.ts
 import { Routes } from '@angular/router';
+import { sceneReducer } from './store/scenes/scenes.reducer';
+import { SceneEffects } from './store/scenes/scenes.effects';
 import { provideState } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
 
-import { sceneReducer } from './store/scenes/scenes.reducer';
-import { SceneEffects } from './store/scenes/scenes.effects';
-
+// app-routing.module.ts (or inside AppModule)
 export const routes: Routes = [
-  {
-    path: '',
-    redirectTo: 'main',
-    pathMatch: 'full'
-  },
+  { path: '', redirectTo: 'main', pathMatch: 'full' },
   {
     path: 'main',
-    loadComponent: () => import('./components/main-component/main-component').then(m => m.MainComponent),
-    providers: [
-      provideState('scenes', sceneReducer),
-      provideEffects(SceneEffects)
-    ]
+    loadChildren: () =>
+      import('./components/main-component/main.module').then(m => m.MainModule),
+      providers: [
+        provideState('scenes', sceneReducer),
+        provideEffects(SceneEffects)
+      ]
   },
-  // other routes...
 ];

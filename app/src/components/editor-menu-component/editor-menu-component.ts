@@ -1,27 +1,8 @@
-import { Component, output, ViewChild } from '@angular/core';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { CommonModule } from '@angular/common';
-import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
-import { DialogLoaderDirective } from '../../helpers/dialog-loader-directive';
-import { DialogLoaderInlineDirective } from '../../helpers/dialog-loader-inline-directive'
+import { Component, output } from '@angular/core';
 
 @Component({
   selector: 'editor-menu',
-  imports: [
-    MatToolbarModule,
-    MatButtonModule,
-    MatRadioModule,
-    MatCheckboxModule,
-    MatIconModule,
-    CommonModule,
-    MatMenuModule,
-    DialogLoaderDirective,
-    DialogLoaderInlineDirective
-  ],
+  standalone: false,
   templateUrl: "./editor-menu-component.html",
 })
 
