@@ -23,9 +23,7 @@ export class MainComponent implements OnDestroy, OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   constructor() {
-    console.log("MainComponent constructor called");
     this.store.select(selectCurrentScene).subscribe(() => {
-      console.log("Selector emitted → forcing CD");
       this.cdr.markForCheck();  // or detectChanges() if isolated
     });
   }

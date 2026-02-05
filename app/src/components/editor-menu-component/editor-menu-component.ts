@@ -1,4 +1,8 @@
-import { Component, output } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
+import { sizeEnum } from '../../enums/enums';
+import { FormControl, FormGroup } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import * as SceneActions from '../../store/scenes/scenes.actions';
 
 @Component({
   selector: 'editor-menu',
@@ -8,6 +12,8 @@ import { Component, output } from '@angular/core';
 
 export class EditorMenuComponent {
   selectedMenuItem = output<Record<number, string>>();
+  store = inject(Store);
+  protected formData: FormGroup = new FormGroup({ sceneName: new FormControl<string>("Sample Scene" + crypto.randomUUID()), sceneSize: new FormControl<sizeEnum>("s") });
 
   protected items: Record<number, string>[] = [
     { 1: 'File' },
@@ -27,5 +33,11 @@ export class EditorMenuComponent {
   handleMenuItemClick(action: string) {
     const itemId = this.itemMap[action];
     this.selectedMenuItem.emit({ [itemId]: action });
+  }
+
+  handleNewSceneSuccess(data: any) {
+    if (data) {
+      this.store.dispatch(SceneActions.startNewScene(data.getRawValue()));
+    }
   }
 }

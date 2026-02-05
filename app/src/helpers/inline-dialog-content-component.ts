@@ -10,6 +10,7 @@ export interface ConfirmDialogData {
     okText?: string;
     cancelText?: string;
     innerContent?: string;
+    formData?: FormData;
 }
 
 @Component({

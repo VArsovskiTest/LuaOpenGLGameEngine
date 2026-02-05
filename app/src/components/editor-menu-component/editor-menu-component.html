@@ -3,15 +3,19 @@
   <button class="menu-button" mat-button [matMenuTriggerFor]="editorMenu">Editor</button>
 
   <mat-menu #fileMenu="matMenu">
-    <button [appDialogLoader]="{message: 'Create new Scene.', title: 'New Scene', okText: 'Create', cancelText: 'Cancel',
-  }" mat-menu-item (click)="handleMenuItemClick('New scene')">New scene
+    <button [appDialogLoaderFormData]="formData"
+    [appDialogLoaderSuccess]="handleNewSceneSuccess"
+    [appDialogLoader]="{message: 'Create new Scene.', title: 'New Scene', okText: 'Create', cancelText: 'Cancel'}" mat-menu-item (click)="handleMenuItemClick('New scene')">New scene
     <ng-template #appDialogLoaderContent>
-      <mat-radio-group [(ngModel)]="selectedSize" (change)="onSizeChange()">
-        <mat-radio-button value="s">Small (1800×1200)</mat-radio-button>
-        <mat-radio-button value="m">Medium (3000×2000)</mat-radio-button>
-        <mat-radio-button value="l">Large (4500×3000)</mat-radio-button>
-        <mat-radio-button value="xl">XL (6000×4000)</mat-radio-button>
-      </mat-radio-group>
+      <form [formGroup]="formData">
+        <input formControlName="sceneName" placeholder="Sample scene"/>
+        <mat-radio-group formControlName="sceneSize">
+          <mat-radio-button value="s">Small (1800x1200)</mat-radio-button>
+          <mat-radio-button value="m">Medium (3000x2000)</mat-radio-button>
+          <mat-radio-button value="l">Large (4500x3000)</mat-radio-button>
+          <mat-radio-button value="xl">XL (6000x4000)</mat-radio-button>
+        </mat-radio-group>
+      </form>
     </ng-template>
   </button>
     <button mat-menu-item (click)="handleMenuItemClick('Load scene')">Load scene</button>

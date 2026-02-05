@@ -1,6 +1,7 @@
 import { createAction, props } from "@ngrx/store";
 import { Scene, SceneState } from '../../models/scene.model'
 import { Update } from "@ngrx/entity";
+import { sizeEnum } from "../../enums/enums";
 
 // export const createScene = createAction('[Main Menu] Create new Scene', props<{ sceneState: SceneState | null, sceneIdCreated: string }>());
 // export const saveScene = createAction('[Main Menu] Save scene', props<{ sceneUpdate: Update<Scene> }>());
@@ -11,7 +12,7 @@ import { Update } from "@ngrx/entity";
 // User chooses size in "New Scene" dialog → menu dispatches this
 export const startNewScene = createAction(
   '[Main Menu] Start New Scene',
-  props<{ size: 's' | 'm' | 'l' | 'xl'; name?: string }>()
+  props<{ size: sizeEnum; name?: string }>()
 );
 
 // Later (once created) – can be dispatched from effect or editor

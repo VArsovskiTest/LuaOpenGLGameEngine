@@ -7,6 +7,9 @@ export interface Actor {
   width?: number;
   height?: number;
   radius?: number;
+  rotation?: number;
+  scaleX?: number;
+  scaleY?: number;
   color: string;            // hex or named
   percentage?: number;
   thickness?: number;

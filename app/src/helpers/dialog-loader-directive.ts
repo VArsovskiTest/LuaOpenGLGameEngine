@@ -15,22 +15,26 @@ export class DialogLoaderDirective implements AfterContentInit {
   constructor(
     private vcr: ViewContainerRef,
     private dialog: MatDialog,   // if still needed
-  ) {}
+  ) { }
 
   store = inject(Store);
 
-  @Input('appDialogLoader') data!: ConfirmDialogData | null;
+  @Input('appDialogLoader') dialogOptions!: ConfirmDialogData | null;
+  @Input('appDialogLoaderFormData') dialogData!: FormData | null;
+  @Input('appDialogLoaderSuccess') successFn!: (params: any) => any;
+  @Input('appDialogLoaderError') errorFn!: (params: any) => any;
   @ContentChild('appDialogLoaderContent') customTemplate?: TemplateRef<any>;
 
   @HostListener('click')
-  onHostClick(){
+  onHostClick() {
 
     const params = {
-        title: this.data?.title || 'Confirm action',
-        message: this.data?.message || 'Are you sure?',
-        okText: this.data?.okText || 'Yes',
-        cancelText: this.data?.cancelText || 'No',
-        innerContent: this.customTemplate
+      title: this.dialogOptions?.title || 'Confirm action',
+      message: this.dialogOptions?.message || 'Are you sure?',
+      okText: this.dialogOptions?.okText || 'Yes',
+      cancelText: this.dialogOptions?.cancelText || 'No',
+      innerContent: this.customTemplate,
+      formData: this.dialogOptions?.formData
     }
 
     console.log(this.customTemplate);
@@ -41,10 +45,16 @@ export class DialogLoaderDirective implements AfterContentInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      this.store.dispatch(SceneActions.startNewScene({
-        size: "s",
-        name: "Sample scene (New) – " + Date.now()   // ← makes name unique
-      }));
+      if (result) {
+        // const formControls = (this.dialogData as any).getRawValue();
+        const formErrors = {}; // TODO: find the errors.. this.dialogData.errors
+        if (this.successFn != null) {
+          this.successFn(this.dialogData);
+        }
+        else if (this.errorFn != null) {
+          this.errorFn(formErrors);
+        }
+      }
     });
   }
 
