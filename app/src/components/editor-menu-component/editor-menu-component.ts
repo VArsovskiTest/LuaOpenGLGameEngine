@@ -35,9 +35,15 @@ export class EditorMenuComponent {
     this.selectedMenuItem.emit({ [itemId]: action });
   }
 
-  handleNewSceneSuccess(data: any) {
+  handleNewSceneSuccess = (data: any) => {
     if (data) {
-      this.store.dispatch(SceneActions.startNewScene(data.getRawValue()));
+      console.log("values received: ", data);
+      this.formData.patchValue({
+        sceneName: data.sceneName,
+        sceneSize: data.sceneSize,
+      });
+
+      this.store.dispatch(SceneActions.startNewScene({name: data?.sceneName, size: data?.sceneSize }));
     }
   }
 }

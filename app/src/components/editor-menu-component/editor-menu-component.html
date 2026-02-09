@@ -4,11 +4,13 @@
 
   <mat-menu #fileMenu="matMenu">
     <button [appDialogLoaderFormData]="formData"
-    [appDialogLoaderSuccess]="handleNewSceneSuccess"
-    [appDialogLoader]="{message: 'Create new Scene.', title: 'New Scene', okText: 'Create', cancelText: 'Cancel'}" mat-menu-item (click)="handleMenuItemClick('New scene')">New scene
-    <ng-template #appDialogLoaderContent>
-      <form [formGroup]="formData">
-        <input formControlName="sceneName" placeholder="Sample scene"/>
+      [appDialogLoader]="{message: 'Create new Scene.', title: 'New Scene', okText: 'Create', cancelText: 'Cancel'}"
+      [appDialogLoaderSuccess]="handleNewSceneSuccess"
+      mat-menu-item>
+      New scene
+      <ng-template #appDialogLoaderContent let-formData>
+        <form [formGroup]="formData">
+        <input matInput formControlName="sceneName" placeholder="Sample scene"/>
         <mat-radio-group formControlName="sceneSize">
           <mat-radio-button value="s">Small (1800x1200)</mat-radio-button>
           <mat-radio-button value="m">Medium (3000x2000)</mat-radio-button>
@@ -16,8 +18,9 @@
           <mat-radio-button value="xl">XL (6000x4000)</mat-radio-button>
         </mat-radio-group>
       </form>
-    </ng-template>
-  </button>
+      </ng-template>
+    </button>
+
     <button mat-menu-item (click)="handleMenuItemClick('Load scene')">Load scene</button>
     <button mat-menu-item (click)="handleMenuItemClick('Save scene')">Save scene</button>
     <button mat-menu-item (click)="handleMenuItemClick('Launch scene')">Launch scene</button>

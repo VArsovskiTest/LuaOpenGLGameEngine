@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
 import Konva from "konva";
 
@@ -21,7 +21,7 @@ import { SceneService } from '../../services/scene-service';
   styleUrl: './scene-editor-component.scss',
 })
 
-export class SceneEditorComponent implements AfterViewInit, OnDestroy {
+export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {  
   private store = inject(Store);
   private http = inject(HttpClient);
 
@@ -32,6 +32,10 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
   actors = new BehaviorSubject<Actor[]>([]);
   currentScene$ = this.store.select(selectSceneState);
   currentScene = new BehaviorSubject<SceneState | null>(null);
+
+  ngOnInit(): void {
+    this.currentScene$.subscribe(scene => this.currentScene.next(scene));
+  }
 
   @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
   private sceneService: SceneService = inject(SceneService);
@@ -141,8 +145,6 @@ export class SceneEditorComponent implements AfterViewInit, OnDestroy {
     // container.style.outline = 'none'; // Optional: remove focus outline
     container.focus();
     this.stage.container().addEventListener('keydown', this.keyboardHandler);
-
-    this.currentScene$.subscribe(scene => this.currentScene.next(scene));
 
     this.actors$.subscribe(actors => {
       this.actors.next(actors);
