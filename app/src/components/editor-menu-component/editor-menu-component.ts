@@ -1,19 +1,36 @@
 import { Component, inject, output } from '@angular/core';
 import { sizeEnum } from '../../enums/enums';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import * as SceneActions from '../../store/scenes/scenes.actions';
+// import { CURRENT_FORM_GROUP } from '../../helpers/dialog-form-tokens';
 
 @Component({
   selector: 'editor-menu',
   standalone: false,
   templateUrl: "./editor-menu-component.html",
+  // providers: [
+  //   {
+  //     provide: CURRENT_FORM_GROUP,
+  //     deps: [FormBuilder],
+  //     useFactory: (fb: FormBuilder) => fb.group({
+  //       sceneName: ['', Validators.required],
+  //       sceneSize: ['s' as sizeEnum, Validators.required]
+  //     })
+  //   }
+  // ]
 })
 
 export class EditorMenuComponent {
   selectedMenuItem = output<Record<number, string>>();
   store = inject(Store);
-  protected formData: FormGroup = new FormGroup({ sceneName: new FormControl<string>("Sample Scene" + crypto.randomUUID()), sceneSize: new FormControl<sizeEnum>("s") });
+
+  // private fb = inject(FormBuilder);
+  // formGroup = this.fb.group({
+  //   sceneName: [''', Validators.required],
+  //   sceneSize: ['s', Validators.required]
+  // });
+  protected formData: FormGroup = new FormGroup({ sceneName: new FormControl<string>(""), sceneSize: new FormControl<sizeEnum>("s") });
 
   protected items: Record<number, string>[] = [
     { 1: 'File' },

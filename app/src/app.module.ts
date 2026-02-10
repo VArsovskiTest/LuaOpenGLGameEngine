@@ -29,6 +29,12 @@ import { MatMenuModule } from '@angular/material/menu';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { actorsReducer } from './store/actors/actors.reducer';
 import { ActorsEffects } from './store/actors/actors.effects';
+import { MatFormFieldModule, MatLabel } from '@angular/material/form-field';
+import { CustomInputComponent } from './helpers/custom-components/custom-input-component';
+import { CustomSwitchComponent } from './helpers/custom-components/custom-switch-component';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatDialogContent } from '@angular/material/dialog';
+import { MatInputModule } from '@angular/material/input';
 
 const routes: Routes = [
   { path: '', redirectTo: 'main', pathMatch: 'full' },
@@ -44,6 +50,9 @@ const routes: Routes = [
     SceneEditorComponent,
     DialogLoaderDirective,
     DialogLoaderInlineDirective,
+    CustomInputComponent,
+    // CustomRadioGroupComponent,
+    CustomSwitchComponent,
     // ... ALL other components, directives, pipes
   ],
   imports: [
@@ -59,10 +68,15 @@ const routes: Routes = [
     EffectsModule.forFeature([ActorsEffects]),
     MatToolbarModule,
     MatButtonModule,
+    MatDialogContent,
+    MatFormFieldModule,
+    MatInputModule,
     MatRadioModule,
     MatCheckboxModule,
     MatIconModule,
     MatMenuModule,
+    MatLabel,
+    ReactiveFormsModule,
     StoreDevtoolsModule.instrument({
       maxAge: 25,  // Keeps last 25 states
       logOnly: false,  // false for full inspect mode

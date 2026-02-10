@@ -13,7 +13,7 @@ import { FormGroup } from "@angular/forms";
 
 export class DialogLoaderDirective implements AfterContentInit {
   constructor(
-    private dialog: MatDialog,   // if still needed
+    private dialog: MatDialog,
   ) { }
 
   store = inject(Store);
