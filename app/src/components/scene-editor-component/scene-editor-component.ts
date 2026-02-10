@@ -12,7 +12,7 @@ import { Scene, SceneState } from '../../models/scene.model';
 import { Circle } from 'konva/lib/shapes/Circle';
 import { sceneReducer } from '../../store/scenes/scenes.reducer';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
-import { SceneService } from '../../services/scene-service';
+import { SceneService, SceneSvc } from '../../services/scene-service';
 
 @Component({
   selector: 'scene-editor-component',
@@ -345,15 +345,16 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   saveScene() {
-    const model = {
-      scene: this.currentScene,
-      actors: this.actors
-    };
-
-    this.sceneService.saveScene(model);
-
-    // var url = `http://localhost:4400/api/${this.currentScene.getValue()?.id}`
-    // this.http.post(url, this.actors.getValue()).subscribe(resp => {})
+    const sceneData = this.currentScene.getValue()?.currentScene;
+    this.sceneService.saveScene({
+      id: sceneData?.id,
+      name: sceneData?.name,
+      actors: sceneData?.actors,
+      size: sceneData?.size,
+      nextSceneId: sceneData?.nextSceneId,
+      winCondition: sceneData?.winCondition,
+      updatedOn: new Date()
+    } as SceneSvc);
   }
 
   loadActors(json: any) {

@@ -1,4 +1,5 @@
 import { EntityState } from "@ngrx/entity";
+import { Actor } from "./actor.model";
 
 
 // src/app/models/scene.model.ts
@@ -8,6 +9,7 @@ export interface Scene {
   size: 's' | 'm' | 'l' | 'xl' | null;
   winCondition?: string;
   nextSceneId?: string;
+  actors?: Actor[];
   // ... data, assets, nodes, etc.
 }
 

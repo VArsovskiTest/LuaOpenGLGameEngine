@@ -25,12 +25,11 @@ export class EditorMenuComponent {
   selectedMenuItem = output<Record<number, string>>();
   store = inject(Store);
 
-  // private fb = inject(FormBuilder);
-  // formGroup = this.fb.group({
-  //   sceneName: [''', Validators.required],
-  //   sceneSize: ['s', Validators.required]
-  // });
-  protected formData: FormGroup = new FormGroup({ sceneName: new FormControl<string>(""), sceneSize: new FormControl<sizeEnum>("s") });
+  private fb = inject(FormBuilder);
+  formData = this.fb.group({
+    sceneName: ['', Validators.required],
+    sceneSize: ['s', Validators.required]
+  });
 
   protected items: Record<number, string>[] = [
     { 1: 'File' },
@@ -60,7 +59,7 @@ export class EditorMenuComponent {
         sceneSize: data.sceneSize,
       });
 
-      this.store.dispatch(SceneActions.startNewScene({name: data?.sceneName, size: data?.sceneSize }));
+      this.store.dispatch(SceneActions.startNewScene({ name: data?.sceneName, size: data?.sceneSize }));
     }
   }
 }
