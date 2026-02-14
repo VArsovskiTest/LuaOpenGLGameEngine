@@ -20,8 +20,8 @@ public class ScenesController : ControllerBase
         return _context.Scenes.ToList();
     }
 
-    [HttpPost("{id?}")]   // POST /api/scenes or /api/scenes/5 for update
-    public async Task<IActionResult> SaveScene(int? id, [FromBody] Scene scene)
+    [HttpPost("{id?}"), HttpPut("{id?}")]
+    public async Task<IActionResult> SaveScene([FromRoute] Guid? id, [FromBody] Scene scene)
     {
         if (id.HasValue)
         {

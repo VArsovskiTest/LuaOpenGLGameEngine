@@ -10,6 +10,7 @@ export interface SceneResponse { data: SceneSvc[]; }
 @Injectable({providedIn: 'root'})
 export class SceneService {
   private apiUrl = `${environment.apiUrl}/scenes`;
+  // private http = inject(HttpClient);
   constructor(private http: HttpClient) {}
 
   saveScene(sceneState: Partial<Scene>): Observable<Scene> {
@@ -17,18 +18,25 @@ export class SceneService {
     // If it has an id → we assume it's an update (PUT), otherwise create new (POST)
     if (sceneState.id) {
       return this.http
-        .put<Scene>(`${this.apiUrl}/${sceneState.id}`, sceneState)
-        .pipe(catchError(this.handleError));
+        .put<Scene>(`${this.apiUrl}/${sceneState.id}`, sceneState, { headers: { "content-type" : "application/json" } })
+        .pipe(
+          map(data => data),
+          catchError(this.handleError));
     } else {
       return this.http
         .post<Scene>(this.apiUrl, sceneState)
-        .pipe(catchError(this.handleError));
+        .pipe(
+          map(data => data),
+          catchError(this.handleError)
+        );
     }
   }
 
   getScenes(): Observable<Scene[]> {
-    return this.http.get<SceneResponse>(environment.apiUrl).pipe(map(response => response?.data || response),
-    catchError(this.handleError));
+    return this.http.get<SceneResponse>(environment.apiUrl).pipe(
+      map(response => response?.data || response),
+      catchError(this.handleError)
+    );
   }
 
   createScene(scene: Omit<Scene, 'id'>): Observable<Scene> {

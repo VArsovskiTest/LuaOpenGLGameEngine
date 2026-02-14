@@ -2,7 +2,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { HttpClientModule } from '@angular/common/http';
 import { RouterModule, Routes } from '@angular/router';
 
 import { AppComponent } from './app.component';
@@ -35,6 +34,7 @@ import { CustomSwitchComponent } from './helpers/custom-components/custom-switch
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatDialogContent } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 const routes: Routes = [
   { path: '', redirectTo: 'main', pathMatch: 'full' },
@@ -58,7 +58,6 @@ const routes: Routes = [
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
-    HttpClientModule,
     RouterModule.forRoot(routes),          // ← routing here
     StoreModule.forRoot({}),               // global reducers if any
     StoreModule.forFeature('scenes', sceneReducer),
@@ -87,6 +86,7 @@ const routes: Routes = [
     // }),
     // FormsModule, ReactiveFormsModule, etc. if needed
   ],
+  providers: [provideHttpClient(withInterceptorsFromDi())],
   bootstrap: [AppComponent]                // ← crucial! Tells Angular to start with this component
 })
 export class AppModule { }

@@ -12,16 +12,16 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowEditorFrontend", policy =>
     {
-        policy.WithOrigins(
-            "http://localhost:4200",          // Angular port
-            "https://localhost:4200",
-            "http://127.0.0.1:4200",          // sometimes browsers use this
-            "http://your-machine-name:4200"   // if accessing via network
+        policy.WithOrigins("*"
+            // "http://localhost:4200",          // Angular port
+            // "https://localhost:4200",
+            // "http://127.0.0.1:4200",          // sometimes browsers use this
+            // "http://your-machine-name:4200"   // if accessing via network
             // Add production origins later, e.g. "https://minimal-api-engine-domain.com"
         )
         .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+        .AllowAnyMethod();
+        //.AllowCredentials();
     });
 });
 

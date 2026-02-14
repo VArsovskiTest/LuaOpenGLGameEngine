@@ -346,7 +346,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   saveScene() {
     const sceneData = this.currentScene.getValue()?.currentScene;
-    this.sceneService.saveScene({
+    const savedScene = this.sceneService.saveScene({
       id: sceneData?.id,
       name: sceneData?.name,
       actors: sceneData?.actors,
@@ -354,7 +354,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       nextSceneId: sceneData?.nextSceneId,
       winCondition: sceneData?.winCondition,
       updatedOn: new Date()
-    } as SceneSvc);
+    } as SceneSvc).subscribe(scene => { console.log("Scene saved: ", scene); });
   }
 
   loadActors(json: any) {
