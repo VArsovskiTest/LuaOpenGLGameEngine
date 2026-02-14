@@ -1,7 +1,7 @@
 // environments/environment.ts
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5281/api'
+  apiUrl: 'http://localhost:5000/api'//'http://minimal-editor-api.local:4400/api'
 };
 
 // environments/environment.prod.ts

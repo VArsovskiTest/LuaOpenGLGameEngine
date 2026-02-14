@@ -2,8 +2,8 @@ namespace MinimalEngineApi.Models;
 
 public class Actor
 {
-    public int Id { get; set; }
-    public int SceneId { get; set; }
+    public Guid Id { get; set; }
+    public Guid SceneId { get; set; }
     public string Type { get; set; } = string.Empty;     // "Player", "Enemy", etc.
     public float X { get; set; }
     public float Y { get; set; }

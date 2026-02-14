@@ -1,0 +1,71 @@
+dotnet publish -c Debug -o C:\_Publish --no-restore /p:DeleteExistingFiles=true
+// dotnet publish /p:PublishProfile=ProfileName /p:DeleteExistingFiles=true
+
+OR directly publish to the inetpub site folder:
+dotnet publish -c Debug -o "C:\inetpub\wwwroot\YourApiSite" /p:DeleteExistingFiles=true
+
+Iusrmgr.msc => create new user => set Password (whichever, does not have to be your login one)
+=> add the user to group: IIS_IUSRS
+=> set to AppPool identity
+=> create the folder with api-name (minimal-editor-api for ex.) in C:\inetpub\wwwroot
+=> Add permissions to that folder for IIS_IUSRS user group
+=> In Program.cs https redicrection is set to port 4401 (so add Basic Binding with http to port 4400 and https to port 4401)
+    => If want to change that then better use an EnvironmentVariable like ASPNETCORE_HTTPS_PORT for ex.
+=> Setup Firewall For ports (4400, 4401) (or whichever ports you chose to use for the API)
+=> Set up url bindings for your IIS site in drivers/etc/hosts file, for ex:
+    127.0.0.1    minimal-editor-api.local # Local API site
+    127.0.0.1    minimal-editor.local     # If also hosting the frontend manually
+=> For further troubleshoot (https/SSL issues or similar): EventViewer => Windows/Applications
+
+// PWSH: dotnet dev-certs https --trust // Make sure IIS Development Certificate is already trusted
+
+BONUS:
+
+Setup-Certificate steps:
+
+Step 1: Open PowerShell as Administrator
+Step 2: Create the self-signed certificate
+Run one of the commands below depending on your needs.
+
+PowerShellNew-SelfSignedCertificate `
+  -DnsName "localhost","minimal-editor-api.local","127.0.0.1" `
+  -CertStoreLocation "cert:\LocalMachine\My" `
+  -FriendlyName "Local API Dev Cert (localhost + minimal-editor-api.local)" `
+  -NotAfter (Get-Date).AddYears(5) `
+  -KeyUsage DigitalSignature,KeyEncipherment `
+  -Type SSLServerAuthentication
+
+OR (a bit more Wildcard version with *.local)
+
+PowerShellNew-SelfSignedCertificate `
+  -DnsName "*.local","localhost" `
+  -CertStoreLocation "cert:\LocalMachine\My" `
+  -FriendlyName "Wildcard *.local Dev Cert" `
+  -NotAfter (Get-Date).AddYears(5) `
+  -KeyUsage DigitalSignature,KeyEncipherment `
+  -Type SSLServerAuthentication
+
+IMPORTANT: For production: Never use self-signed — get real certs (Let's Encrypt, etc.).
+
+Step 3: Copy the Thumbprint (long hex string)
+Step 4: Trust the certificate (so browsers stop complaining)
+    certlm.msc → Enter (manages Local Computer certificates)
+    Expand Personal → Certificates
+    Find your new cert
+    Right-click it → All Tasks → Export…
+        Yes, export the private key → Next
+        .PFX format → check "Include all certificates..." and "Exportable private key"
+        Set a temporary password
+Save pfx file: e.g. C:\temp\dev-cert.pfx
+
+Step 5: Import it to Trusted Root Certification Authorities:
+    Expand Trusted Root Certification Authorities → Certificates
+    Right-click → All Tasks → Import…
+    Select your .pfx file
+        → enter password
+        → Place all certificates in: Trusted Root Certification Authorities
+
+Cleanup:
+    * List certs: Get-ChildItem -Path Cert:\LocalMachine\My | Format-Table Subject, FriendlyName, Thumbprint, NotAfter
+        ** This lists your Thumbprint also
+    * Remove cert: Remove-Item -Path Cert:\LocalMachine\My\THUMBPRINT_HERE

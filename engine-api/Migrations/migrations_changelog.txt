@@ -1,0 +1,8 @@
+dotnet tool install --global dotnet-ef
+dotnet tool update --global dotnet-ef
+dotnet ef migrations add InitialCreate
+dotnet ef database update // OR dotnet ef database update InitialCreate
+
+dotnet ef migrations add ChangeSceneAndActorIdsToGuid
+dotnet ef migrations script --idempotent > changes.sql // Create a changes.sql file to check if Migration will build properly
+dotnet ef database update

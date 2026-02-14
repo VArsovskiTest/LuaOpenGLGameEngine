@@ -18,7 +18,10 @@ export class SceneService {
     // If it has an id → we assume it's an update (PUT), otherwise create new (POST)
     if (sceneState.id) {
       return this.http
-        .put<Scene>(`${this.apiUrl}/${sceneState.id}`, sceneState, { headers: { "content-type" : "application/json" } })
+        .put<Scene>(`${this.apiUrl}/${sceneState.id}`, sceneState, { headers: {
+          "content-type" : "application/json",
+          'Access-Control-Allow-Origin':'*',
+        } })
         .pipe(
           map(data => data),
           catchError(this.handleError));
