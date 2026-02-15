@@ -69,3 +69,38 @@ Cleanup:
     * List certs: Get-ChildItem -Path Cert:\LocalMachine\My | Format-Table Subject, FriendlyName, Thumbprint, NotAfter
         ** This lists your Thumbprint also
     * Remove cert: Remove-Item -Path Cert:\LocalMachine\My\THUMBPRINT_HERE
+
+MySQL setup:
+
+1 = Log in as root (or another admin user): mysql -u root -p
+    use \h prompt to see options, should be \g for sending a SQL command to server
+2 = SQLCREATE USER 'webapp'@'localhost' IDENTIFIED BY '<YourPasswordHere>';
+3 = (Optional but recommended) Create the database:SQLCREATE DATABASE `minimal-editor-api-db` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+4 = Grant privileges (this works even if the DB didn't exist yet when you ran step 2):
+    SQLGRANT ALL PRIVILEGES ON `minimal-editor-api-db`.* TO 'webapp'@'localhost'; FLUSH PRIVILEGES;
+
+Verification check:
+
+Open CMD (admin):
+Make sure Path variable knows MySQL location (or set termporarily for session):
+    set PATH=%PATH%;"C:\Program Files\MySQL\MySQL Server 8.0\bin"
+mysql -u root -p
+
+\g SHOW DATABASES;
+SELECT User, Host FROM mysql.user;
+SHOW GRANTS FOR 'webapp'@'localhost';
+
+P.S. make sure your user uses old plugin or set options for new hashing plugin for mysql passwords, i.e.:
+
+    ALTER USER 'webapp'@'localhost' IDENTIFIED WITH mysql_native_password BY '<YourPassword>'; FLUSH PRIVILEGES;
+
+Check:
+
+    SELECT User, Host, plugin FROM mysql.user WHERE User = 'webapp';
+    should show:
+
++--------+-----------+-----------------------+
+| User   | Host      | plugin                |
++--------+-----------+-----------------------+
+| webapp | localhost | mysql_native_password | <== This is important
++--------+-----------+-----------------------+

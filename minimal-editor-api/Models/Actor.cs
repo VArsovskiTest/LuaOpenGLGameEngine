@@ -1,9 +1,13 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 namespace MinimalEngineApi.Models;
 
 public class Actor
 {
-    public Guid Id { get; set; }
-    public Guid SceneId { get; set; }
+    // [Column(TypeName = "binary(16)")]
+    [Key]
+    public int Id { get; set; }
+    public int SceneId { get; set; }
     public string Type { get; set; } = string.Empty;     // "Player", "Enemy", etc.
     public float X { get; set; }
     public float Y { get; set; }

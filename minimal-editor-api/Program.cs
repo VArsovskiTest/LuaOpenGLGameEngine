@@ -50,7 +50,7 @@ public class Program
         defaultConnection = ConnectionStringBuilder.GetConnectionString(defaultConnection); // update connection from Env_variable
 
         builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseMySql(defaultConnection, ServerVersion.AutoDetect(defaultConnection)));// options.UseSqlite("Data Source=minimal-editor-api.db"));
+            options.UseMySql(defaultConnection, ServerVersion.AutoDetect(defaultConnection)));
 
         builder.Services.AddControllers();
 
