@@ -4,10 +4,10 @@ namespace MinimalEngineApi.Models;
 
 public class Actor
 {
-    // [Column(TypeName = "binary(16)")]
     [Key]
-    public int Id { get; set; }
-    public int SceneId { get; set; }
+    [Column(TypeName = "binary(16)")]
+    public Guid Id { get; set; } = new Guid();
+    public Guid SceneId { get; set; } = new Guid();
     public string Type { get; set; } = string.Empty;     // "Player", "Enemy", etc.
     public float X { get; set; }
     public float Y { get; set; }

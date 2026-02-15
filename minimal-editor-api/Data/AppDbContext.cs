@@ -11,6 +11,18 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Scene>()
+            .Property(e => e.Id)
+            .HasColumnType("binary(16)");
+
+        modelBuilder.Entity<Actor>()
+            .Property(e => e.Id)
+            .HasColumnType("binary(16)");
+
+        modelBuilder.Entity<Actor>()
+            .Property(e => e.SceneId)
+            .HasColumnType("binary(16)");
+
         modelBuilder.Entity<Actor>()
             .HasOne(a => a.Scene)
             .WithMany(s => s.Actors)
