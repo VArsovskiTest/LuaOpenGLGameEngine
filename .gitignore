@@ -3,8 +3,10 @@
 .vscode/*
 app/.vs/*
 app/.vscode/*
-engine/.vs/*
-engine/.vscode/*
+minimal-editor-api/.vs/*
+minimal-editor-api/.vscode/*
+minimal-editor-server/.vs/*
+minimal-editor-server/.vscode/*
 
 # Ignore plugin & bin/obj folders
 lua-debug/

@@ -39,6 +39,25 @@ public class ScenesController : ControllerBase
             _context.Scenes.Add(scene);
         }
 
+        foreach(var actor in scene.Actors)
+        {
+            var existing = await _context.Actors.FindAsync(actor.Id);
+            if (existing != null)
+            {
+                existing.Type = actor.Type;
+                existing.X = actor.X;
+                existing.Y = actor.Y;
+                existing.SceneId = scene.Id;
+                existing.Scene = scene;
+                existing.UpdatedAt = DateTime.Now;
+            }
+            else
+            {
+                actor.CreatedAt = DateTime.Now;
+                _context.Actors.Add(actor);
+            }
+        }
+
         await _context.SaveChangesAsync();
         return Ok(scene.Id);   // return new/existing ID
     }
