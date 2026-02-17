@@ -29,8 +29,6 @@ export class MainComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit() {
-    console.log("Main component init:");
-    console.log(this.store);
     this.store.select(selectCurrentScene).subscribe(scene => {
       console.log("Current scene updated:", scene);
       this.showEditor = scene != null;

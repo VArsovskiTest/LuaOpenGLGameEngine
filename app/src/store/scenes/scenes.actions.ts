@@ -9,13 +9,11 @@ import { sizeEnum } from "../../enums/enums";
 
 // scene.actions.ts
 
-// User chooses size in "New Scene" dialog → menu dispatches this
 export const startNewScene = createAction(
   '[Main Menu] Start New Scene',
   props<{ size: sizeEnum; name?: string }>()
 );
 
-// Later (once created) – can be dispatched from effect or editor
 export const setCurrentScene = createAction(
   '[Scene] Set Current Scene',
   props<{ scene: Scene }>()

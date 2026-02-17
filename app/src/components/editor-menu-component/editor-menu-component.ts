@@ -53,7 +53,6 @@ export class EditorMenuComponent {
 
   handleNewSceneSuccess = (data: any) => {
     if (data) {
-      console.log("values received: ", data);
       this.formData.patchValue({
         sceneName: data.sceneName,
         sceneSize: data.sceneSize,

@@ -4,7 +4,7 @@ import { Actor } from "./actor.model";
 
 // src/app/models/scene.model.ts
 export interface Scene {
-  id: string;
+  id?: string; // must be optional = before creating in DB we need this not have value
   name: string | null;
   size: 's' | 'm' | 'l' | 'xl' | null;
   winCondition?: string;

@@ -16,25 +16,18 @@ export class SceneEffects {
 
     return actions$.pipe(
       ofType(SceneActions.startNewScene),
-      // Log BEFORE dispatching new action
       tap(() => {
         store.pipe(
-          select(state => state.scenes),  // or your root selector if no feature
+          select(state => state.scenes),
           take(1)
         ).subscribe(s => console.log("Scenes state BEFORE:", s));
       }),
       map(({ size, name }) => {
-        const newScene: Scene = {
-          id: crypto.randomUUID(),
-          name: name ?? `New Scene (${size})`,
-          size,
-          // ...
-        };
+        const newScene: Scene = { name: name ?? `New Scene (${size})`, size };
         return SceneActions.setCurrentScene({ scene: newScene });
       }),
-      // Log AFTER (but this runs before reducer actually applies)
       tap(() => {
-        setTimeout(() => {  // small delay to let reducer run // Remove this once you confirm it works
+        setTimeout(() => {  // small delay to let reducer run
           store.pipe(select(state => state.scenes), take(1)).subscribe(s => {
             console.log("Scenes state AFTER:", s);
           });

@@ -22,6 +22,9 @@ import { SceneService, SceneSvc } from '../../services/scene-service';
 })
 
 export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {  
+  @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
+  private sceneService: SceneService = inject(SceneService);
+
   private store = inject(Store);
   private http = inject(HttpClient);
 
@@ -35,10 +38,8 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.currentScene$.subscribe(scene => this.currentScene.next(scene));
+    console.log("Scene loaded from Store", this.currentScene);
   }
-
-  @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
-  private sceneService: SceneService = inject(SceneService);
 
   private stage!: Konva.Stage;
   private layer!: Konva.Layer;
