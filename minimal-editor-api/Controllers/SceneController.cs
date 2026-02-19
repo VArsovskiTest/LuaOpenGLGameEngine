@@ -35,7 +35,6 @@ public class ScenesController : ControllerBase
         else
         {
             scene.CreatedAt = DateTime.UtcNow;
-            scene.UpdatedAt = DateTime.UtcNow;
             _context.Scenes.Add(scene);
         }
 

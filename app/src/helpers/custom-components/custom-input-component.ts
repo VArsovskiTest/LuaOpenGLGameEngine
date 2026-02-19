@@ -2,6 +2,7 @@
 import { Component, Input, inject } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { CURRENT_FORM_GROUP } from '../../helpers/dialog-form-tokens';
+import { MatLabel } from '@angular/material/select';
 
 @Component({
     selector: 'app-custom-input',

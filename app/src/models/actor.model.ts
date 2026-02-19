@@ -11,6 +11,7 @@ export interface Actor {
   scaleX?: number;
   scaleY?: number;
   color: string;            // hex or named
+  movable?: boolean;
   percentage?: number;
   thickness?: number;
   name?: string;

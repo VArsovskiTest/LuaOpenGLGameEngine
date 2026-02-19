@@ -6,13 +6,13 @@ import * as ActorActions from '../../store/actors/actors.actions'
 import { Actor } from '../../models/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { Container } from 'konva/lib/Container';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, map, of, switchMap, take, tap, withLatestFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Scene, SceneState } from '../../models/scene.model';
 import { Circle } from 'konva/lib/shapes/Circle';
-import { sceneReducer } from '../../store/scenes/scenes.reducer';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
-import { SceneService, SceneSvc } from '../../services/scene-service';
+import { ActorSvc, SceneService, SceneSvc } from '../../services/scene-service';
+import { ActorsService } from '../../services/actors-service';
 
 @Component({
   selector: 'scene-editor-component',
@@ -21,9 +21,10 @@ import { SceneService, SceneSvc } from '../../services/scene-service';
   styleUrl: './scene-editor-component.scss',
 })
 
-export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {  
+export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
   private sceneService: SceneService = inject(SceneService);
+  private actorsService: ActorsService = inject(ActorsService);
 
   private store = inject(Store);
   private http = inject(HttpClient);
@@ -37,7 +38,16 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   currentScene = new BehaviorSubject<SceneState | null>(null);
 
   ngOnInit(): void {
-    this.currentScene$.subscribe(scene => this.currentScene.next(scene));
+    this.currentScene$.subscribe(scene => {
+      this.currentScene.next(scene);
+      const sceneId = this.currentScene.getValue()?.currentScene?.id;
+      if (sceneId) {
+        this.actorsService.getActorsForScene(sceneId).subscribe(actors => {
+          // TODO: Find out why actors don't drawn even though we have actors here
+          this.actors.next(actors);
+          this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT);
+      })};
+    });
     console.log("Scene loaded from Store", this.currentScene);
   }
 
@@ -318,7 +328,8 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   updateColor(id: string, newColor: string) {
     this.selectedActor.next(this.findById(id, this.actors.getValue()));
-    this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id, changes: { color: newColor } }
+    this.store.dispatch(ActorActions.updateActor({
+      id: id, actorUpdate: { id, changes: { color: newColor } }
     }));
   }
 
@@ -337,7 +348,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   undo() {
     const previous = this.selectedActor.getValue();
     if (previous) {
-      this.store.dispatch(ActorActions.updateActor({ id: previous.id,  actorUpdate: { id: previous.id, changes: previous } }))
+      this.store.dispatch(ActorActions.updateActor({ id: previous.id, actorUpdate: { id: previous.id, changes: previous } }))
     }
   }
 
@@ -346,16 +357,43 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   saveScene() {
-    const sceneData = this.currentScene.getValue()?.currentScene;
-    const savedScene = this.sceneService.saveScene({
-      id: sceneData?.id,
-      name: sceneData?.name,
-      actors: sceneData?.actors,
-      size: sceneData?.size,
-      nextSceneId: sceneData?.nextSceneId,
-      winCondition: sceneData?.winCondition,
-      updatedOn: new Date()
-    } as SceneSvc).subscribe(scene => { console.log("Scene saved: ", scene); });
+    const sceneToSave$ = this.currentScene$.pipe(
+      take(1),
+      map(s => {
+        const sceneData = s?.currentScene;
+        const scene = {
+          name: sceneData?.name,
+          actors: sceneData?.actors,
+          size: sceneData?.name,
+          nextSceneId: sceneData?.name,
+          winCondition: sceneData?.winCondition,
+        } as SceneSvc;
+        if (sceneData?.id) { scene.updatedAt = new Date(); }
+        else scene.createdAt = new Date();
+        return scene;
+      }),
+      withLatestFrom(this.actors), map(([sd, ad]) => {
+        return {
+          ...sd, actors: ad.map(actor => {
+            const actorData = {
+              ...actor,
+              type: actor.type, name: actor.name,
+              x: actor.x, y: actor.y, scaleX: actor.scaleX, scaleY: actor.scaleY,
+              rotation: actor.rotation, width: actor.width, height: actor.height, radius: actor.radius,
+              color: actor.color,
+              movable: actor.movable,
+            } as ActorSvc;
+            if (sd?.id) { actorData.updatedAt = new Date(); }
+            else actorData.createdAt = new Date();
+            return actorData;
+          })
+        };
+      }),
+      // tap(savedScene => console.log("Saving scene", savedScene)),
+      // switchMap(scene => { debugger; return this.sceneService.saveScene(scene); })
+    );
+    let sceneSaved: Scene | null = null;
+    sceneToSave$.subscribe(scene => this.sceneService.saveScene(scene).subscribe(savedScene => sceneSaved = savedScene));
   }
 
   loadActors(json: any) {

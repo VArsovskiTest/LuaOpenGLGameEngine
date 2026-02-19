@@ -1,8 +1,9 @@
 import { Component, inject, output } from '@angular/core';
-import { sizeEnum } from '../../enums/enums';
+import { MenuItemsEnum, sizeEnum } from '../../enums/enums';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { Store } from '@ngrx/store';
+import { select, Store } from '@ngrx/store';
 import * as SceneActions from '../../store/scenes/scenes.actions';
+import { MenuItem } from '../../models/miscelaneous.models';
 // import { CURRENT_FORM_GROUP } from '../../helpers/dialog-form-tokens';
 
 @Component({
@@ -22,7 +23,7 @@ import * as SceneActions from '../../store/scenes/scenes.actions';
 })
 
 export class EditorMenuComponent {
-  selectedMenuItem = output<Record<number, string>>();
+  selectedMenuItem = output<MenuItem | null>();
   store = inject(Store);
 
   private fb = inject(FormBuilder);
@@ -31,24 +32,19 @@ export class EditorMenuComponent {
     sceneSize: ['s', Validators.required]
   });
 
-  protected items: Record<number, string>[] = [
-    { 1: 'File' },
-    { 2: 'Editor' }
+  protected itemMap: MenuItem[] = [
+    new MenuItem('New scene', MenuItemsEnum.NewScene),
+    new MenuItem('Load scene', MenuItemsEnum.LoadScene),
+    new MenuItem('Save scene', MenuItemsEnum.SaveScene),
+    new MenuItem('Launch scene', MenuItemsEnum.LaunchScene),
+    new MenuItem('Add actor', MenuItemsEnum.AddActor),
+    new MenuItem('Remove actor', MenuItemsEnum.RemoveActor),
+    new MenuItem('Modify actor', MenuItemsEnum.ModivyActor)
   ];
 
-  protected itemMap: Record<string, number> = {
-    'New scene': 1,
-    'Load scene': 2,
-    'Save scene': 3,
-    'Launch scene': 4,
-    'Add actor': 5,
-    'Remove actor': 6,
-    'Modify actor': 7
-  };
-
   handleMenuItemClick(action: string) {
-    const itemId = this.itemMap[action];
-    this.selectedMenuItem.emit({ [itemId]: action });
+    const selectedItem = this.itemMap.find(item => item.name == action) || null;
+    this.selectedMenuItem.emit(selectedItem);
   }
 
   handleNewSceneSuccess = (data: any) => {

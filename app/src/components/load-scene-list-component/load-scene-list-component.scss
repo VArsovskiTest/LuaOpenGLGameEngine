@@ -1,0 +1,25 @@
+//#006a6a
+.table-definition-row {
+    background-color : #502c33;
+    color: whitesmoke;
+}
+.table-item-row-selected {
+    //background-color : #502c33;
+    color: #006a6a;
+    font-weight: bold;
+}
+.table-item-row-selected:hover {
+    background-color: #a08c83;
+    color: #006a6a;
+}
+
+.table-item-row {    
+    background-color : whitesmoke;
+    color:#502c33;
+    font-weight: normal;
+}
+.table-item-row:hover {
+    background-color: #a08c83;
+    color: whitesmoke;
+    cursor: pointer;
+}

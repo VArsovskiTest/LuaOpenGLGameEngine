@@ -1,23 +1,23 @@
-<mat-toolbar color="primary">
-  <button class="menu-button" mat-button [matMenuTriggerFor]="fileMenu">File</button>
-  <button class="menu-button" mat-button [matMenuTriggerFor]="editorMenu">Editor</button>
-
+<!-- <mat-toolbar color="primary"> -->
+  <div class="menu-button-container">
+    <button class="menu-button" mat-button [matMenuTriggerFor]="fileMenu">File</button>
+    <button class="menu-button" mat-button [matMenuTriggerFor]="editorMenu">Editor</button>
+  </div>
   <mat-menu #fileMenu="matMenu">
     <button [appDialogLoaderFormData]="formData"
       [appDialogLoader]="{message: 'Create new Scene.', title: 'New Scene', okText: 'Create', cancelText: 'Cancel'}"
-      [appDialogLoaderSuccess]="handleNewSceneSuccess"
-      mat-menu-item>
+      [appDialogLoaderSuccess]="handleNewSceneSuccess" mat-menu-item>
       New scene
       <ng-template #appDialogLoaderContent let-formData>
         <form [formGroup]="formData">
-        <input matInput formControlName="sceneName" placeholder="Sample scene"/>
-        <mat-radio-group formControlName="sceneSize">
-          <mat-radio-button value="s">Small (1800x1200)</mat-radio-button>
-          <mat-radio-button value="m">Medium (3000x2000)</mat-radio-button>
-          <mat-radio-button value="l">Large (4500x3000)</mat-radio-button>
-          <mat-radio-button value="xl">XL (6000x4000)</mat-radio-button>
-        </mat-radio-group>
-      </form>
+          <input matInput formControlName="sceneName" placeholder="Sample scene" />
+          <mat-radio-group formControlName="sceneSize">
+            <mat-radio-button value="s">Small (1800x1200)</mat-radio-button>
+            <mat-radio-button value="m">Medium (3000x2000)</mat-radio-button>
+            <mat-radio-button value="l">Large (4500x3000)</mat-radio-button>
+            <mat-radio-button value="xl">XL (6000x4000)</mat-radio-button>
+          </mat-radio-group>
+        </form>
       </ng-template>
     </button>
 
@@ -31,19 +31,21 @@
     <button mat-menu-item (click)="handleMenuItemClick('Remove actor')">Remove actor</button>
     <button mat-menu-item (click)="handleMenuItemClick('Modify actor')">Modify actor</button>
   </mat-menu>
-</mat-toolbar>
+<!-- </mat-toolbar> -->
 
-<button [appDialogLoader]="{
+<div class="menu-button-container">
+  <button class="menu-button" mat-button [appDialogLoader]="{
     message: 'This will permanently remove the user.',
     title: 'Delete user?',
     okText: 'Delete anyway',
     cancelText: 'Keep user',
     innerContent: '<small>Warning: also removes associated files</small>'
   }">
-  Delete User
-</button>
+    Delete User
+  </button>
+</div>
 
-<div appDialogLoaderInline="data=
+<!-- <div class="menu-button-container" appDialogLoaderInline="data=
 {
     message: 'This will permanently remove the user.',
     title: 'Delete user?',
@@ -51,11 +53,9 @@
     cancelText: 'Keep user',
     innerContent: '<small>Warning: also removes associated files</small>'
 }
-" style="border: 1px solid black; padding: 10px; cursor: pointer;">
-  Click me to append custom HTML!
+">
+  <button mat-button class="menu-button">Click me to append custom HTML!</button>
   <ng-template #appDialogLoaderInlineContent>
-    <div class="content">
-      <p>ASDFASDFASDFASDF</p>
-    </div>
+    <div class="content"><p>ASDFASDFASDFASDF</p></div>
   </ng-template>
-</div>
+</div> -->

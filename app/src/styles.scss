@@ -1,3 +1,4 @@
+
 // Include theming for Angular Material with `mat.theme()`.
 // This Sass mixin will define CSS variables that are used for styling Angular Material
 // components according to the Material 3 design spec.
@@ -211,6 +212,12 @@ p {
   strong {
     font-weight: 600;
   }
+}
+
+.menu-button-container {
+  background-color: whitesmoke;
+  padding: 10px;
+  cursor: pointer;
 }
 
 .navbar {

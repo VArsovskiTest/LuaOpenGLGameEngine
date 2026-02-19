@@ -104,3 +104,11 @@ Check:
 +--------+-----------+-----------------------+
 | webapp | localhost | mysql_native_password | <== This is important
 +--------+-----------+-----------------------+
+
+Usage:
+
+USE <database-name>;
+\g SELECT * FROM <table-name> WHERE LOWER(<column-name>) LIKE LOWER('%<literal-value>%') LIMIT <how-many-items>;
+
+History of Queries:
+    \g UPDATE scenes SET Size='nil';

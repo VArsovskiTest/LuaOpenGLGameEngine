@@ -16,6 +16,12 @@ public class ActorsController : ControllerBase {
     [HttpGet]
     public async Task<IEnumerable<Actor>> GetActors()
     {
-        return _dbContext.Actors.ToList();
+        return await Task.Run(() => _dbContext.Actors);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IEnumerable<Actor>> GetActorsForScene(Guid id)
+    {
+        return await Task.Run(() => _dbContext.Actors.Where(actor => actor.SceneId == id));
     }
 }

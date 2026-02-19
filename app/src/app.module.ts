@@ -6,6 +6,9 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { AppComponent } from './app.component';
 import { MainComponent } from './components/main-component/main-component';
+import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
 
 // State imports
 import { SceneState } from './models/scene.model';
@@ -35,6 +38,8 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatDialogContent } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { LoadSceneListComponent } from './components/load-scene-list-component/load-scene-list-component';
+import { MatCard } from '@angular/material/card';
 
 const routes: Routes = [
   { path: '', redirectTo: 'main', pathMatch: 'full' },
@@ -48,11 +53,14 @@ const routes: Routes = [
     MainComponent,
     EditorMenuComponent,
     SceneEditorComponent,
+    LoadSceneListComponent,
     DialogLoaderDirective,
     DialogLoaderInlineDirective,
     CustomInputComponent,
     // CustomRadioGroupComponent,
     CustomSwitchComponent,
+    // MatTableDataSource,
+
     // ... ALL other components, directives, pipes
   ],
   imports: [
@@ -74,7 +82,10 @@ const routes: Routes = [
     MatCheckboxModule,
     MatIconModule,
     MatMenuModule,
+    MatTableModule,
+    MatPaginator,
     MatLabel,
+    MatCard,
     ReactiveFormsModule,
     StoreDevtoolsModule.instrument({
       maxAge: 25,  // Keeps last 25 states
