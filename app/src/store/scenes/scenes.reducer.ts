@@ -42,6 +42,9 @@ export const sceneReducer = createReducer(
   // ── Save (can be optimistic or just set dirty flag) ──────
   on(SceneActions.saveCurrentScene, (state) => state), // no change needed in reducer if async
 
+  // Reset (set none)
+  on(SceneActions.resetScene, () => initialState)
+
   // ── Optional success/failure ─────────────────────────────
   // on(saveSuccess, (state, { updatedScene }) => ({ ...state, current: updatedScene })),
   // on(loadSuccess, (state, { scene }) => ({ ...state, current: scene, isLoading: false })),

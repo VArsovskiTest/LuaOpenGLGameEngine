@@ -38,3 +38,5 @@ export const loadScene = createAction(
   '[Main Menu] Load Scene',
   props<{ id: string }>()           // or filePath: string
 );
+
+export const resetScene = createAction('[Scene] Reset Scene', props);

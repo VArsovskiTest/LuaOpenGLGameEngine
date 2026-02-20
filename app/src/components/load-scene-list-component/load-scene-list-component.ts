@@ -1,11 +1,12 @@
 import { AfterViewInit, Component, inject, OnInit, ViewChild } from '@angular/core';
 import { SceneService } from '../../services/scene-service';
-import { Scene } from '../../models/scene.model';
-import { Observable, tap } from 'rxjs';
+import { Scene, SceneState } from '../../models/scene.model';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
 import * as ScenActions from '../../store/scenes/scenes.actions';
+import { selectSceneState } from '../../store/scenes/scenes.selectors';
 
 @Component({
   selector: 'load-scene-list-component',
@@ -15,6 +16,8 @@ import * as ScenActions from '../../store/scenes/scenes.actions';
 })
 export class LoadSceneListComponent implements OnInit, AfterViewInit {
   store = inject(Store);
+  currentScene$ = this.store.select(selectSceneState);
+  private currentScene: BehaviorSubject<SceneState | null> = new BehaviorSubject<SceneState | null>(null);
 
   protected scenesList$: Observable<Scene[]> = new Observable<Scene[]>();
   displayedColumns: string[] = ['id', 'name', 'size'];
@@ -36,6 +39,8 @@ export class LoadSceneListComponent implements OnInit, AfterViewInit {
     // .pipe(tap(scene => { if (this.paginator) { this.dataSource.paginator = this.paginator; } }))
     .subscribe(sceneList => { this.dataSource.data = sceneList });
     this.dataSource.paginator = this.paginator;
+
+    this.currentScene$.subscribe(scene => this.currentScene.next(scene));
   }
 
   handleSelected(selectedScene: Scene) {
@@ -47,8 +52,11 @@ export class LoadSceneListComponent implements OnInit, AfterViewInit {
   }
 
   loadScene() {
-    debugger;
     if (this.selectedScene) {
+      const currentSceneId = this.currentScene.getValue()?.currentScene?.id;
+      if (currentSceneId && (this.selectedScene.id != currentSceneId)) {
+        this.store.dispatch(ScenActions.resetScene());
+      }
       console.log("loading scene", this.selectedScene);
       this.store.dispatch(ScenActions.setCurrentScene({ scene: this.selectedScene }));
     }

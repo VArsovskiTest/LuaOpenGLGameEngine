@@ -14,6 +14,7 @@ export interface Scene {
 }
 
 export interface SceneState {// extends EntityState<Scene> {
+  id?: string,
   currentScene: Scene | null;
   pendingNewParams: { size: string; winCondition?: string } | null;
   isLoading: boolean;

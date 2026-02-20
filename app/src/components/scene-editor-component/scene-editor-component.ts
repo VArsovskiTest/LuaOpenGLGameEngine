@@ -27,8 +27,6 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private actorsService: ActorsService = inject(ActorsService);
 
   private store = inject(Store);
-  private http = inject(HttpClient);
-
   actors$ = this.store.select(selectAllActors);
   selectedId$ = this.store.select(selectSelectedActorId);
   selectedActor$ = this.store.select(selectSelectedActor);
@@ -37,17 +35,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   currentScene$ = this.store.select(selectSceneState);
   currentScene = new BehaviorSubject<SceneState | null>(null);
 
-  ngOnInit(): void {
-    this.currentScene$.subscribe(scene => {
-      this.currentScene.next(scene);
-      const sceneId = this.currentScene.getValue()?.currentScene?.id;
-      if (sceneId) {
-        this.actorsService.getActorsForScene(sceneId).subscribe(actors => {
-          // TODO: Find out why actors don't drawn even though we have actors here
-          this.actors.next(actors);
-          this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT);
-      })};
-    });
+  ngOnInit(): void {    
     console.log("Scene loaded from Store", this.currentScene);
   }
 
@@ -172,6 +160,19 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       this.layer.batchDraw();
     });
+
+    this.currentScene$.subscribe(scene => {
+      this.currentScene.next(scene);
+      const sceneId = this.currentScene.getValue()?.currentScene?.id;
+      if (sceneId) {
+        this.actorsService.getActorsForScene(sceneId).subscribe(actors => {
+          this.store.dispatch(ActorActions.clearScene()); // On currentScene$ change clear previous actors
+          actors.forEach(actor => {
+            actor.color = this.getColorByType(actor.type);
+            this.store.dispatch(ActorActions.addActor({ actor: actor }));
+          });
+      })};
+    });
   }
 
   private redrawShapes(actors: Actor[], vw: number, vh: number) {
@@ -187,6 +188,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             id: actor.id,
             x: actor.x,
             y: actor.y,
+            color: actor.color,
             width: actor.width ?? 100,
             height: actor.height ?? 80,
             rotation: actor.rotation,
@@ -208,6 +210,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             id: actor.id,
             x: actor.x,
             y: actor.y,
+            color: actor.color,
             radius: actor.radius ?? 50,
             rotation: actor.rotation,
             fill: actor.color,
@@ -228,6 +231,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             id: actor.id,
             x: actor.x ?? 50,
             y: actor.y ?? 50,
+            color: actor.color,
             width: (actor.percentage ?? 100) / 100 * 500,
             thickness: actor.thickness ?? 20,
             rotation: actor.rotation,
@@ -362,10 +366,11 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       map(s => {
         const sceneData = s?.currentScene;
         const scene = {
+          id: sceneData?.id,
           name: sceneData?.name,
           actors: sceneData?.actors,
-          size: sceneData?.name,
-          nextSceneId: sceneData?.name,
+          size: sceneData?.size,
+          nextSceneId: sceneData?.nextSceneId,
           winCondition: sceneData?.winCondition,
         } as SceneSvc;
         if (sceneData?.id) { scene.updatedAt = new Date(); }
@@ -393,11 +398,16 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       // switchMap(scene => { debugger; return this.sceneService.saveScene(scene); })
     );
     let sceneSaved: Scene | null = null;
-    sceneToSave$.subscribe(scene => this.sceneService.saveScene(scene).subscribe(savedScene => sceneSaved = savedScene));
+    sceneToSave$.subscribe(scene => { debugger; this.sceneService.saveScene(scene).subscribe(savedScene => sceneSaved = savedScene) });
   }
 
   loadActors(json: any) {
     const actors = json.actors as Actor[];
     this.store.dispatch(ActorActions.loadActors({ actors }))
+  }
+
+  private getColorByType(type: string) {
+    return type == "rectangle" ? "#e74c3c":
+    type == "circle" ? "#3498db" : "#aadaed";
   }
 }
