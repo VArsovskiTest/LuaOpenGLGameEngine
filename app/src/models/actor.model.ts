@@ -1,4 +1,10 @@
 // src/app/models/actor.model.ts
+export interface ActorTransformations {
+  rotation?: number;
+  scaleX?: number;
+  scaleY?: number;
+}
+
 export interface Actor {
   id: string;
   type: 'rectangle' | 'circle' | 'resource-bar';
@@ -7,10 +13,8 @@ export interface Actor {
   width?: number;
   height?: number;
   radius?: number;
-  rotation?: number;
-  scaleX?: number;
-  scaleY?: number;
-  color: string;            // hex or named
+  color: string;
+  transform?: ActorTransformations;
   movable?: boolean;
   percentage?: number;
   thickness?: number;

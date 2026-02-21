@@ -51,6 +51,7 @@ public class ScenesController : ControllerBase
                     existingActor.X = incoming.X;
                     existingActor.Y = incoming.Y;
                     existingActor.Color = incoming.Color;
+                    existingActor.Transform = incoming.Transform;
                     existingActor.UpdatedAt = DateTime.UtcNow;
                 }
                 else
@@ -62,6 +63,7 @@ public class ScenesController : ControllerBase
                         X = incoming.X,
                         Y = incoming.Y,
                         Color = incoming.Color,
+                        Transform = incoming.Transform,
                         UpdatedAt = DateTime.UtcNow,
                     };
                     existing.Actors.Add(newActor);

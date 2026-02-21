@@ -41,5 +41,10 @@ public class AppDbContext : DbContext
             .WithMany(s => s.Actors)
             .HasForeignKey(a => a.SceneId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Actor>()
+            .Property(a => a.TransformDataJson)
+            .HasColumnType("json");
+            //.OwnsOne(a => a.Transform, buildAction: builder => {}); //builder.ToJson(options => {...}) if need more rules for naming/customization
     }
 }

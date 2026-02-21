@@ -104,12 +104,3 @@ Check:
 +--------+-----------+-----------------------+
 | webapp | localhost | mysql_native_password | <== This is important
 +--------+-----------+-----------------------+
-
-Usage:
-
-USE <database-name>;
-\g SELECT * FROM <table-name> WHERE LOWER(<column-name>) LIKE LOWER('%<literal-value>%') LIMIT <how-many-items>;
-
-History of manual Queries:
-    UPDATE scenes SET Size='nil'; (after initial db update fail with no default value)
-    ALTER TABLE Actors DROP COLUMN color; (after initial fail of creation of new column Color but not setting a value)
