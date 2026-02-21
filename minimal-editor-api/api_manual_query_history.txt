@@ -1,0 +1,11 @@
+Usage:
+
+1. USE <database-name>;
+2. 'g <your-query>; -- IMPORTANT - don't forget the ";" after your query
+
+MySql syntax template: \g SELECT * FROM <table-name> WHERE LOWER(<column-name>) LIKE LOWER('%<literal-value>%') LIMIT <how-many-items>;
+
+History of manual Queries:
+    UPDATE scenes SET Size='nil'; --(after initial db update fail with no default value)
+    ALTER TABLE Actors DROP COLUMN color; --(after initial fail of creation of new column Color but not setting a value)
+    UPDATE Actors SET transformation = '{}' where transformation like 'null'; --(after failing to properly set default value, "null" is not safe because it can't be properly deserialized to JSON)

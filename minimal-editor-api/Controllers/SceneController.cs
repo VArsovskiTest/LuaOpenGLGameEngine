@@ -26,7 +26,7 @@ public class ScenesController : ControllerBase
         if (id.HasValue)
         {
             var existing = await _context.Scenes
-                .Include(s => s.Actors)           // Important: load current children!
+                .Include(s => s.Actors)
                 .FirstOrDefaultAsync(s => s.Id == id.Value);
 
             if (existing == null) return NotFound();
@@ -34,12 +34,10 @@ public class ScenesController : ControllerBase
             existing.Name = scene.Name;
             existing.UpdatedAt = DateTime.UtcNow;
 
-            // 1. Remove actors that are no longer present
             var incomingActorIds = scene.Actors.Select(a => a.Id).ToHashSet();
             var toRemove = existing.Actors.Where(ea => !incomingActorIds.Contains(ea.Id)).ToList();
             foreach (var actor in toRemove) { existing.Actors.Remove(actor); }
 
-            // 2. Update existing + add new ones
             foreach (var incoming in scene.Actors)
             {
                 var existingActor = existing.Actors.FirstOrDefault(ea => ea.Id == incoming.Id);
@@ -51,6 +49,7 @@ public class ScenesController : ControllerBase
                     existingActor.X = incoming.X;
                     existingActor.Y = incoming.Y;
                     existingActor.Color = incoming.Color;
+                    existingActor.Transform = incoming.Transform;
                     existingActor.UpdatedAt = DateTime.UtcNow;
                 }
                 else
@@ -62,6 +61,7 @@ public class ScenesController : ControllerBase
                         X = incoming.X,
                         Y = incoming.Y,
                         Color = incoming.Color,
+                        Transform = incoming.Transform,
                         UpdatedAt = DateTime.UtcNow,
                     };
                     existing.Actors.Add(newActor);

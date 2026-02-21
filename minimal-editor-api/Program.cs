@@ -1,13 +1,13 @@
-using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
-using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Microsoft.Extensions.Configuration;
-
-using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
+using Microsoft.OpenApi.Models;
 using MinimalEngineApi.Data;
 using MinimalEngineApi.Models;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using Swashbuckle.AspNetCore.Swagger;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Data.Common;
+using System.Text.Json;
 
 public class Program
 {
@@ -52,7 +52,14 @@ public class Program
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseMySql(defaultConnection, ServerVersion.AutoDetect(defaultConnection)));
 
-        builder.Services.AddControllers();
+        // builder.Services.AddControllers();
+        builder.Services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            //// Optional: also nice defaults
+            //options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            //options.JsonSerializerOptions.WriteIndented = true; // for debugging
+        });
 
         // Add this early in the services section
         builder.Services.AddCors(options =>

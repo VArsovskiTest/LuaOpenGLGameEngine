@@ -13,6 +13,9 @@ import { Circle } from 'konva/lib/shapes/Circle';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
 import { ActorSvc, SceneService, SceneSvc } from '../../services/scene-service';
 import { ActorsService } from '../../services/actors-service';
+import { roundTo3Decimals } from '../../helpers/helpers';
+import { Shape, ShapeConfig } from 'konva/lib/Shape';
+import { KonvaEventObject } from 'konva/lib/Node';
 
 @Component({
   selector: 'scene-editor-component',
@@ -146,8 +149,8 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stage.container().addEventListener('keydown', this.keyboardHandler);
 
     this.actors$.subscribe(actors => {
+      this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT);
       this.actors.next(actors);
-      this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT)
     });
 
     // Handle selection from store (attach transformer here for robustness)
@@ -191,7 +194,9 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             color: actor.color,
             width: actor.width ?? 100,
             height: actor.height ?? 80,
-            rotation: actor.rotation,
+            scaleX: roundTo3Decimals(actor.transform?.scaleX ?? 1) ?? 1.0,
+            scaleY: roundTo3Decimals(actor.transform?.scaleY ?? 1) ?? 1.0,
+            rotation: roundTo3Decimals(actor.transform?.rotation ?? 0) ?? 0.0,
             fill: actor.color,
             stroke: 'black',
             strokeWidth: 2,
@@ -212,7 +217,9 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             y: actor.y,
             color: actor.color,
             radius: actor.radius ?? 50,
-            rotation: actor.rotation,
+            scaleX: roundTo3Decimals(actor.transform?.scaleX ?? 1) ?? 1.0,
+            scaleY: roundTo3Decimals(actor.transform?.scaleY ?? 1) ?? 1.0,
+            rotation: roundTo3Decimals(actor.transform?.rotation ?? 0) ?? 0.0,
             fill: actor.color,
             stroke: "black",
             strokeWidth: 2,
@@ -234,7 +241,9 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             color: actor.color,
             width: (actor.percentage ?? 100) / 100 * 500,
             thickness: actor.thickness ?? 20,
-            rotation: actor.rotation,
+            scaleX: roundTo3Decimals(actor.transform?.scaleX ?? 1) ?? 1.0,
+            scaleY: roundTo3Decimals(actor.transform?.scaleY ?? 1) ?? 1.0,
+            rotation: roundTo3Decimals(actor.transform?.rotation ?? 0) ?? 0.0,
             name: actor.name,
             draggable: false
           })
@@ -247,41 +256,8 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.layer.batchDraw();
       });
 
-      shape.on("dragend", () => {
-        this.onActorMoved(actor.id, shape.x(), shape.y())
-      });
-
-      // Inside the place where you create the shape (inside redrawShapes, after creating shape)
-      shape.on('transformend', () => {
-        // Get the updated properties
-
-        const changes: Partial<Actor> = {
-          x: shape.x(),
-          y: shape.y(),
-          rotation: shape.rotation(),
-          scaleX: shape.scaleX(),
-          scaleY: shape.scaleY(),
-        };
-
-        if (actor.type === 'rectangle') {
-          changes.width = shape.width() * shape.scaleX();
-          changes.height = shape.height() * shape.scaleY();
-        } else if (actor.type === 'circle') {
-          changes.radius = (shape as Circle).radius() * shape.scale().x;
-        }
-
-        // Dispatch to store
-        const id = shape.getAttr("id") || "no_Id";
-        this.store.dispatch(
-          ActorActions.updateActor({
-            id: id,
-            actorUpdate: { id: id, changes: changes }
-          })
-        );
-
-        console.log('Actor updated after transform:');
-        console.log(changes);
-      });
+      shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
+      shape.on('transformend', (shape) => { this.onActorTransformed(actor.id, shape.currentTarget); });
 
       this.layer.add(shape);
       this.shapes[actor.id] = shape;
@@ -332,9 +308,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   updateColor(id: string, newColor: string) {
     this.selectedActor.next(this.findById(id, this.actors.getValue()));
-    this.store.dispatch(ActorActions.updateActor({
-      id: id, actorUpdate: { id, changes: { color: newColor } }
-    }));
+    this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id, changes: { color: newColor } } }));
   }
 
   onActorMoved(id: string, newX: number, newY: number) {
@@ -343,6 +317,24 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       this.selectedActor.next(currentlySelected);
       this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id, changes: { x: newX, y: newY } } }))
     }
+  }
+
+  onActorTransformed(id: string, shape: Shape<ShapeConfig>) {
+        const changes: Partial<Actor> = {
+          x: roundTo3Decimals(shape.x()),
+          y: roundTo3Decimals(shape.y()),
+          transform: {
+            rotation: roundTo3Decimals(shape.rotation()),
+            scaleX: roundTo3Decimals(shape.scaleX()),
+            scaleY: roundTo3Decimals(shape.scaleY()),
+          }
+        };
+
+        // if (actor.type === 'rectangle') { changes.width = shape.width() * shape.scaleX(); changes.height = shape.height() * shape.scaleY(); }
+        // else if (actor.type === 'circle') { changes.radius = (shape as Circle).radius() * shape.scale().x; }
+
+        console.log(changes);
+        this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id: id, changes: changes } }));
   }
 
   private findById(id: string, list: Actor[]): Actor {
@@ -383,9 +375,11 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             const actorData = {
               ...actor,
               type: actor.type, name: actor.name,
-              x: actor.x, y: actor.y, scaleX: actor.scaleX, scaleY: actor.scaleY,
-              rotation: actor.rotation, width: actor.width, height: actor.height, radius: actor.radius,
+              x: actor.x, y: actor.y,
+              width: actor.width, height: actor.height, radius: actor.radius,
               color: actor.color,
+              transform: actor.transform,
+              transformDataJson: JSON.stringify(actor.transform),
               movable: actor.movable,
             } as ActorSvc;
             if (sd?.id) { actorData.updatedAt = new Date(); }
@@ -395,10 +389,12 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         };
       }),
       // tap(savedScene => console.log("Saving scene", savedScene)),
-      // switchMap(scene => { debugger; return this.sceneService.saveScene(scene); })
+      // switchMap(scene => return this.sceneService.saveScene(scene))
     );
     let sceneSaved: Scene | null = null;
-    sceneToSave$.subscribe(scene => { debugger; this.sceneService.saveScene(scene).subscribe(savedScene => sceneSaved = savedScene) });
+    sceneToSave$.subscribe(scene => {
+      this.sceneService.saveScene(scene).subscribe(savedScene => sceneSaved = savedScene)
+    });
   }
 
   loadActors(json: any) {

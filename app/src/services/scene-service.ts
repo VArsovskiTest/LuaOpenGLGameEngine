@@ -19,7 +19,6 @@ export class SceneService {
   saveScene(sceneState: Partial<Scene>): Observable<Scene> {
     console.log("Saving: ", sceneState);
     // If it has an id → we assume it's an update (PUT), otherwise create new (POST)
-    debugger;
     if (sceneState.id) {
       return this.http
         .put<Scene>(`${this.apiUrl}/${sceneState.id}`, sceneState, { headers: {
