@@ -1,9 +1,9 @@
 // src/app/shared/custom-form-controls/custom-radio-group.component.ts
 import { Component, Input, inject } from '@angular/core';
-import { CURRENT_FORM_GROUP } from '../../helpers/dialog-form-tokens';
+import { CURRENT_FORM_GROUP } from '../shared/dialog-form-tokens';
 
 @Component({
-  selector: 'app-custom-radio-group',
+  selector: 'minimal-gl-custom-radio-group',
   standalone: false,
   template: `
     <div class="radio-group">

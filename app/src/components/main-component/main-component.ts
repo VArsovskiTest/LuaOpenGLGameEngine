@@ -3,7 +3,7 @@ import { EditorMenuComponent } from '../editor-menu-component/editor-menu-compon
 import { Store } from '@ngrx/store';
 import { selectCurrentScene } from '../../store/scenes/scenes.selectors';
 import { ofType } from '@ngrx/effects';
-import { BehaviorSubject, combineLatest, Observable, Subscription, take, tap } from 'rxjs';
+import { tap } from 'rxjs';
 import * as SceneActions from '../../store/scenes/scenes.actions';
 import { MenuItem } from '../../models/miscelaneous.models';
 import { MenuItemsEnum } from '../../enums/enums';
@@ -34,10 +34,7 @@ export class MainComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit() {
-    this.store.select(selectCurrentScene).subscribe(scene => {
-      console.log("Current scene updated:", scene);
-      this.showEditor = scene != null;
-    });
+    this.store.select(selectCurrentScene).subscribe(scene => { this.showEditor = scene != null; });
     this.store.pipe(
       ofType(SceneActions.setCurrentScene),
       tap(a => console.log("setCurrentScene action received in component:", a))

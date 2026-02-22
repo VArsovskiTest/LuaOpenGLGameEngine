@@ -13,9 +13,11 @@ import { Circle } from 'konva/lib/shapes/Circle';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
 import { ActorSvc, SceneService, SceneSvc } from '../../services/scene-service';
 import { ActorsService } from '../../services/actors-service';
-import { roundTo3Decimals } from '../../helpers/helpers';
+import { roundTo3Decimals } from '../../shared/math-helper';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { KonvaEventObject } from 'konva/lib/Node';
+import { sizeEnum } from '../../enums/enums';
+import { CalculateHeight, CalculateWidth } from '../../shared/scene-helper';
 
 @Component({
   selector: 'scene-editor-component',
@@ -48,10 +50,21 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private tr: Konva.Transformer = new Konva.Transformer({});
   private keyboardHandler: (e: KeyboardEvent) => any = () => { };
 
-  private VISIBLE_WIDTH = 1120;  // Container div width
-  private VISIBLE_HEIGHT = 600; // Container div height
+  private VISIBLE_WIDTH = 1050;  // Default stage width
+  private VISIBLE_HEIGHT = 600; // Default stage height
 
   ngAfterViewInit(): void {
+    this.currentScene$.subscribe(scene => {
+      this.currentScene.next(scene);
+      const newSceneWidth = CalculateWidth(scene.currentScene?.size as sizeEnum);
+      const newSceneHeight = CalculateHeight(scene.currentScene?.size as sizeEnum);
+      this.VISIBLE_WIDTH = newSceneWidth || this.VISIBLE_WIDTH;
+      this.VISIBLE_HEIGHT = newSceneHeight || this.VISIBLE_HEIGHT;
+      this.setupBindings();
+    });
+  }
+
+  private setupBindings() {
     this.stage = new Konva.Stage({
       container: this.stageCongainer.nativeElement,
       width: this.VISIBLE_WIDTH,
@@ -175,7 +188,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             this.store.dispatch(ActorActions.addActor({ actor: actor }));
           });
       })};
-    });
+    });    
   }
 
   private redrawShapes(actors: Actor[], vw: number, vh: number) {

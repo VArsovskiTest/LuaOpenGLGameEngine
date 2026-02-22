@@ -4,6 +4,7 @@ import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
 import { select, Store } from '@ngrx/store';
 import * as SceneActions from '../../store/scenes/scenes.actions';
 import { MenuItem } from '../../models/miscelaneous.models';
+import { ColorPicker } from 'primeng/colorpicker';
 // import { CURRENT_FORM_GROUP } from '../../helpers/dialog-form-tokens';
 
 @Component({
@@ -25,6 +26,8 @@ import { MenuItem } from '../../models/miscelaneous.models';
 export class EditorMenuComponent {
   selectedMenuItem = output<MenuItem | null>();
   store = inject(Store);
+
+  protected color: string = "#ffff00";
 
   private fb = inject(FormBuilder);
   formData = this.fb.group({

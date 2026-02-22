@@ -2,7 +2,7 @@ import { Component, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
-  selector: 'app-toggle',
+  selector: 'minimal-gl-custom-switch',
   standalone: false,
   template: `
     <div 

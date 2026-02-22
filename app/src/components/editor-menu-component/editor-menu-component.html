@@ -12,10 +12,10 @@
         <form [formGroup]="formData">
           <input matInput formControlName="sceneName" placeholder="Sample scene" />
           <mat-radio-group formControlName="sceneSize">
-            <mat-radio-button value="s">Small (1800x1200)</mat-radio-button>
-            <mat-radio-button value="m">Medium (3000x2000)</mat-radio-button>
-            <mat-radio-button value="l">Large (4500x3000)</mat-radio-button>
-            <mat-radio-button value="xl">XL (6000x4000)</mat-radio-button>
+            <mat-radio-button value="s">Small (1200x800)</mat-radio-button>
+            <mat-radio-button value="m">Medium (1800x1200)</mat-radio-button>
+            <mat-radio-button value="l">Large (3000x2000)</mat-radio-button>
+            <mat-radio-button value="xl">XL (4500x3000)</mat-radio-button>
           </mat-radio-group>
         </form>
       </ng-template>
@@ -44,6 +44,18 @@
     Delete User
   </button>
 </div>
+
+<label for="color">Pick a color</label>
+<p-colorPicker
+  id="color"
+  [format]="'hex'"
+  [inline]="false"
+  [style]="{'width':'100%'}"
+></p-colorPicker>
+
+<minimal-gl-custom-color-picker></minimal-gl-custom-color-picker>
+
+<!-- false = popup (default), true = always visible -->
 
 <!-- <div class="menu-button-container" appDialogLoaderInline="data=
 {

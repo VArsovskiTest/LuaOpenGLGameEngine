@@ -8,4 +8,5 @@ MySql syntax template: \g SELECT * FROM <table-name> WHERE LOWER(<column-name>) 
 History of manual Queries:
     UPDATE scenes SET Size='nil'; --(after initial db update fail with no default value)
     ALTER TABLE Actors DROP COLUMN color; --(after initial fail of creation of new column Color but not setting a value)
-    UPDATE Actors SET transformation = '{}' where transformation like 'null'; --(after failing to properly set default value, "null" is not safe because it can't be properly deserialized to JSON)
+    UPDATE Actors SET transformation = '{}' WHERE transformation like 'null'; --(after failing to properly set default value, "null" is not safe because it can't be properly deserialized to JSON)
+    UPDATE scenes SET size = 's' WHERE `Size` like 'nil' --(stage container initial value)

@@ -18,28 +18,34 @@ import { StoreModule } from '@ngrx/store';
 import { EffectsModule } from '@ngrx/effects';
 import { sceneReducer } from './store/scenes/scenes.reducer';
 import { SceneEffects } from './store/scenes/scenes.effects';
-import { SceneEditorComponent } from './components/scene-editor-component/scene-editor-component';
-import { EditorMenuComponent } from './components/editor-menu-component/editor-menu-component';
-import { DialogLoaderDirective } from './helpers/dialog-loader-directive';
-import { DialogLoaderInlineDirective } from './helpers/dialog-loader-inline-directive';
+
+// MatUI
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatFormFieldModule, MatLabel } from '@angular/material/form-field';
+import { MatDialogContent } from '@angular/material/dialog';
+import { MatInputModule } from '@angular/material/input';
+import { MatCard } from '@angular/material/card';
+import { ColorPickerModule } from 'primeng/colorpicker';
+
+// Components & Directives
+import { SceneEditorComponent } from './components/scene-editor-component/scene-editor-component';
+import { EditorMenuComponent } from './components/editor-menu-component/editor-menu-component';
+import { DialogLoaderDirective } from './shared/dialog-loader-directive';
+import { DialogLoaderInlineDirective } from './shared/dialog-loader-inline-directive';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { actorsReducer } from './store/actors/actors.reducer';
 import { ActorsEffects } from './store/actors/actors.effects';
-import { MatFormFieldModule, MatLabel } from '@angular/material/form-field';
-import { CustomInputComponent } from './helpers/custom-components/custom-input-component';
-import { CustomSwitchComponent } from './helpers/custom-components/custom-switch-component';
+import { CustomInputComponent } from './custom-components/custom-input-component';
+import { CustomSwitchComponent } from './custom-components/custom-switch-component';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatDialogContent } from '@angular/material/dialog';
-import { MatInputModule } from '@angular/material/input';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { LoadSceneListComponent } from './components/load-scene-list-component/load-scene-list-component';
-import { MatCard } from '@angular/material/card';
+import { CustomColorPickerComponent } from './custom-components/custom-color-picker-component/custom-color-picker-component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'main', pathMatch: 'full' },
@@ -86,6 +92,8 @@ const routes: Routes = [
     MatPaginator,
     MatLabel,
     MatCard,
+    ColorPickerModule,
+    CustomColorPickerComponent,
     ReactiveFormsModule,
     StoreDevtoolsModule.instrument({
       maxAge: 25,  // Keeps last 25 states
@@ -97,7 +105,21 @@ const routes: Routes = [
     // }),
     // FormsModule, ReactiveFormsModule, etc. if needed
   ],
-  providers: [provideHttpClient(withInterceptorsFromDi())],
+  providers: [
+    provideHttpClient(withInterceptorsFromDi()),
+    // provideAnimationsAsync(), // enables smooth animations (CSS-based in v21+)
+    // providePrimeNG({
+    //   theme: {
+    //     preset: Aura,
+    //     options: {
+    //       prefix: 'p',           // optional: CSS var prefix, default 'p'
+    //       darkModeSelector: 'system', // or 'light', 'dark', or false
+    //       cssLayer: false        // set to true if using CSS layers
+    //     }
+    //   },
+    //   ripple: true // optional: enables ripple effect on buttons/clicks
+    // })
+  ],
   bootstrap: [AppComponent]                // ← crucial! Tells Angular to start with this component
 })
 export class AppModule { }

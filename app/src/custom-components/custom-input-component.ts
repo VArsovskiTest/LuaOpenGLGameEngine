@@ -1,11 +1,11 @@
 // src/app/helpers/custom-components/custom-input-component.ts
 import { Component, Input, inject } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { CURRENT_FORM_GROUP } from '../../helpers/dialog-form-tokens';
+import { CURRENT_FORM_GROUP } from '../shared/dialog-form-tokens';
 import { MatLabel } from '@angular/material/select';
 
 @Component({
-    selector: 'app-custom-input',
+    selector: 'minimal-gl-custom-input',
     standalone: false,
     template: `
     <mat-form-field appearance="fill" class="full-width">

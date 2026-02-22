@@ -32,6 +32,7 @@ public class ScenesController : ControllerBase
             if (existing == null) return NotFound();
 
             existing.Name = scene.Name;
+            existing.Size = scene.Size;
             existing.UpdatedAt = DateTime.UtcNow;
 
             var incomingActorIds = scene.Actors.Select(a => a.Id).ToHashSet();
