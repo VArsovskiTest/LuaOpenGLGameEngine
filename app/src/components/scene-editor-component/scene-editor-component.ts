@@ -101,6 +101,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       if (e.target === this.stage) {
         this.tr.nodes([]);
         this.layer.batchDraw();
+        this.showActorPopup.next(false);
       }
     });
 

@@ -18,9 +18,15 @@ export interface DialogData {
 @Component({
   selector: `inline-dialog-content`,
   template: `
-    <h2 mat-dialog-title *ngIf="data?.title">{{ data.title }}</h2>
-    <mat-dialog-content>
-      <p>{{ data?.message || '(no message)' }}</p>
+  <ng-content>
+    <h2 mat-dialog-title *ngIf="data?.title"><strong>{{ data.title }}</strong></h2>
+    <mat-dialog-content style="padding-bottom: 15px"><!--Removes the scrollbar if not necessary-->
+    <ng-container *ngIf="data?.message">
+      <p><strong>{{ data?.message }}</strong></p>
+    </ng-container>
+    <ng-container *ngIf="!data?.message">
+      <hr/>
+    </ng-container>
       <ng-container *ngIf="data.formGroup"
         [ngTemplateOutlet]="data.innerContent"
         [ngTemplateOutletContext]="{ $implicit: data.formGroup }">
@@ -32,8 +38,9 @@ export interface DialogData {
         {{ data?.okText || 'OK' }}
       </button>
     </mat-dialog-actions>
+    </ng-content>
   `,
-  imports: [ CommonModule, MatDialogModule, MatButtonModule ]
+  imports: [CommonModule, MatDialogModule, MatButtonModule]
 })
 export class InlineDialogContentComponent {
   constructor(

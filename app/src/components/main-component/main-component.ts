@@ -3,10 +3,11 @@ import { EditorMenuComponent } from '../editor-menu-component/editor-menu-compon
 import { Store } from '@ngrx/store';
 import { selectCurrentScene } from '../../store/scenes/scenes.selectors';
 import { ofType } from '@ngrx/effects';
-import { tap } from 'rxjs';
+import { BehaviorSubject, tap } from 'rxjs';
 import * as SceneActions from '../../store/scenes/scenes.actions';
 import { MenuItem } from '../../models/miscelaneous.models';
 import { MenuItemsEnum } from '../../enums/enums';
+import { Scene } from '../../models/scene.model';
 
 @Component({
   selector: 'main-component',
@@ -21,9 +22,9 @@ export class MainComponent implements OnDestroy, OnInit {
   private store = inject(Store);
 
   protected currentScene$ = this.store.select(selectCurrentScene);
-  protected showEditor = false;
   private outputSub?: OutputRefSubscription;
-  protected loadScene?:boolean;
+  protected showCurrentScene: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  protected showLoadScene: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   private cdr = inject(ChangeDetectorRef);
 
@@ -34,7 +35,9 @@ export class MainComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit() {
-    this.store.select(selectCurrentScene).subscribe(scene => { this.showEditor = scene != null; });
+    this.store.select(selectCurrentScene).subscribe(scene => {
+      this.showCurrentScene.next(scene != null);
+    });
     this.store.pipe(
       ofType(SceneActions.setCurrentScene),
       tap(a => console.log("setCurrentScene action received in component:", a))
@@ -42,8 +45,10 @@ export class MainComponent implements OnDestroy, OnInit {
   }
 
   protected handleSelectedMenuItem(item: MenuItem) {
-      this.loadScene = item.id == MenuItemsEnum.LoadScene;
-      console.log("load scene", this.loadScene);
+    this.showLoadScene.next(item.id == MenuItemsEnum.LoadScene);
+    if (this.showLoadScene.getValue()) {
+      this.showCurrentScene.next(false);
+    };
   }
 
   ngOnDestroy() {

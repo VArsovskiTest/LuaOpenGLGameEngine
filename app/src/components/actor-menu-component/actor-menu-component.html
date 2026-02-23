@@ -1,6 +1,34 @@
-<div class="actor-menu-container" [appDialogLoader]="{title: 'Edit actor'}"
-     [appDialogLoaderSuccess]="handleMenuItemClick"
->
-    <button mat-menu-item (click)="handleMenuItemClick('Controls')">Controls</button>
-    <button mat-menu-item (click)="handleMenuItemClick('Behaviors')">Behaviors</button>
+<div class="actor-menu-container">
+    <button mat-button (click)="handleMenuItemClick('Controls')"
+        [appDialogLoader]="{title: 'Edit actor', message: 'Select controlling factions for selected actor'}"
+        [appDialogLoaderFormData]="formDataControls" [appDialogLoaderSuccess]="handleMenuItemClick">
+        <ng-template #appDialogLoaderContent>
+            <hr />
+            <form [formGroup]="formDataControls">
+                <mat-radio-group formControlName="actorControl">
+                    <mat-radio-button value="player">Player</mat-radio-button>
+                    <mat-radio-button value="ai">AI</mat-radio-button>
+                    <mat-radio-button value="neutral">Neutral</mat-radio-button>
+                    <mat-radio-button value="null">No interaction</mat-radio-button>
+                </mat-radio-group>
+            </form>
+        </ng-template>
+        Controls
+    </button>
+    <button mat-button (click)="handleMenuItemClick('Behaviors')"
+        [appDialogLoader]="{title: 'Edit actor', message:'Set up actor behaviors (advanced)'}"
+        [appDialogLoaderFormData]="formDataBehaviors" [appDialogLoaderSuccess]="handleMenuItemClick">
+        <ng-template #appDialogLoaderContent>
+            <form [formGroup]="formDataBehaviors">
+                <div *ngFor="let group of this.actorBehaviorsList">
+                    <hr class="vertical-delimiter" />
+                    <ul class="behavior-items-container" *ngFor="let behavior of group">
+                        <li><label><input type="checkbox">{{ behavior.name }}</label></li>
+                    </ul>
+                </div>
+                <button mat-button>Custom (browse)</button>
+            </form>
+        </ng-template>
+        Behaviors
+    </button>
 </div>

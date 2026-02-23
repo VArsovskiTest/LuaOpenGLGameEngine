@@ -6,3 +6,8 @@ export class MenuItem {
         this.id = id; this.name = name;        
     }
 }
+
+export class ActorBehavior {
+    id: number = 0;
+    name?: string;    
+}

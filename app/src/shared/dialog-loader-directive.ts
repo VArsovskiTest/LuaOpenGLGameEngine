@@ -28,8 +28,8 @@ export class DialogLoaderDirective implements AfterContentInit {
   onHostClick() {
 
     const params = {
-      title: this.dialogOptions?.title || 'Confirm action',
-      message: this.dialogOptions?.message || 'Are you sure?',
+      title: this.dialogOptions?.title,
+      message: this.dialogOptions?.message,
       okText: this.dialogOptions?.okText || 'Yes',
       cancelText: this.dialogOptions?.cancelText || 'No',
       innerContent: this.customTemplate,

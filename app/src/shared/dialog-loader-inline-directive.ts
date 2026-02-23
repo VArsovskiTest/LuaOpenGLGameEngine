@@ -1,6 +1,5 @@
 // dialog-loader-directive.ts
 import { Directive, HostListener, ContentChild, TemplateRef, ElementRef, Renderer2, ViewContainerRef, EnvironmentInjector, inject } from "@angular/core";
-import { AfterContentInit } from '@angular/core';
 import { InlineDialogContentComponent } from "./inline-dialog-content-component";
 
 @Directive({
@@ -8,7 +7,7 @@ import { InlineDialogContentComponent } from "./inline-dialog-content-component"
   selector: '[appDialogLoaderInline]'
 })
 
-export class DialogLoaderInlineDirective implements AfterContentInit {
+export class DialogLoaderInlineDirective {
   constructor(
     private el: ElementRef,
     private renderer: Renderer2,
@@ -48,10 +47,5 @@ export class DialogLoaderInlineDirective implements AfterContentInit {
       // Optional: subscribe to outputs if the component has any
       // componentRef.instance.someOutput.subscribe(...);
     }
-  }
-
-  ngAfterContentInit(): void {
-    console.log("AfterContentInit: customTemplate: ");
-    console.log(this.customTemplate);
   }
 }
