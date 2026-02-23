@@ -45,7 +45,7 @@ export class EditorMenuComponent {
     new MenuItem('Modify actor', MenuItemsEnum.ModivyActor)
   ];
 
-  handleMenuItemClick(action: string) {
+  protected handleMenuItemClick(action: string) {
     const selectedItem = this.itemMap.find(item => item.name == action) || null;
     this.selectedMenuItem.emit(selectedItem);
   }

@@ -9,7 +9,7 @@ import * as ScenActions from '../../store/scenes/scenes.actions';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
 
 @Component({
-  selector: 'load-scene-list-component',
+  selector: 'load-scene-list',
   standalone: false,
   templateUrl: './load-scene-list-component.html',
   styleUrl: './load-scene-list-component.scss',

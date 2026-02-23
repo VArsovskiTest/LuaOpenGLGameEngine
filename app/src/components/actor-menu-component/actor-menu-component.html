@@ -1,0 +1,6 @@
+<div class="actor-menu-container" [appDialogLoader]="{title: 'Edit actor'}"
+     [appDialogLoaderSuccess]="handleMenuItemClick"
+>
+    <button mat-menu-item (click)="handleMenuItemClick('Controls')">Controls</button>
+    <button mat-menu-item (click)="handleMenuItemClick('Behaviors')">Behaviors</button>
+</div>

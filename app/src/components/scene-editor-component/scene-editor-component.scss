@@ -13,10 +13,12 @@
 .stage-toolbar {
   background-color: white;
   padding: 0rem, 1.5rem;
+  height: 1 rem;
   display: flex;
   // justify-content: space-between;
   align-items: center; /* vertical center */
 }
+
 .stage-canvas {
   display: flex;
 }

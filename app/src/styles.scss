@@ -108,6 +108,7 @@ p {
 }
 
 .canvas {
+  width: calc(100% - 3rem);
   flex: 1 1 auto; /* take the rest */
   background: #fff;
   padding: 1rem;

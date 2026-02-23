@@ -42,10 +42,11 @@ import { actorsReducer } from './store/actors/actors.reducer';
 import { ActorsEffects } from './store/actors/actors.effects';
 import { CustomInputComponent } from './custom-components/custom-input-component';
 import { CustomSwitchComponent } from './custom-components/custom-switch-component';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { LoadSceneListComponent } from './components/load-scene-list-component/load-scene-list-component';
 import { CustomColorPickerComponent } from './custom-components/custom-color-picker-component/custom-color-picker-component';
+import { ActorMenuComponent } from './components/actor-menu-component/actor-menu-component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'main', pathMatch: 'full' },
@@ -58,6 +59,7 @@ const routes: Routes = [
     AppComponent,
     MainComponent,
     EditorMenuComponent,
+    ActorMenuComponent,
     SceneEditorComponent,
     LoadSceneListComponent,
     DialogLoaderDirective,
@@ -94,6 +96,7 @@ const routes: Routes = [
     MatCard,
     ColorPickerModule,
     CustomColorPickerComponent,
+    FormsModule,
     ReactiveFormsModule,
     StoreDevtoolsModule.instrument({
       maxAge: 25,  // Keeps last 25 states
