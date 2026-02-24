@@ -3,13 +3,10 @@ import { Store } from '@ngrx/store';
 import Konva from "konva";
 
 import * as ActorActions from '../../store/actors/actors.actions'
-import { Actor } from '../../models/actor.model'
+import { Actor, ActorTransformations } from '../../models/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
-import { Container } from 'konva/lib/Container';
-import { BehaviorSubject, map, Observable, of, Subject, switchMap, take, tap, withLatestFrom } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, delay, map, Observable, Subject, switchMap, take, throttleTime, withLatestFrom } from 'rxjs';
 import { Scene, SceneState } from '../../models/scene.model';
-import { Circle } from 'konva/lib/shapes/Circle';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
 import { ActorSvc, SceneService, SceneSvc } from '../../services/scene-service';
 import { ActorsService } from '../../services/actors-service';
@@ -18,6 +15,8 @@ import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { sizeEnum } from '../../enums/enums';
 import { CalculateHeight, CalculateWidth } from '../../shared/scene-helper';
+import { Stage } from 'konva/lib/Stage';
+import { SceneHelper } from '../../shared/scene.helper';
 
 @Component({
   selector: 'scene-editor',
@@ -27,9 +26,8 @@ import { CalculateHeight, CalculateWidth } from '../../shared/scene-helper';
 })
 
 export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
-  // @ViewChild('selectedColorContainer') selectedColorContainer!: ElementRef;
 
+  @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
   private sceneService: SceneService = inject(SceneService);
   private actorsService: ActorsService = inject(ActorsService);
 
@@ -37,49 +35,74 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   actors$ = this.store.select(selectAllActors);
   selectedId$ = this.store.select(selectSelectedActorId);
   selectedActor$ = this.store.select(selectSelectedActor);
-  selectedActor = new BehaviorSubject<Actor | null | undefined>(undefined);
-  actors = new BehaviorSubject<Actor[]>([]);
   currentScene$ = this.store.select(selectSceneState);
+
+  actors = new BehaviorSubject<Actor[]>([]);
+  selectedActor = new BehaviorSubject<Actor | null | undefined>(undefined);
   currentScene = new BehaviorSubject<SceneState | null>(null);
 
-  protected selectedColorStr: string = "#000000";
-  protected selectedColor: BehaviorSubject<string> = new BehaviorSubject<string>(this.selectedColorStr);
+  protected defaultColor: string = "#000000";
+  protected selectedColor: BehaviorSubject<string> = new BehaviorSubject<string>(this.defaultColor);
   protected selectedColor$: Observable<string> = new Observable();
-  
+  private actorColorChange$ = new Subject<string>();
+  private backgroundColorChange$ = new Subject<string>();
+
   protected showActorMenu: BehaviorSubject<boolean> = new BehaviorSubject(false);
   protected showActorMenu$: Observable<boolean> = new Observable();
   protected showStageMenu: BehaviorSubject<boolean> = new BehaviorSubject(false);
   protected showStageMenu$: Observable<boolean> = new Observable();
 
-  constructor(private cdr: ChangeDetectorRef) { }
+  private keyboardHandler: (e: KeyboardEvent) => any = () => { };
+  private sceneHelper = new SceneHelper();
 
-  ngOnInit(): void {
-    console.log("Scene loaded from Store", this.currentScene);
-    this.showActorMenu$ = this.showActorMenu.asObservable();
-    this.showStageMenu$ = this.showStageMenu.asObservable();
-    this.selectedColor$ = this.selectedColor.asObservable();
-    this.selectedColor$.subscribe(color => this.selectedColorStr = color);
-  }
-
+  private VISIBLE_WIDTH = 1050; // Default stage width
+  private VISIBLE_HEIGHT = 600; // Default stage height
   private stage!: Konva.Stage;
   private layer!: Konva.Layer;
-  private background!: Konva.Shape;
+  private background: BehaviorSubject<Konva.Shape> = new BehaviorSubject<Konva.Shape>({} as Shape);
+  private backgroundActor: BehaviorSubject<Actor> = new BehaviorSubject<Actor>({} as Actor);
+
   private shapes: { [id: string]: Konva.Shape } = {};
   private tr: Konva.Transformer = new Konva.Transformer({});
-  private keyboardHandler: (e: KeyboardEvent) => any = () => { };
 
-  private VISIBLE_WIDTH = 1050;  // Default stage width
-  private VISIBLE_HEIGHT = 600; // Default stage height
+  constructor(private cdr: ChangeDetectorRef) { };
 
-  ngAfterViewInit(): void {
-    this.currentScene$.subscribe(scene => {
-      this.currentScene.next(scene);
-      const newSceneWidth = CalculateWidth(scene.currentScene?.size as sizeEnum);
-      const newSceneHeight = CalculateHeight(scene.currentScene?.size as sizeEnum);
-      this.VISIBLE_WIDTH = newSceneWidth || this.VISIBLE_WIDTH;
-      this.VISIBLE_HEIGHT = newSceneHeight || this.VISIBLE_HEIGHT;
-      this.setupBindings();
+  //#region Stage Handlers
+
+  private keyboardHandlerLogic = (e: KeyboardEvent) => {
+    const DELTA = 3;
+    let handled = false;
+    let selectedNodes = this.tr?.nodes() ?? [];
+    if (selectedNodes.length === 0) { return; }
+
+    const survivingNodes: Konva.Node[] = [];
+    selectedNodes.forEach((node) => {
+      const nodeHasBeenRemoved = !node || !node.parent;
+      if (nodeHasBeenRemoved) { return; }
+
+      const id = node.id();
+      switch (e.key) {
+        case 'w': case 'ArrowUp': { node.y(node.y() - DELTA); handled = true; survivingNodes.push(node); break; }
+        case 'a': case 'ArrowLeft': { node.x(node.x() - DELTA); handled = true; survivingNodes.push(node); break; }
+        case 's': case 'ArrowDown': { node.y(node.y() + DELTA); handled = true; survivingNodes.push(node); break; }
+        case 'd': case 'ArrowRight': { node.x(node.x() + DELTA); handled = true; survivingNodes.push(node); break; }
+        case 'Delete':
+        case 'Backspace':
+          if (id) {
+            this.store.dispatch(ActorActions.removeActor({ id }));
+            delete this.shapes[id];
+          }
+          node.destroy(); handled = true; break;
+      }
     });
+
+    if (handled) {
+      // Only keep surviving nodes in transformer
+      this.tr.nodes(survivingNodes);
+      this.layer.batchDraw();
+      // e.preventDefault();
+      e.stopPropagation();
+    }
   }
 
   private setupBindings() {
@@ -89,112 +112,36 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       height: this.VISIBLE_HEIGHT,
     });
 
-    this.stage.draggable(true);
+    this.stage.draggable(false);
     this.stage.dragBoundFunc((pos) => {
       const x = Math.max(this.VISIBLE_WIDTH, Math.min(0, pos.x));
       const y = Math.max(this.VISIBLE_HEIGHT, Math.min(0, pos.y));
       return { x, y };
     });
-    this.layer = new Konva.Layer();
-    this.background = new Konva.Rect({
-      id: this.currentScene.getValue()?.currentScene?.id,
-      x: 0,
-      y: 0,
-      color: this.selectedColor.getValue(),
-      width: this.VISIBLE_WIDTH,
-      height: this.VISIBLE_HEIGHT,
-      fill: this.selectedColor.getValue(),
-      draggable: false,
-      resizable: false
-    });
-    this.layer.add(this.background);
 
-    this.tr = new Konva.Transformer({
-      borderStroke: '#0099ff',
-      borderStrokeWidth: 2,
-      anchorStroke: '#0099ff',
-      anchorFill: 'white',
-      anchorSize: 10,
-      anchorCornerRadius: 5,
+    this.stage.on('click tap', (e) => {
+      console.log("Selected stage");
+      this.highlightStage();
     });
+
+    this.layer = new Konva.Layer();
+    this.tr = new Konva.Transformer({
+      borderStroke: '#0099ff', anchorStroke: '#0099ff',
+      borderStrokeWidth: 2, anchorCornerRadius: 5, anchorSize: 10,
+      anchorFill: 'white',
+    });
+
     this.layer.add(this.tr);
     this.stage.add(this.layer);
 
-    this.stage.on('click tap', (e) => {
-      if (e.target === this.stage) {
-        this.tr.nodes([]);
-        this.layer.batchDraw();
-        this.showActorMenu.next(false);
-        this.highlightStage();
-      }
-    });
-
-    this.keyboardHandler = (e: KeyboardEvent) => {
-      let selectedNodes = this.tr?.nodes() ?? [];
-      if (selectedNodes.length === 0) { return; }
-
-      const DELTA = 3;
-      let handled = false;
-
-      const survivingNodes: Konva.Node[] = [];
-
-      selectedNodes.forEach((node) => {
-        const nodeHasBeenRemoved = !node || !node.parent;
-        if (nodeHasBeenRemoved) { return; }
-
-        const id = node.id();
-
-        switch (e.key) {
-          case 'ArrowLeft':
-            node.x(node.x() - DELTA);
-            handled = true;
-            survivingNodes.push(node);
-            break;
-          case 'ArrowUp':
-            node.y(node.y() - DELTA);
-            handled = true;
-            survivingNodes.push(node);
-            break;
-          case 'ArrowRight':
-            node.x(node.x() + DELTA);
-            handled = true;
-            survivingNodes.push(node);
-            break;
-          case 'ArrowDown':
-            node.y(node.y() + DELTA);
-            handled = true;
-            survivingNodes.push(node);
-            break;
-          case 'Delete':
-          case 'Backspace':
-            if (id) {
-              this.store.dispatch(ActorActions.removeActor({ id }));
-              delete this.shapes[id];
-            }
-            node.destroy();
-            handled = true;
-            break;
-        }
-      });
-
-      if (handled) {
-        // Only keep surviving nodes in transformer
-        this.tr.nodes(survivingNodes);
-        this.layer.batchDraw();
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-
     const container = this.stage.container();
-    container.tabIndex = 1;           // Required for keyboard focus
-    // container.style.outline = 'none'; // Optional: remove focus outline
+    container.tabIndex = 1; // Required for keyboard focus
     container.focus();
-    this.stage.container().addEventListener('keydown', this.keyboardHandler);
 
+    this.stage.container().addEventListener('keydown', this.keyboardHandler);
     this.actors$.subscribe(actors => {
-      this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT);
       this.actors.next(actors);
+      this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT);
     });
 
     this.selectedActor.subscribe(actor => {
@@ -207,14 +154,104 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       const sceneId = this.currentScene.getValue()?.currentScene?.id;
       if (sceneId) {
         this.actorsService.getActorsForScene(sceneId).subscribe(actors => {
-          this.store.dispatch(ActorActions.clearScene()); // On currentScene$ change clear previous actors
-          actors.forEach(actor => {
-            if (!actor.color) actor.color = '#ffffff';
-            this.store.dispatch(ActorActions.addActor({ actor: actor }));
-          });
+          this.store.dispatch(ActorActions.clearScene());
+          // TODO: Detect if multiple backgrounds, if yes show popup, if user clicks yes this gets executed:
+          // this.removeDuplicateBackgrounds(actors); // Just fix the initial state for scenes with multiple backgrounds by mistake
+          this.initializeActorsAndBackground(actors);
         })
       };
     });
+  }
+
+  // private removeDuplicateBackgrounds(actors: Actor[]) {
+  //   const allBackgroundData = actors.filter(actor => actor.type == "background");
+  //   if (allBackgroundData.length > 1) {
+  //     allBackgroundData.forEach(actor => this.store.dispatch(ActorActions.removeActor({id: actor.id})));
+  //     this.initializeActorsAndBackground(actors.filter(actor => actor.type != "background"));
+  //   }
+  // }
+
+  private initializeActorsAndBackground(actors: Actor[]) {
+    let backgroundData = actors.find(actor => actor.type == "background");
+
+    if (backgroundData) {
+      console.log("Background exists in actors list:", backgroundData);
+      this.backgroundActor.next(backgroundData);
+    }
+    else {
+      console.log("Initializing new background:", backgroundData);
+      backgroundData = this.getOrGenerateBackground();
+      actors.push(backgroundData);
+      this.backgroundActor.next(backgroundData);
+      this.background.next(this.sceneHelper.getRectangleFromActor(this.backgroundActor.getValue()));
+      this.store.dispatch(ActorActions.addActor({ actor: this.backgroundActor.getValue() }));
+    }
+
+    actors.forEach(actor => {
+      if (!actor.color) actor.color = this.sceneHelper.generateRandomColor();
+      this.store.dispatch(ActorActions.addActor({ actor: actor }));
+    });
+
+    this.actors.next(actors);
+    // return this.actors.getValue();
+  }
+
+  //#endregion
+
+  ngOnInit(): void {
+    console.log("Scene loaded from Store", this.currentScene);
+
+    this.showActorMenu$ = this.showActorMenu.asObservable();
+    this.showStageMenu$ = this.showStageMenu.asObservable();
+    this.selectedColor$ = this.selectedColor.asObservable();
+
+    // Init actions for OnColorChange event
+    // If you need to emit the updated actor, you can next it to another subject here
+    this.actorColorChange$.pipe(throttleTime(50, undefined, { leading: true, trailing: false })) // Immediate first, then at most every 50ms
+    .subscribe(color => {
+      const updated = { ...this.selectedActor.getValue(), color } as Actor;
+      this.updateColor(updated.id, color);
+    });
+
+    this.backgroundColorChange$.pipe(throttleTime(50, undefined, { leading: true, trailing: false })) // Immediate first, then at most every 750ms
+    .subscribe(color => {
+      const updated = { ...this.backgroundActor.getValue(), color } as Actor;
+      this.updateColor(updated.id, color);
+    });
+
+    // Init Keyboard event
+    this.keyboardHandler = this.keyboardHandlerLogic;
+  }
+
+  ngAfterViewInit(): void {
+    this.currentScene$.subscribe(scene => {
+      this.currentScene.next(scene);
+      const newSceneWidth = CalculateWidth(scene.currentScene?.size as sizeEnum);
+      const newSceneHeight = CalculateHeight(scene.currentScene?.size as sizeEnum);
+      this.VISIBLE_WIDTH = newSceneWidth || this.VISIBLE_WIDTH;
+      this.VISIBLE_HEIGHT = newSceneHeight || this.VISIBLE_HEIGHT;
+
+      // Init scene bindings
+      this.setupBindings();
+    });
+  }
+
+  private getOrGenerateBackground(color?: string) {
+    let existing = this.actors.getValue().find((actor: Actor) => actor.type == 'background');
+    if (existing) return existing;
+
+    const colorHex = color || this.sceneHelper.generateRandomColor(35, 75);
+    const backgroundData = existing || {
+      id: crypto.randomUUID(),
+      sceneId: this.currentScene.getValue()?.currentScene?.id,
+      type: "background",
+      color: colorHex,
+      x: 0, y: 0, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT,
+      fill: colorHex,
+      draggable: false,
+      resizable: false
+    } as Actor;
+    return backgroundData;
   }
 
   private redrawShapes(actors: Actor[], vw: number, vh: number) {
@@ -222,128 +259,99 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.layer.getChildren().forEach(child => { if (child !== this.tr) { child.destroy(); } });
     this.shapes = {};
 
-    actors.forEach(actor => {
-      let shape: Konva.Shape;
-      switch (actor.type) {
-        case 'rectangle': {
-          shape = new Konva.Rect({
-            id: actor.id,
-            x: actor.x,
-            y: actor.y,
-            color: actor.color,
-            width: actor.width ?? 100,
-            height: actor.height ?? 80,
-            scaleX: roundTo3Decimals(actor.transform?.scaleX ?? 1) ?? 1.0,
-            scaleY: roundTo3Decimals(actor.transform?.scaleY ?? 1) ?? 1.0,
-            rotation: roundTo3Decimals(actor.transform?.rotation ?? 0) ?? 0.0,
-            fill: actor.color,
-            stroke: 'black',
-            strokeWidth: 2,
-            draggable: true,
-            resizable: true,
-            dragBoundFunc: function (pos) {
-              const newX = Math.max(0, Math.min(pos.x, vw - this.width()));
-              const newY = Math.max(0, Math.min(pos.y, vh - this.height()));
-              return { x: newX, y: newY };
+    actors.sort((actor1, actor2) => actor1.type > actor2.type ? 1 : -1) // Parse background first
+      .forEach(actor => {
+        let shape: Konva.Shape;
+        switch (actor.type) {
+          case 'background':
+            {
+              let backgroundData = this.backgroundActor.getValue();
+              backgroundData = { ...backgroundData, id: backgroundData.id, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT, transform: { scaleX: 1.0, scaleY: 1.0 } };
+              shape = this.sceneHelper.getRectangleFromActor(backgroundData);
+              break;
             }
-          });
-          break;
+          case 'rectangle': {
+            shape = this.sceneHelper.getRectangleFromActor(actor, {
+              draggable: true,
+              resizable: true,
+              dragBoundFunc: function (pos: any) {
+                const newX = Math.max(0, Math.min(pos.x, vw - this.width()));
+                const newY = Math.max(0, Math.min(pos.y, vh - this.height()));
+                return { x: newX, y: newY };
+              }
+            });
+            break;
+          }
+          case 'circle': {
+            shape = this.sceneHelper.getCircleFromActor(actor, {
+              draggable: true,
+              resizable: true,
+              dragBoundFunc: function (pos: any) {
+                const newX = Math.max(0, Math.min(pos.x, vw - (actor.radius ?? 0)));
+                const newY = Math.max(0, Math.min(pos.y, vh - (actor.radius ?? 0)));
+                return { x: newX, y: newY };
+              }
+            });
+            break;
+          }
+          case 'resource-bar': {
+            shape = this.sceneHelper.getResourceBarFromActor(actor, { draggable: false });
+          }
         }
-        case 'circle': {
-          shape = new Konva.Circle({
-            id: actor.id,
-            x: actor.x,
-            y: actor.y,
-            color: actor.color,
-            radius: actor.radius ?? 50,
-            scaleX: roundTo3Decimals(actor.transform?.scaleX ?? 1) ?? 1.0,
-            scaleY: roundTo3Decimals(actor.transform?.scaleY ?? 1) ?? 1.0,
-            rotation: roundTo3Decimals(actor.transform?.rotation ?? 0) ?? 0.0,
-            fill: actor.color,
-            stroke: "black",
-            strokeWidth: 2,
-            draggable: true,
-            resizable: true,
-            dragBoundFunc: function (pos) {
-              const newX = Math.max(0, Math.min(pos.x, vw - (actor.radius ?? 0)));
-              const newY = Math.max(0, Math.min(pos.y, vh - (actor.radius ?? 0)));
-              return { x: newX, y: newY };
+
+        shape.on("click tap", (e) => {
+          this.selectedColor.next(actor.color);
+          const sameActorClick = (this.selectedActor.getValue()?.id || false) && (e.target.id() == this.selectedActor.getValue()?.id);
+          const backgroundClick = actor.type == 'background';
+          const targetId = e.target.attrs["id"];
+
+          if (!sameActorClick && !backgroundClick) this.showTransformer(actor.id, targetId);
+          else {
+            if (!backgroundClick) this.highlightActor(this.selectedActor.getValue()?.id, targetId)
+            else {
+              this.highlightStage();
+              this.backgroundActor.next(actor);
             }
-          })
-          break;
-        }
-        case 'resource-bar': {
-          shape = new Konva.Rect({
-            id: actor.id,
-            x: actor.x ?? 50,
-            y: actor.y ?? 50,
-            color: actor.color,
-            width: (actor.percentage ?? 100) / 100 * 500,
-            thickness: actor.thickness ?? 20,
-            scaleX: roundTo3Decimals(actor.transform?.scaleX ?? 1) ?? 1.0,
-            scaleY: roundTo3Decimals(actor.transform?.scaleY ?? 1) ?? 1.0,
-            rotation: roundTo3Decimals(actor.transform?.rotation ?? 0) ?? 0.0,
-            name: actor.name,
-            draggable: false
-          })
-        }
-      }
+            this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
+          }
 
-      shape.on("click tap", (e) => {
-        this.selectedColor.next(actor.color);
-        this.highlightSelected(this.selectedActor.getValue()?.id, e.target.attrs["id"]);
-        this.updateColor(actor.id, actor.color);
+          this.selectedActor.next(this.findById(actor.id, this.actors.getValue()));
+          e.cancelBubble = true;
+          this.layer.batchDraw();
+        });
 
-        this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
-        e.cancelBubble = true;  // Prevent bubbling to stage
-        this.layer.batchDraw();
+        shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
+        shape.on('transformend', (shape) => { this.onActorTransformed(actor.id, shape.currentTarget); });
+
+        if (shape.getParent()) {
+          if (actor.type == "background") shape.moveToBottom(); else shape.moveToTop();
+        }
+
+        this.layer.add(shape);
+        this.shapes[actor.id] = shape;
       });
-
-      shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
-      shape.on('transformend', (shape) => { this.onActorTransformed(actor.id, shape.currentTarget); });
-
-      this.layer.add(shape);
-      this.shapes[actor.id] = shape;
-    });
 
     this.layer.draw();
   }
 
-  private highlightSelected(id: string | undefined, targetId: string | undefined) {
+  private highlightActor(id: string | undefined, targetId: string | undefined) {
     this.showStageMenu.next(false);
-    this.stage.setAttr("isRecoloring", false);
-    Object.values(this.shapes).forEach(shape => { shape.strokeWidth(id === shape.id() ? 4 : 2); })
-
-    if (this.tr.attrs["isTransforming"]) {
-      this.showActorMenu.next(targetId == id);
-      this.tr.setAttr("isTransforming", false);
-    }
-
-    if (targetId && this.shapes[targetId]) { this.tr.nodes([this.shapes[targetId]]); }
-    else { this.tr.nodes([]); };
-
-    this.tr.setAttr("isTransforming", true);
-    this.layer.draw();
+    this.showActorMenu.next(targetId == id);
   }
 
   private highlightStage() {
     this.showActorMenu.next(false);
-    this.tr.setAttr("isTransforming", false);
-
-    if (this.stage.attrs["isRecoloring"]) {
-      this.showStageMenu.next(true);
-      this.stage.setAttr("isRecoloring", false);
-    }
-
-    this.stage.setAttr("isTransforming", true);
-    this.layer.draw();
+    this.showStageMenu.next(true);
   }
 
-  ngOnDestroy(): void {
-    if (this.keyboardHandler) {
-      this.stage?.container()?.removeEventListener('keydown', this.keyboardHandler);
-    }
-    this.stage?.destroy();
+  private showTransformer(id: string, targetId: string | undefined) {
+    this.showActorMenu.next(false);
+    this.showStageMenu.next(false);
+
+    if (targetId && this.shapes[targetId]) { this.tr.nodes([this.shapes[targetId]]); this.tr.moveToTop(); }
+    else { this.tr.nodes([]); };
+
+    this.tr.setAttr("isTransforming", this.tr.nodes.length ? !this.tr.isTransforming : false);
   }
 
   addRectangle() {
@@ -372,7 +380,6 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   updateColor(id: string, newColor: string) {
-    this.selectedActor.next(this.findById(id, this.actors.getValue()));
     this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id, changes: { color: newColor } } }));
   }
 
@@ -394,11 +401,6 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         scaleY: roundTo3Decimals(shape.scaleY()),
       }
     };
-
-    // if (actor.type === 'rectangle') { changes.width = shape.width() * shape.scaleX(); changes.height = shape.height() * shape.scaleY(); }
-    // else if (actor.type === 'circle') { changes.radius = (shape as Circle).radius() * shape.scale().x; }
-
-    console.log(changes);
     this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id: id, changes: changes } }));
   }
 
@@ -453,8 +455,6 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           })
         };
       }),
-      // tap(savedScene => console.log("Saving scene", savedScene)),
-      // switchMap(scene => return this.sceneService.saveScene(scene))
     );
     let sceneSaved: Scene | null = null;
     sceneToSave$.subscribe(scene => {
@@ -468,17 +468,22 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   protected onColorChange(event: any) {
-    const newColor = event.value; // PrimeNG onChange gives { value: string }
-    const updated = { ...this.selectedActor.getValue(), color: newColor } as Actor;
-    this.updateColor(updated.id, newColor);
+    const newColor = event.value;
+
+    const selectionMode = this.showStageMenu.getValue() ? "stage" : this.showActorMenu.getValue() ? "actor" : "none ?";
+    console.log("SceneEditor: color received: ", newColor);
+    console.log("Selection model: ", selectionMode);
+    if (this.showActorMenu.getValue()) {
+      this.actorColorChange$.next(newColor);
+    } else {
+      this.backgroundColorChange$.next(newColor);
+    }
   }
 
-  // protected onColorChange(color: any) {
-  //   const currentValue = this.selectedActor.getValue();
-  //   if (currentValue) {
-  //     const updated = { ...currentValue, color: color };
-  //     this.selectedActor.next(updated);
-  //     this.cdr.detectChanges();
-  //   }
-  // }
+  ngOnDestroy(): void {
+    if (this.keyboardHandler) {
+      this.stage?.container()?.removeEventListener('keydown', this.keyboardHandler);
+    }
+    this.stage?.destroy();
+  }
 }

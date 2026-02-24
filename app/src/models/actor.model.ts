@@ -7,7 +7,7 @@ export interface ActorTransformations {
 
 export interface Actor {
   id: string;
-  type: 'rectangle' | 'circle' | 'resource-bar';
+  type: 'rectangle' | 'circle' | 'resource-bar' | 'background';
   x: number;
   y: number;
   width?: number;

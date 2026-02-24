@@ -14,6 +14,7 @@ html {
       typography: Roboto,
       density: 0,
     ));
+    background-color: #502c33;
 }
 
 body {
@@ -101,6 +102,8 @@ p {
   height: 98%;
   align-content: center;
   vertical-align: middle;
+  padding-left: 1rem;
+  margin-right: 0.5rem;
 }
 
 // TODO: Figure out how to except mat-paginator before uncommenting this
@@ -112,7 +115,8 @@ p {
   width: calc(100% - 3rem);
   flex: 1 1 auto; /* take the rest */
   background: #fff;
-  padding: 1rem;
+  background-color: #502c33;
+  padding-right: 1.5rem;
 }
 
 .content {

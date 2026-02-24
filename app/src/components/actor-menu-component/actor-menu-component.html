@@ -1,15 +1,16 @@
-@if (showStageMenuOptions) {
+@if (showStageMenu$ | async) {
 <div class="actor-menu-container">
-    <a #selectedColorContainer class="color-picker-container">
+    <label class="color-picker-label" color="primary">Color:</label>
+    <a class="color-picker-container">
         <p-colorPicker [ngModel]="incomingColor$ | async" (onChange)="onColorChange($event)" [format]="'hex'" [inline]="false" />
     </a>
 </div>
 }
-@if (showActorMenuOptions) {
+@if (showActorMenu$ | async) {
 <div class="actor-menu-container">
+    <label class="color-picker-label" color="primary">Color:</label>
     <a #selectedColorContainer class="color-picker-container">
-        <p-colorPicker [ngModel]="incomingColor$ | async" (onChange)="onColorChange($event)" [format]="'hex'"
-            [inline]="false" />
+        <p-colorPicker [ngModel]="incomingColor$ | async" (onChange)="onColorChange($event)" [format]="'hex'" [inline]="false" />
     </a>
 
     <button mat-button (click)="handleMenuItemClick('Controls')"
