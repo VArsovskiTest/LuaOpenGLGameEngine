@@ -6,7 +6,7 @@ import * as ActorActions from '../../store/actors/actors.actions'
 import { Actor } from '../../models/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { Container } from 'konva/lib/Container';
-import { BehaviorSubject, map, Observable, of, switchMap, take, tap, withLatestFrom } from 'rxjs';
+import { BehaviorSubject, map, Observable, of, Subject, switchMap, take, tap, withLatestFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Scene, SceneState } from '../../models/scene.model';
 import { Circle } from 'konva/lib/shapes/Circle';
@@ -41,19 +41,29 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   actors = new BehaviorSubject<Actor[]>([]);
   currentScene$ = this.store.select(selectSceneState);
   currentScene = new BehaviorSubject<SceneState | null>(null);
+
   protected selectedColorStr: string = "#000000";
-  protected selectedColor$: Observable<string> = new Observable();
   protected selectedColor: BehaviorSubject<string> = new BehaviorSubject<string>(this.selectedColorStr);
-  protected showActorPopup: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  protected selectedColor$: Observable<string> = new Observable();
+  
+  protected showActorMenu: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  protected showActorMenu$: Observable<boolean> = new Observable();
+  protected showStageMenu: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  protected showStageMenu$: Observable<boolean> = new Observable();
 
   constructor(private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     console.log("Scene loaded from Store", this.currentScene);
+    this.showActorMenu$ = this.showActorMenu.asObservable();
+    this.showStageMenu$ = this.showStageMenu.asObservable();
+    this.selectedColor$ = this.selectedColor.asObservable();
+    this.selectedColor$.subscribe(color => this.selectedColorStr = color);
   }
 
   private stage!: Konva.Stage;
   private layer!: Konva.Layer;
+  private background!: Konva.Shape;
   private shapes: { [id: string]: Konva.Shape } = {};
   private tr: Konva.Transformer = new Konva.Transformer({});
   private keyboardHandler: (e: KeyboardEvent) => any = () => { };
@@ -76,7 +86,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stage = new Konva.Stage({
       container: this.stageCongainer.nativeElement,
       width: this.VISIBLE_WIDTH,
-      height: this.VISIBLE_HEIGHT
+      height: this.VISIBLE_HEIGHT,
     });
 
     this.stage.draggable(true);
@@ -86,6 +96,19 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       return { x, y };
     });
     this.layer = new Konva.Layer();
+    this.background = new Konva.Rect({
+      id: this.currentScene.getValue()?.currentScene?.id,
+      x: 0,
+      y: 0,
+      color: this.selectedColor.getValue(),
+      width: this.VISIBLE_WIDTH,
+      height: this.VISIBLE_HEIGHT,
+      fill: this.selectedColor.getValue(),
+      draggable: false,
+      resizable: false
+    });
+    this.layer.add(this.background);
+
     this.tr = new Konva.Transformer({
       borderStroke: '#0099ff',
       borderStrokeWidth: 2,
@@ -101,7 +124,8 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       if (e.target === this.stage) {
         this.tr.nodes([]);
         this.layer.batchDraw();
-        this.showActorPopup.next(false);
+        this.showActorMenu.next(false);
+        this.highlightStage();
       }
     });
 
@@ -185,7 +209,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.actorsService.getActorsForScene(sceneId).subscribe(actors => {
           this.store.dispatch(ActorActions.clearScene()); // On currentScene$ change clear previous actors
           actors.forEach(actor => {
-            if (!actor.color) actor.color = this.getColorByType(actor.type);
+            if (!actor.color) actor.color = '#ffffff';
             this.store.dispatch(ActorActions.addActor({ actor: actor }));
           });
         })
@@ -266,11 +290,9 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       shape.on("click tap", (e) => {
-        this.selectedColorStr = actor.color;
-
-        this.highlightSelected(this.selectedActor.getValue()?.id, e.target.attrs["id"]);
-        this.selectedActor.next(actor);
         this.selectedColor.next(actor.color);
+        this.highlightSelected(this.selectedActor.getValue()?.id, e.target.attrs["id"]);
+        this.updateColor(actor.id, actor.color);
 
         this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
         e.cancelBubble = true;  // Prevent bubbling to stage
@@ -288,10 +310,12 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private highlightSelected(id: string | undefined, targetId: string | undefined) {
+    this.showStageMenu.next(false);
+    this.stage.setAttr("isRecoloring", false);
     Object.values(this.shapes).forEach(shape => { shape.strokeWidth(id === shape.id() ? 4 : 2); })
 
     if (this.tr.attrs["isTransforming"]) {
-      this.showActorPopup.next(targetId == id);;
+      this.showActorMenu.next(targetId == id);
       this.tr.setAttr("isTransforming", false);
     }
 
@@ -299,6 +323,19 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     else { this.tr.nodes([]); };
 
     this.tr.setAttr("isTransforming", true);
+    this.layer.draw();
+  }
+
+  private highlightStage() {
+    this.showActorMenu.next(false);
+    this.tr.setAttr("isTransforming", false);
+
+    if (this.stage.attrs["isRecoloring"]) {
+      this.showStageMenu.next(true);
+      this.stage.setAttr("isRecoloring", false);
+    }
+
+    this.stage.setAttr("isTransforming", true);
     this.layer.draw();
   }
 
@@ -430,16 +467,10 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.store.dispatch(ActorActions.loadActors({ actors }))
   }
 
-  private getColorByType(type: string) {
-    return type == "rectangle" ? "#e74c3c" :
-      type == "circle" ? "#3498db" : "#aadaed";
-  }
-
   protected onColorChange(event: any) {
     const newColor = event.value; // PrimeNG onChange gives { value: string }
     const updated = { ...this.selectedActor.getValue(), color: newColor } as Actor;
-    this.selectedActor.next(updated);
-    this.store.dispatch(ActorActions.updateActor({id: updated.id, actorUpdate: { id: updated.id, changes: updated }}));
+    this.updateColor(updated.id, newColor);
   }
 
   // protected onColorChange(color: any) {

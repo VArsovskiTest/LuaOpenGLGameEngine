@@ -1,6 +1,7 @@
-import { AfterViewInit, Component, inject } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActorBehavior } from '../../models/miscelaneous.models';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Component({
   selector: 'actor-menu',
@@ -8,7 +9,22 @@ import { ActorBehavior } from '../../models/miscelaneous.models';
   templateUrl: './actor-menu-component.html',
   styleUrl: './actor-menu-component.scss',
 })
-export class ActorMenuComponent implements AfterViewInit {
+export class ActorMenuComponent implements OnInit, AfterViewInit {
+  
+  @Input() incomingColor$: Observable<string> = new Observable();
+  @Input() showActorMenu$: Observable<boolean> = new Observable();
+  @Input() showStageMenu$: Observable<boolean> = new Observable();
+
+  protected showActorMenuOptions: boolean = false;
+  protected showStageMenuOptions: boolean = false;
+
+  ngOnInit(): void {
+    this.showActorMenu$.subscribe(actorOptions => this.showActorMenuOptions = actorOptions);
+    this.showStageMenu$.subscribe(stageOptions => this.showStageMenuOptions = stageOptions);
+  }
+
+  protected selectedColorChanged: EventEmitter<string | null> = new EventEmitter();
+
   private fb: FormBuilder = inject(FormBuilder);
   protected actorBehaviorsList: ActorBehavior[][] = [];
   protected formDataControls: FormGroup = this.fb.group({
@@ -22,6 +38,10 @@ export class ActorMenuComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.actorBehaviorsList.push([{id: 0, name: "Movable"}, {id: 0, name: "Destructible"}]);
     this.actorBehaviorsList.push([{id: 0, name: "Aggressive"}, {id: 1, name: "Balanced"}, {id: 2, name: "Tactical"}, {id: 3, name: "Tentative"}]);
+  }
+
+  onColorChange(color: string) {
+    this.selectedColorChanged.emit(color);
   }
 
   protected handleMenuItemClick(item: any) {}

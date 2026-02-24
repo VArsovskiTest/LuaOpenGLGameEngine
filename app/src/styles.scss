@@ -103,9 +103,10 @@ p {
   vertical-align: middle;
 }
 
-.main-content * {
-  padding: 0.5rem;
-}
+// TODO: Figure out how to except mat-paginator before uncommenting this
+// .main-content * {
+//   padding: 0.5rem;
+// }
 
 .canvas {
   width: calc(100% - 3rem);

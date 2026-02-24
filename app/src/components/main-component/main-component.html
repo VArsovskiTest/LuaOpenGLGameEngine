@@ -14,15 +14,17 @@
     </aside>
     <div class="divider" role="separator" aria-label="Divider"></div>
     <aside class="canvas">
-      @if (showCurrentScene.getValue()) {
+      <div class="main-content">
+        @if (showCurrentScene.getValue()) {
         @if (currentScene$ | async; as scene) {
-          <h2>Editing: {{ scene.name }} ({{ scene.size }})</h2>
-          <scene-editor></scene-editor>
+        <h2>Editing: {{ scene.name }} ({{ scene.size }})</h2>
+        <scene-editor></scene-editor>
         }
-      }
-      @if (showLoadScene.getValue() && !showCurrentScene.getValue()) {
+        }
+        @if (showLoadScene.getValue() && !showCurrentScene.getValue()) {
         <load-scene-list></load-scene-list>
-      }
+        }
+      </div>
     </aside>
   </div>
 </div>

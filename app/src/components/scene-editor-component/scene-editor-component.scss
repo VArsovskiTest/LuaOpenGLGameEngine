@@ -21,10 +21,13 @@
 
 .stage-canvas {
   display: flex;
-  border-bottom: 1rem solid whitesmoke;
 }
 
 #stage-container {
   overflow: auto; /* Adds a Scrollbar to allow larger canvas area*/
   border: 1px solid #ccc; width: 1000px; height: 600px;
+}
+
+.color-picker-container {
+  border: 2px solid #502c33;
 }

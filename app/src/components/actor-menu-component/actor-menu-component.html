@@ -1,4 +1,17 @@
+@if (showStageMenuOptions) {
 <div class="actor-menu-container">
+    <a #selectedColorContainer class="color-picker-container">
+        <p-colorPicker [ngModel]="incomingColor$ | async" (onChange)="onColorChange($event)" [format]="'hex'" [inline]="false" />
+    </a>
+</div>
+}
+@if (showActorMenuOptions) {
+<div class="actor-menu-container">
+    <a #selectedColorContainer class="color-picker-container">
+        <p-colorPicker [ngModel]="incomingColor$ | async" (onChange)="onColorChange($event)" [format]="'hex'"
+            [inline]="false" />
+    </a>
+
     <button mat-button (click)="handleMenuItemClick('Controls')"
         [appDialogLoader]="{title: 'Edit actor', message: 'Select controlling factions for selected actor'}"
         [appDialogLoaderFormData]="formDataControls" [appDialogLoaderSuccess]="handleMenuItemClick">
@@ -32,3 +45,4 @@
         Behaviors
     </button>
 </div>
+}
