@@ -12,6 +12,14 @@
     margin-right: 150px;
 }
 
+.color-picker-label {
+    padding-right: 5px;
+    align-content: center;
+    font-weight: bold;
+    // color: #006a6a;
+    color: var(--mat-sys-primary);
+    font-weight: var(--mat-button-text-label-text-weight, var(--mat-sys-label-large-weight));
+}
 .color-picker-container {
     align-content: center;
     margin-top: 14px;

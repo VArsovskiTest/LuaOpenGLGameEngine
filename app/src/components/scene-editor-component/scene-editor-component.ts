@@ -28,7 +28,6 @@ import { CalculateHeight, CalculateWidth } from '../../shared/scene-helper';
 
 export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
-  // @ViewChild('selectedColorContainer') selectedColorContainer!: ElementRef;
 
   private sceneService: SceneService = inject(SceneService);
   private actorsService: ActorsService = inject(ActorsService);
@@ -291,7 +290,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
       shape.on("click tap", (e) => {
         this.selectedColor.next(actor.color);
-        this.highlightSelected(this.selectedActor.getValue()?.id, e.target.attrs["id"]);
+        this.highlightActor(this.selectedActor.getValue()?.id, e.target.attrs["id"]);
         this.updateColor(actor.id, actor.color);
 
         this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
@@ -309,7 +308,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.layer.draw();
   }
 
-  private highlightSelected(id: string | undefined, targetId: string | undefined) {
+  private highlightActor(id: string | undefined, targetId: string | undefined) {
     this.showStageMenu.next(false);
     this.stage.setAttr("isRecoloring", false);
     Object.values(this.shapes).forEach(shape => { shape.strokeWidth(id === shape.id() ? 4 : 2); })
@@ -332,10 +331,11 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     if (this.stage.attrs["isRecoloring"]) {
       this.showStageMenu.next(true);
+      this.selectedColor.next(this.background.attrs["color"]);
       this.stage.setAttr("isRecoloring", false);
     }
 
-    this.stage.setAttr("isTransforming", true);
+    this.stage.setAttr("isRecoloring", true);
     this.layer.draw();
   }
 
@@ -468,17 +468,14 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   protected onColorChange(event: any) {
-    const newColor = event.value; // PrimeNG onChange gives { value: string }
-    const updated = { ...this.selectedActor.getValue(), color: newColor } as Actor;
-    this.updateColor(updated.id, newColor);
+    const newColor = event.value;
+    if (this.showActorMenu.getValue()) {
+      const updated = { ...this.selectedActor.getValue(), color: newColor } as Actor;
+      this.updateColor(updated.id, newColor);
+    }
+    else if (this.showStageMenu.getValue()) {
+      this.background.setAttr("color", newColor);
+      this.layer.batchDraw();
+    }
   }
-
-  // protected onColorChange(color: any) {
-  //   const currentValue = this.selectedActor.getValue();
-  //   if (currentValue) {
-  //     const updated = { ...currentValue, color: color };
-  //     this.selectedActor.next(updated);
-  //     this.cdr.detectChanges();
-  //   }
-  // }
 }

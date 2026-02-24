@@ -9,21 +9,13 @@ import { BehaviorSubject, Observable } from 'rxjs';
   templateUrl: './actor-menu-component.html',
   styleUrl: './actor-menu-component.scss',
 })
-export class ActorMenuComponent implements OnInit, AfterViewInit {
+export class ActorMenuComponent implements AfterViewInit {
   
   @Input() incomingColor$: Observable<string> = new Observable();
   @Input() showActorMenu$: Observable<boolean> = new Observable();
   @Input() showStageMenu$: Observable<boolean> = new Observable();
-
-  protected showActorMenuOptions: boolean = false;
-  protected showStageMenuOptions: boolean = false;
-
-  ngOnInit(): void {
-    this.showActorMenu$.subscribe(actorOptions => this.showActorMenuOptions = actorOptions);
-    this.showStageMenu$.subscribe(stageOptions => this.showStageMenuOptions = stageOptions);
-  }
-
-  protected selectedColorChanged: EventEmitter<string | null> = new EventEmitter();
+  @Output() selectedColorChanged: EventEmitter<string | null> = new EventEmitter();
+  // @ViewChild('selectedColorContainer') selectedColorContainer!: ElementRef;
 
   private fb: FormBuilder = inject(FormBuilder);
   protected actorBehaviorsList: ActorBehavior[][] = [];

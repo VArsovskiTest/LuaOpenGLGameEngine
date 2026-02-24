@@ -5,12 +5,14 @@
 }
 .table-item-row-selected {
     //background-color : #502c33;
-    color: #006a6a;
+    // color: #006a6a;
+    color: var(--mat-sys-primary);
     font-weight: bold;
 }
 .table-item-row-selected:hover {
     background-color: #a08c83;
-    color: #006a6a;
+    // color: #006a6a;
+    color: var(--mat-sys-primary);
 }
 
 .table-item-row {    
