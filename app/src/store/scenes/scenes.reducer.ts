@@ -1,9 +1,11 @@
 import { createReducer, on } from '@ngrx/store';
 import * as SceneActions from '../scenes/scenes.actions';
 import { SceneState } from '../../models/scene.model';
+import { SceneSizeEnum } from '../../enums/enums';
 
 const initialState: SceneState = {
     currentScene: null,
+    size: SceneSizeEnum.u,
     pendingNewParams: null,
     isLoading: false,
     error: null

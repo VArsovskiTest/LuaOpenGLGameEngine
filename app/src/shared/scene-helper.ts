@@ -1,4 +1,4 @@
-import { sizeEnum } from "../enums/enums";
+import { SceneSizeEnum } from "../enums/enums";
 
 export const sceneSizes = ():{x: number, y: number}[] => {
   return [
@@ -9,14 +9,14 @@ export const sceneSizes = ():{x: number, y: number}[] => {
   ];
 }
 
-export function CalculateWidth(size: sizeEnum): number | null {
+export function CalculateWidth(size: SceneSizeEnum): number | null {
   return  size == 's' ? sceneSizes()[0].x
         : size == 'm' ? sceneSizes()[1].x
         : size == 'l' ? sceneSizes()[2].x
         : size == 'xl' ? sceneSizes()[3].x : null;
 }
 
-export function CalculateHeight(size: sizeEnum): number | null {
+export function CalculateHeight(size: SceneSizeEnum): number | null {
   return  size == 's' ? sceneSizes()[0].y
         : size == 'm' ? sceneSizes()[1].y
         : size == 'l' ? sceneSizes()[2].y

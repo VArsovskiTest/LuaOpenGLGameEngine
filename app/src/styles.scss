@@ -76,7 +76,7 @@ p {
 
 .menu a,
 .menu button {
-  color: white;
+  color: whitesmoke;
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -88,8 +88,8 @@ p {
 }
 
 .toolbar {
-  flex: 0 0 18%;
-  color: #f0f0f0;
+  flex: 0 0 15%;
+  color:whitesmoke;
   background: #502c33;
   padding-left: 1.5rem; // padding: 0.5rem 0.5rem 0.5rem 1.5rem;
   overflow-y: auto;
@@ -97,13 +97,14 @@ p {
 }
 
 .main-content {
-  background: #f0f0f0;
+  background: whitesmoke;
   color: #333;
   height: 98%;
   align-content: center;
   vertical-align: middle;
   padding-left: 1rem;
   margin-right: 0.5rem;
+  overflow: scroll;
 }
 
 // TODO: Figure out how to except mat-paginator before uncommenting this

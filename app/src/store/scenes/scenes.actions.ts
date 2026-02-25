@@ -1,7 +1,7 @@
 import { createAction, props } from "@ngrx/store";
 import { Scene, SceneState } from '../../models/scene.model'
 import { Update } from "@ngrx/entity";
-import { sizeEnum } from "../../enums/enums";
+import { SceneSizeEnum } from "../../enums/enums";
 
 // export const createScene = createAction('[Main Menu] Create new Scene', props<{ sceneState: SceneState | null, sceneIdCreated: string }>());
 // export const saveScene = createAction('[Main Menu] Save scene', props<{ sceneUpdate: Update<Scene> }>());
@@ -11,7 +11,7 @@ import { sizeEnum } from "../../enums/enums";
 
 export const startNewScene = createAction(
   '[Main Menu] Start New Scene',
-  props<{ size: sizeEnum; name?: string }>()
+  props<{ size: SceneSizeEnum; name?: string }>()
 );
 
 export const setCurrentScene = createAction(

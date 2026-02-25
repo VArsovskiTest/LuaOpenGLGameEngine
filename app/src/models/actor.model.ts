@@ -1,3 +1,6 @@
+import { IRect } from "konva/lib/types";
+import { ActorTypeEnum } from "../enums/enums";
+
 // src/app/models/actor.model.ts
 export interface ActorTransformations {
   rotation?: number;
@@ -7,12 +10,15 @@ export interface ActorTransformations {
 
 export interface Actor {
   id: string;
-  type: 'rectangle' | 'circle' | 'resource-bar' | 'background';
+  type: ActorTypeEnum;
   x: number;
   y: number;
   width?: number;
   height?: number;
   radius?: number;
+  image?: ImageBitmap;
+  crop?: IRect;
+  cornerRadius?: number;
   color: string;
   transform?: ActorTransformations;
   transformDataJson?: string; // TODO: figure out how to remove this field, without it transform save doesn't work
@@ -23,7 +29,15 @@ export interface Actor {
   // you can add later: rotation, scale, name/label, zIndex, locked, etc.
 }
 
-export interface ActorsState {
+export interface ActorImage {
+  
+}
+
+export interface ActorState {
+  
+}
+
+export interface ActorStoreState { // TODO: Think of new name, you'll need ActorState for something else soon..
     ids: string[];
     entities: { [id: string]: Actor };
     selectedId: string | null;

@@ -1,5 +1,5 @@
 import { Component, inject, output } from '@angular/core';
-import { MenuItemsEnum, sizeEnum } from '../../enums/enums';
+import { MenuItemsEnum, SceneSizeEnum } from '../../enums/enums';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { select, Store } from '@ngrx/store';
 import * as SceneActions from '../../store/scenes/scenes.actions';
@@ -17,7 +17,7 @@ import { ColorPicker } from 'primeng/colorpicker';
   //     deps: [FormBuilder],
   //     useFactory: (fb: FormBuilder) => fb.group({
   //       sceneName: ['', Validators.required],
-  //       sceneSize: ['s' as sizeEnum, Validators.required]
+  //       sceneSize: ['s' as SceneSizeEnum, Validators.required]
   //     })
   //   }
   // ]
