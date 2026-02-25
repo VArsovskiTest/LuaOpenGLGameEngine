@@ -1,5 +1,5 @@
 import { createAction, props } from "@ngrx/store";
-import { Actor, ActorsState } from "../../models/actor.model";
+import { Actor } from "../../models/actor.model";
 import { Update } from "@ngrx/entity"
 
 export const loadActors = createAction('[Scene Editor] Load Actors', props<{ actors: Actor[] }>());

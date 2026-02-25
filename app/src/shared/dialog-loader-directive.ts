@@ -36,6 +36,8 @@ export class DialogLoaderDirective implements AfterContentInit {
       formGroup: this.dialogData  // This is now the entire FormGroup
     }
 
+    console.log("Opening dialog with Template: ", this.customTemplate);
+
     const dialogRef = this.dialog.open(InlineDialogContentComponent, {
       width: '450px',
       data: params

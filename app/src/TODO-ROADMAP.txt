@@ -1,0 +1,22 @@
+NEXT UP:
+
+* Global Loader (interceptors or without)
+* Generate random background (Or select background actor on New)
+** Image Actors & Backgrounds (Perhaps preferred color pallete, textures, & gradients)
+* Copy-Paste actor (Ctrl+C/Ctrl+V)
+* Set up Controls & Behaviors for actors (proper validation/warnings included)
+[ Projected Work ~ 2.5 weeks, have time to take a look at couple tutorials as well ]
+
+** Render Scene (the bulk of the entire work => make Lua load scenes you created in Canva as close as possible)
+** Test very basic Lua scripts (Gravitation or Scared enemy perhaps)
+[ Projected Work ~ 5.5 weeks, have to make sure scripts are "stackable" i.e. modular and can be mixed-in]
+
+* Interpretation of Scene sizes (editor minimap up top or left down under perhaps ?)
+* Win-Conditions (win-condition scripts in Lua as well ?, victory/defeat screen/s perhaps..)
+[ Projected Work ~ 2 weeks, have time to take a look at couple tutorials as well ]
+
+** Publish Scene (after done with Render => this one will require arguably some Deployment logic as well)
+[ The bulk of learning will happen here => publish a game scene and then render it remotely from a deployed location on cloud. Test on devices if possible, GL HF ]
+
+Known BUGS (left behind):
+* Background color change does not change unless color picker control gets reactivated.. :?

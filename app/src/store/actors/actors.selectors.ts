@@ -1,8 +1,8 @@
 import { createFeatureSelector, createSelector  } from "@ngrx/store";
-import { ActorsState } from "../../models/actor.model";
+import { ActorStoreState } from "../../models/actor.model";
 import { adapter } from './actors.adapter'
 
-export const selectActorsState = createFeatureSelector<ActorsState>('actors');
+export const selectActorsState = createFeatureSelector<ActorStoreState>('actors');
 
 export const {
     selectIds,

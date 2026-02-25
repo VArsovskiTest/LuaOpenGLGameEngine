@@ -12,9 +12,9 @@ export class ActorsEffects {
             const actions$ = inject(Actions); // Make sure not null here..
             const store = inject(Store);
 
-            const actorsState$ = store.pipe(select(state => state.actors));
-            const actorsState = new BehaviorSubject<Actor[]>([]);
-            actorsState$.subscribe((actors: Actor[]) => actorsState.next(actors));
+            const actorsStoreState$ = store.pipe(select(state => state.actors));
+            const actorsStoreState = new BehaviorSubject<Actor[]>([]);
+            actorsStoreState$.subscribe((actors: Actor[]) => actorsStoreState.next(actors));
 
             return actions$.pipe(ofType(ActorActions.addActor),
             tap(() => {
@@ -23,7 +23,7 @@ export class ActorsEffects {
                     take(1)).subscribe(s => console.log("Actors state BEFORE add: " + s));
             }),
             map(() => {
-                return ActorActions.loadActors({ actors: actorsState.getValue() })
+                return ActorActions.loadActors({ actors: actorsStoreState.getValue() })
             }),
             tap(() => {
                 setTimeout(() => {

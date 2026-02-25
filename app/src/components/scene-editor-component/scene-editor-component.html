@@ -1,8 +1,20 @@
 <div class="stage-container">
     <ng-container>
         <div class="stage-toolbar">
-            <button mat-button class="menu-button" (click)="addRectangle()">Add Rectangle</button>
-            <button mat-button class="menu-button" (click)="addCircle()">Add Circle</button>
+            <button mat-button class="menu-button" [appDialogLoader]="{title: 'Add Actor', message: 'Select actor type to add to current scene'}"
+            [appDialogLoaderFormData]="addActorFormData"
+            [appDialogLoaderSuccess]="addActor">
+            <ng-template #appDialogLoaderContent>
+                <form [formGroup]="addActorFormData">
+                    <mat-radio-group formControlName="actorType">
+                        <mat-radio-button value="rectangle">Add Rectangle</mat-radio-button>
+                        <mat-radio-button value="circle">Add Circle</mat-radio-button>
+                        <mat-radio-button value="image">Add Image</mat-radio-button>
+                    </mat-radio-group>
+                </form>
+            </ng-template>
+            Add Actor</button>
+
             <button mat-button class="menu-button" (click)="undo()">Undo Action</button>
             <button mat-button class="menu-button" (click)="clearAll()">Clear</button>
             <button mat-button class="menu-button" (click)="saveScene()">Save</button>

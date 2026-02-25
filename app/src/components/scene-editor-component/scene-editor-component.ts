@@ -10,13 +10,15 @@ import { Scene, SceneState } from '../../models/scene.model';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
 import { ActorSvc, SceneService, SceneSvc } from '../../services/scene-service';
 import { ActorsService } from '../../services/actors-service';
-import { roundTo3Decimals } from '../../shared/math-helper';
+import { generateRandom, roundTo3Decimals } from '../../shared/math-helper';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { sizeEnum } from '../../enums/enums';
 import { CalculateHeight, CalculateWidth } from '../../shared/scene-helper';
 import { Stage } from 'konva/lib/Stage';
 import { SceneHelper } from '../../shared/scene.helper';
+import { ActorTypeEnum } from '../../enums/enums';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'scene-editor',
@@ -41,6 +43,11 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedActor = new BehaviorSubject<Actor | null | undefined>(undefined);
   currentScene = new BehaviorSubject<SceneState | null>(null);
 
+  private fb = inject(FormBuilder);
+  protected addActorFormData: FormGroup = this.fb.group({
+    actorType: [''] // TODO: Do validation later if need be: Validators.apply(() =>{...})
+  });
+
   protected defaultColor: string = "#000000";
   protected selectedColor: BehaviorSubject<string> = new BehaviorSubject<string>(this.defaultColor);
   protected selectedColor$: Observable<string> = new Observable();
@@ -55,8 +62,8 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private keyboardHandler: (e: KeyboardEvent) => any = () => { };
   private sceneHelper = new SceneHelper();
 
-  private VISIBLE_WIDTH = 1050; // Default stage width
-  private VISIBLE_HEIGHT = 600; // Default stage height
+  private VISIBLE_WIDTH = 1200; // Default stage width
+  private VISIBLE_HEIGHT = 800; // Default stage height
   private stage!: Konva.Stage;
   private layer!: Konva.Layer;
   private background: BehaviorSubject<Konva.Shape> = new BehaviorSubject<Konva.Shape>({} as Shape);
@@ -208,16 +215,16 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     // Init actions for OnColorChange event
     // If you need to emit the updated actor, you can next it to another subject here
     this.actorColorChange$.pipe(throttleTime(50, undefined, { leading: true, trailing: false })) // Immediate first, then at most every 50ms
-    .subscribe(color => {
-      const updated = { ...this.selectedActor.getValue(), color } as Actor;
-      this.updateColor(updated.id, color);
-    });
+      .subscribe(color => {
+        const updated = { ...this.selectedActor.getValue(), color } as Actor;
+        this.updateColor(updated.id, color);
+      });
 
     this.backgroundColorChange$.pipe(throttleTime(50, undefined, { leading: true, trailing: false })) // Immediate first, then at most every 750ms
-    .subscribe(color => {
-      const updated = { ...this.backgroundActor.getValue(), color } as Actor;
-      this.updateColor(updated.id, color);
-    });
+      .subscribe(color => {
+        const updated = { ...this.backgroundActor.getValue(), color } as Actor;
+        this.updateColor(updated.id, color);
+      });
 
     // Init Keyboard event
     this.keyboardHandler = this.keyboardHandlerLogic;
@@ -263,14 +270,14 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       .forEach(actor => {
         let shape: Konva.Shape;
         switch (actor.type) {
-          case 'background':
+          case ActorTypeEnum.background:
             {
               let backgroundData = this.backgroundActor.getValue();
               backgroundData = { ...backgroundData, id: backgroundData.id, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT, transform: { scaleX: 1.0, scaleY: 1.0 } };
               shape = this.sceneHelper.getRectangleFromActor(backgroundData);
               break;
             }
-          case 'rectangle': {
+          case ActorTypeEnum.rectangle: {
             shape = this.sceneHelper.getRectangleFromActor(actor, {
               draggable: true,
               resizable: true,
@@ -282,7 +289,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             });
             break;
           }
-          case 'circle': {
+          case ActorTypeEnum.circle: {
             shape = this.sceneHelper.getCircleFromActor(actor, {
               draggable: true,
               resizable: true,
@@ -294,41 +301,51 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             });
             break;
           }
-          case 'resource-bar': {
+          case ActorTypeEnum.image: {
+            shape = new Konva.Image({
+              image: actor?.image || new ImageBitmap(), //HTMLOrSVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas | VideoFrame
+              crop: actor?.crop || {x: 0, y: 0, width: 0, height: 0},
+              cornerRadius: actor?.cornerRadius
+            });
+            break;
+          }
+          case ActorTypeEnum.resourcebar: {
             shape = this.sceneHelper.getResourceBarFromActor(actor, { draggable: false });
           }
         }
 
-        shape.on("click tap", (e) => {
-          this.selectedColor.next(actor.color);
-          const sameActorClick = (this.selectedActor.getValue()?.id || false) && (e.target.id() == this.selectedActor.getValue()?.id);
-          const backgroundClick = actor.type == 'background';
-          const targetId = e.target.attrs["id"];
+        if (shape!) {
+          shape.on("click tap", (e) => {
+            this.selectedColor.next(actor.color);
+            const sameActorClick = (this.selectedActor.getValue()?.id || false) && (e.target.id() == this.selectedActor.getValue()?.id);
+            const backgroundClick = actor.type == 'background';
+            const targetId = e.target.attrs["id"];
 
-          if (!sameActorClick && !backgroundClick) this.showTransformer(actor.id, targetId);
-          else {
-            if (!backgroundClick) this.highlightActor(this.selectedActor.getValue()?.id, targetId)
+            if (!sameActorClick && !backgroundClick) this.showTransformer(actor.id, targetId);
             else {
-              this.highlightStage();
-              this.backgroundActor.next(actor);
+              if (!backgroundClick) this.highlightActor(this.selectedActor.getValue()?.id, targetId)
+              else {
+                this.highlightStage();
+                this.backgroundActor.next(actor);
+              }
+              this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
             }
-            this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
+
+            this.selectedActor.next(this.findById(actor.id, this.actors.getValue()));
+            e.cancelBubble = true;
+            this.layer.batchDraw();
+          });
+
+          shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
+          shape.on('transformend', (shape) => { this.onActorTransformed(actor.id, shape.currentTarget); });
+
+          if (shape.getParent()) {
+            if (actor.type == "background") shape.moveToBottom(); else shape.moveToTop();
           }
 
-          this.selectedActor.next(this.findById(actor.id, this.actors.getValue()));
-          e.cancelBubble = true;
-          this.layer.batchDraw();
-        });
-
-        shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
-        shape.on('transformend', (shape) => { this.onActorTransformed(actor.id, shape.currentTarget); });
-
-        if (shape.getParent()) {
-          if (actor.type == "background") shape.moveToBottom(); else shape.moveToTop();
+          this.layer.add(shape);
+          this.shapes[actor.id] = shape;
         }
-
-        this.layer.add(shape);
-        this.shapes[actor.id] = shape;
       });
 
     this.layer.draw();
@@ -358,11 +375,11 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const newActor: Actor = {
       id: crypto.randomUUID(),
       type: "rectangle",
-      x: 200,
-      y: 150,
-      width: 120,
-      height: 80,
-      color: '#e74c3c'
+      x: generateRandom(100, 500),
+      y: generateRandom(100, 250),
+      width: generateRandom(50, 150),
+      height: generateRandom(50, 100),
+      color: this.sceneHelper.generateRandomColor(20, 50)
     };
     this.store.dispatch(ActorActions.addActor({ actor: newActor }))
   }
@@ -371,12 +388,34 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     const newActor: Actor = {
       id: crypto.randomUUID(),
       type: "circle",
-      x: 200,
-      y: 150,
-      radius: 50,
-      color: '#3498db'
+      x: generateRandom(100, 500),
+      y: generateRandom(100, 250),
+      radius: generateRandom(30, 100),
+      color: this.sceneHelper.generateRandomColor(20, 50)
     };
     this.store.dispatch(ActorActions.addActor({ actor: newActor }))
+  }
+
+  addActor = (dialogData: any) => { // NOTE: Need arrow function if need to use "this" inside function
+    const actorType = dialogData.actorType;
+    switch(actorType) {
+      case (ActorTypeEnum.background): {
+        alert("Adding background not Implemented");
+        break;
+      }
+      case (ActorTypeEnum.rectangle): {
+        this.addRectangle();
+        break;
+      }
+      case (ActorTypeEnum.circle): {
+        this.addCircle();
+        break;
+      }
+      case (ActorTypeEnum.image): {
+        alert("Adding image not implemented");
+        break;
+      }
+    }
   }
 
   updateColor(id: string, newColor: string) {

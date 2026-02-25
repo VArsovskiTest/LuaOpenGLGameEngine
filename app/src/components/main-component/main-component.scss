@@ -34,3 +34,9 @@ box-sizing: border-box;
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
+
+.main-content {
+    max-width: 1200px;
+    padding-bottom: 1rem;
+    background-color: #502c33;
+}
