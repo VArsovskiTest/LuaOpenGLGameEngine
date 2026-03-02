@@ -1,5 +1,5 @@
 import { Shape } from "konva/lib/Shape";
-import { Actor } from "../models/actor.model";
+import { Actor, ActorCircle, ActorGeneric, ActorRectangle, ActorResourceBar } from "../models/actor.model";
 import { roundTo3Decimals } from "./math-helper";
 import Konva from "konva";
 
@@ -34,7 +34,8 @@ export class SceneHelper {
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     }
 
-    getRectangleFromActor(actor: Actor, customData?: any): Shape {
+    getRectangleFromActor(actorData: ActorGeneric, customData?: any): Shape {
+        const actor = actorData as ActorRectangle;
         return new Konva.Rect({
             ...(customData || {}),
             id: actor.id,
@@ -53,15 +54,14 @@ export class SceneHelper {
         });
     }
 
-    getCircleFromActor(actor: Actor, customData?: any): Shape {
+    getCircleFromActor(actorData: ActorGeneric, customData?: any): Shape {
+        const actor = actorData as ActorCircle;
         return new Konva.Circle({
             ...(customData || {}),
             id: actor.id,
             x: actor.x,
             y: actor.y,
             color: actor.color,
-            width: actor.width ?? 100,
-            height: actor.height ?? 80,
             radius: actor.radius ?? 50,
             scaleX: roundTo3Decimals(actor.transform?.scaleX ?? 1) ?? 1.0,
             scaleY: roundTo3Decimals(actor.transform?.scaleY ?? 1) ?? 1.0,
@@ -72,13 +72,13 @@ export class SceneHelper {
         });
     }
 
-    getResourceBarFromActor(actor:Actor, customData?: any): Shape {
+    getResourceBarFromActor(actorData: ActorGeneric, customData?: any): Shape {
+        const actor = actorData as ActorResourceBar;
         return new Konva.Rect({
             ...(customData || {}),
             id: actor.id,
             x: actor.x ?? 50,
             y: actor.y ?? 50,
-            color: actor.color,
             width: (actor.percentage ?? 100) / 100 * 500,
             thickness: actor.thickness ?? 20,
             scaleX: roundTo3Decimals(actor.transform?.scaleX ?? 1) ?? 1.0,

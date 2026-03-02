@@ -51,6 +51,10 @@ export class MainComponent implements OnDestroy, OnInit {
     };
   }
 
+  protected getMainContentClass() {
+    return this.showLoadScene ? "main-content-editor" : "main-content-empty" ;
+  }
+
   ngOnDestroy() {
     this.outputSub?.unsubscribe();
   }

@@ -58,7 +58,7 @@ export class LoadSceneListComponent implements OnInit, AfterViewInit {
         this.store.dispatch(ScenActions.resetScene());
       }
       console.log("loading scene", this.selectedScene);
-      debugger; // TODO: check Size initialization from DB..
+      // TODO: check Size initialization from DB..
       this.store.dispatch(ScenActions.setCurrentScene({ scene: this.selectedScene }));
     }
   }

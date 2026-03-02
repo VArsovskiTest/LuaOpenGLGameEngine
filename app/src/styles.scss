@@ -104,13 +104,26 @@ p {
   vertical-align: middle;
   padding-left: 1rem;
   margin-right: 0.5rem;
+}
+.main-content-empty {
+  @extend .main-content;
+  overflow: auto;
+}
+.main-content-editor {
+  @extend .main-content;
   overflow: scroll;
 }
 
-// TODO: Figure out how to except mat-paginator before uncommenting this
-// .main-content * {
-//   padding: 0.5rem;
-// }
+.title {
+    font-weight: bolder;
+    padding: 0.5rem 0 0.5rem 0;
+    align-content: center;
+}
+.subtitle {
+    font-style: italic;
+    padding: 0.5rem 0 0.5rem 0;
+    align-content: center;
+}
 
 .canvas {
   width: calc(100% - 3rem);

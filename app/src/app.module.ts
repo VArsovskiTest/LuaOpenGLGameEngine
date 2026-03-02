@@ -1,5 +1,5 @@
 // app.module.ts
-import { NgModule } from '@angular/core';
+import { importProvidersFrom, NgModule, provideZoneChangeDetection } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule, Routes } from '@angular/router';
@@ -29,6 +29,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatFormFieldModule, MatLabel } from '@angular/material/form-field';
 import { MatDialogContent } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
+import { MatSnackBarModule } from '@angular/material/snack-bar'
 import { MatCard } from '@angular/material/card';
 import { ColorPickerModule } from 'primeng/colorpicker';
 
@@ -88,6 +89,7 @@ const routes: Routes = [
     MatInputModule,
     MatRadioModule,
     MatCheckboxModule,
+    MatSnackBarModule,
     MatIconModule,
     MatMenuModule,
     MatTableModule,
@@ -110,6 +112,7 @@ const routes: Routes = [
   ],
   providers: [
     provideHttpClient(withInterceptorsFromDi()),
+    // provideZoneChangeDetection({ eventCoalescing: true }),
     // provideAnimationsAsync(), // enables smooth animations (CSS-based in v21+)
     // providePrimeNG({
     //   theme: {

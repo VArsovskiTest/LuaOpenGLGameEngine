@@ -3,7 +3,7 @@ import { Store } from '@ngrx/store';
 import Konva from "konva";
 
 import * as ActorActions from '../../store/actors/actors.actions'
-import { Actor, ActorTransformations } from '../../models/actor.model'
+import { Actor, ActorBase, ActorCircle, ActorGeneric, ActorImage, ActorRectangle, ActorResourceBar, ActorTransformations } from '../../models/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { BehaviorSubject, delay, map, Observable, Subject, switchMap, take, throttleTime, withLatestFrom } from 'rxjs';
 import { Scene, SceneState } from '../../models/scene.model';
@@ -148,12 +148,15 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stage.container().addEventListener('keydown', this.keyboardHandler);
     this.actors$.subscribe(actors => {
       this.actors.next(actors);
-      this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT);
+      this.redrawShapes(actors.filter(actor => actor?.data || false).map(actor => actor.data), this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT);
     });
 
     this.selectedActor.subscribe(actor => {
-      if (actor) { this.selectedColor.next(actor.color); }
-      this.cdr.detectChanges(); // usually needed
+      if (actor) {
+        const color = actor?.data.type != 'image' ? (actor?.data as ActorRectangle).color : undefined;
+        if (actor && color) { this.selectedColor.next(color); }
+        this.cdr.detectChanges(); // usually needed
+      }
     });
 
     this.currentScene$.subscribe(scene => {
@@ -178,28 +181,33 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   //   }
   // }
 
-  private initializeActorsAndBackground(actors: Actor[]) {
-    let backgroundData = actors.find(actor => actor.type == "background");
+  private initializeActorsAndBackground(actors: ActorGeneric[]) {
+    let backgroundData = actors.find(actor => actor && actor.type == "background");
 
     if (backgroundData) {
       console.log("Background exists in actors list:", backgroundData);
-      this.backgroundActor.next(backgroundData);
+      this.backgroundActor.next({ data: backgroundData });
     }
     else {
       console.log("Initializing new background:", backgroundData);
-      backgroundData = this.getOrGenerateBackground();
+      backgroundData = this.getOrGenerateBackground().data;
       actors.push(backgroundData);
-      this.backgroundActor.next(backgroundData);
-      this.background.next(this.sceneHelper.getRectangleFromActor(this.backgroundActor.getValue()));
+      this.backgroundActor.next({ data: backgroundData });
+      this.background.next(this.sceneHelper.getRectangleFromActor(this.backgroundActor.getValue().data));
       this.store.dispatch(ActorActions.addActor({ actor: this.backgroundActor.getValue() }));
     }
 
     actors.forEach(actor => {
-      if (!actor.color) actor.color = this.sceneHelper.generateRandomColor();
-      this.store.dispatch(ActorActions.addActor({ actor: actor }));
+      const actorData = actor && actor.type != 'image' ? (actor as ActorRectangle) : undefined;
+      if (actorData && !actorData.color) actorData.color = this.sceneHelper.generateRandomColor();
+      this.store.dispatch(ActorActions.addActor({ actor: { data: actorData } as Actor }));
     });
 
-    this.actors.next(actors);
+    this.actors.next(actors.map(
+      actor => {
+        const actorWithData = { data: actor } as Actor;
+        return actorWithData;
+      }));
     // return this.actors.getValue();
   }
 
@@ -217,13 +225,13 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.actorColorChange$.pipe(throttleTime(50, undefined, { leading: true, trailing: false })) // Immediate first, then at most every 50ms
       .subscribe(color => {
         const updated = { ...this.selectedActor.getValue(), color } as Actor;
-        this.updateColor(updated.id, color);
+        this.updateColor(updated.data.id, color);
       });
 
     this.backgroundColorChange$.pipe(throttleTime(50, undefined, { leading: true, trailing: false })) // Immediate first, then at most every 750ms
       .subscribe(color => {
         const updated = { ...this.backgroundActor.getValue(), color } as Actor;
-        this.updateColor(updated.id, color);
+        this.updateColor(updated.data.id, color);
       });
 
     // Init Keyboard event
@@ -244,89 +252,100 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private getOrGenerateBackground(color?: string) {
-    let existing = this.actors.getValue().find((actor: Actor) => actor.type == 'background');
+    let existing = this.actors.getValue().find((actor: Actor) => actor.data.type == 'background');
     if (existing) return existing;
 
     const colorHex = color || this.sceneHelper.generateRandomColor(35, 75);
     const backgroundData = existing || {
-      id: crypto.randomUUID(),
-      sceneId: this.currentScene.getValue()?.currentScene?.id,
-      type: "background",
-      color: colorHex,
-      x: 0, y: 0, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT,
-      fill: colorHex,
-      draggable: false,
-      resizable: false
+      data: {
+        id: crypto.randomUUID(),
+        sceneId: this.currentScene.getValue()?.currentScene?.id,
+        type: "background",
+        color: colorHex,
+        x: 0, y: 0, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT,
+        fill: colorHex,
+        draggable: false,
+        resizable: false
+      }
     } as Actor;
     return backgroundData;
   }
 
-  private redrawShapes(actors: Actor[], vw: number, vh: number) {
+  private generateShape(actor: ActorGeneric, vw: number, vh: number): Konva.Shape {
+    let shape: Konva.Shape = {} as Konva.Shape;
+    switch (actor.type) {
+      case ActorTypeEnum.background: {
+        let backgroundDataContainer = this.backgroundActor.getValue();
+        let backgroundData = backgroundDataContainer.data;
+        backgroundData = { ...backgroundData, id: backgroundData.id, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT, transform: { scaleX: 1.0, scaleY: 1.0 } };
+        backgroundDataContainer = { data: backgroundData };
+        shape = this.sceneHelper.getRectangleFromActor(backgroundData);
+        break;
+      }
+      case ActorTypeEnum.rectangle: {
+        shape = this.sceneHelper.getRectangleFromActor(actor, {
+          draggable: true,
+          resizable: true,
+          dragBoundFunc: function (pos: any) {
+            const newX = Math.max(0, Math.min(pos.x, vw - this.width()));
+            const newY = Math.max(0, Math.min(pos.y, vh - this.height()));
+            return { x: newX, y: newY };
+          }
+        });
+        break;
+      }
+      case ActorTypeEnum.circle: {
+        const radius = (actor as ActorCircle).radius;
+        shape = this.sceneHelper.getCircleFromActor(actor, {
+          draggable: true,
+          resizable: true,
+          dragBoundFunc: function (pos: any) {
+            const newX = Math.max(0, Math.min(pos.x, vw - (radius ?? 0)));
+            const newY = Math.max(0, Math.min(pos.y, vh - (radius ?? 0)));
+            return { x: newX, y: newY };
+          }
+        });
+        break;
+      }
+      case ActorTypeEnum.image: {
+        const actorImage = actor as ActorImage;
+        shape = new Konva.Image({
+          image: actorImage?.image || new ImageBitmap(), //HTMLOrSVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas | VideoFrame
+          crop: actorImage?.crop || { x: 0, y: 0, width: 0, height: 0 },
+          cornerRadius: actorImage?.cornerRadius
+        });
+        break;
+      }
+      case ActorTypeEnum.resourcebar: {
+        shape = this.sceneHelper.getResourceBarFromActor(actor, { draggable: false });
+      }
+    }
+
+    return shape;
+  }
+
+  private redrawShapes(actors: ActorGeneric[], vw: number, vh: number) {
     // this.layer.destroyChildren();   // ← Preserve transformer instead
     this.layer.getChildren().forEach(child => { if (child !== this.tr) { child.destroy(); } });
     this.shapes = {};
 
     actors.sort((actor1, actor2) => actor1.type > actor2.type ? 1 : -1) // Parse background first
       .forEach(actor => {
-        let shape: Konva.Shape;
-        switch (actor.type) {
-          case ActorTypeEnum.background:
-            {
-              let backgroundData = this.backgroundActor.getValue();
-              backgroundData = { ...backgroundData, id: backgroundData.id, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT, transform: { scaleX: 1.0, scaleY: 1.0 } };
-              shape = this.sceneHelper.getRectangleFromActor(backgroundData);
-              break;
-            }
-          case ActorTypeEnum.rectangle: {
-            shape = this.sceneHelper.getRectangleFromActor(actor, {
-              draggable: true,
-              resizable: true,
-              dragBoundFunc: function (pos: any) {
-                const newX = Math.max(0, Math.min(pos.x, vw - this.width()));
-                const newY = Math.max(0, Math.min(pos.y, vh - this.height()));
-                return { x: newX, y: newY };
-              }
-            });
-            break;
-          }
-          case ActorTypeEnum.circle: {
-            shape = this.sceneHelper.getCircleFromActor(actor, {
-              draggable: true,
-              resizable: true,
-              dragBoundFunc: function (pos: any) {
-                const newX = Math.max(0, Math.min(pos.x, vw - (actor.radius ?? 0)));
-                const newY = Math.max(0, Math.min(pos.y, vh - (actor.radius ?? 0)));
-                return { x: newX, y: newY };
-              }
-            });
-            break;
-          }
-          case ActorTypeEnum.image: {
-            shape = new Konva.Image({
-              image: actor?.image || new ImageBitmap(), //HTMLOrSVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas | VideoFrame
-              crop: actor?.crop || {x: 0, y: 0, width: 0, height: 0},
-              cornerRadius: actor?.cornerRadius
-            });
-            break;
-          }
-          case ActorTypeEnum.resourcebar: {
-            shape = this.sceneHelper.getResourceBarFromActor(actor, { draggable: false });
-          }
-        }
-
+        let shape = this.generateShape(actor, vw, vh);
         if (shape!) {
           shape.on("click tap", (e) => {
-            this.selectedColor.next(actor.color);
-            const sameActorClick = (this.selectedActor.getValue()?.id || false) && (e.target.id() == this.selectedActor.getValue()?.id);
+            const color = actor.type != 'image' ? (actor as ActorRectangle).color : undefined;
+            if (color) this.selectedColor.next(color);
+            const sameActorClick = (this.selectedActor.getValue()?.data.id || false) && (e.target.id() == this.selectedActor.getValue()?.data.id);
             const backgroundClick = actor.type == 'background';
             const targetId = e.target.attrs["id"];
 
             if (!sameActorClick && !backgroundClick) this.showTransformer(actor.id, targetId);
             else {
-              if (!backgroundClick) this.highlightActor(this.selectedActor.getValue()?.id, targetId)
+              if (!backgroundClick) this.highlightActor(this.selectedActor.getValue()?.data.id, targetId)
               else {
                 this.highlightStage();
-                this.backgroundActor.next(actor);
+                this.backgroundActor.next({data: actor });
               }
               this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
             }
@@ -334,20 +353,19 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             this.selectedActor.next(this.findById(actor.id, this.actors.getValue()));
             e.cancelBubble = true;
             this.layer.batchDraw();
+
+            shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
+            shape.on('transformend', (shape) => { this.onActorTransformed(actor.id, shape.currentTarget); });
+
+            if (shape.getParent()) {
+              if (actor.type == "background") shape.moveToBottom(); else shape.moveToTop();
+            }
           });
-
-          shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
-          shape.on('transformend', (shape) => { this.onActorTransformed(actor.id, shape.currentTarget); });
-
-          if (shape.getParent()) {
-            if (actor.type == "background") shape.moveToBottom(); else shape.moveToTop();
-          }
 
           this.layer.add(shape);
           this.shapes[actor.id] = shape;
         }
       });
-
     this.layer.draw();
   }
 
@@ -372,7 +390,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   addRectangle() {
-    const newActor: Actor = {
+    const newActor: ActorGeneric = {
       id: crypto.randomUUID(),
       type: "rectangle",
       x: generateRandom(100, 500),
@@ -381,11 +399,11 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       height: generateRandom(50, 100),
       color: this.sceneHelper.generateRandomColor(20, 50)
     };
-    this.store.dispatch(ActorActions.addActor({ actor: newActor }))
+    this.store.dispatch(ActorActions.addActor({ actor: { data: newActor } as Actor }))
   }
 
   addCircle() {
-    const newActor: Actor = {
+    const newActor: ActorGeneric = {
       id: crypto.randomUUID(),
       type: "circle",
       x: generateRandom(100, 500),
@@ -393,12 +411,27 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       radius: generateRandom(30, 100),
       color: this.sceneHelper.generateRandomColor(20, 50)
     };
-    this.store.dispatch(ActorActions.addActor({ actor: newActor }))
+    this.store.dispatch(ActorActions.addActor({ actor: { data: newActor } as Actor }))
+  }
+
+  async addImage() {
+    // Create ImageBitmap from external image
+    const response = await fetch('https://example.com/image.jpg');
+    const blob = await response.blob();
+    const bitmap = await createImageBitmap(blob);
+    const newActor: ActorGeneric = {
+      id: crypto.randomUUID(),
+      type: "image",
+      x: generateRandom(100, 500),
+      y: generateRandom(100, 250),
+      image: bitmap
+    }
+    this.store.dispatch(ActorActions.addActor({ actor: { data: newActor } as Actor }))
   }
 
   addActor = (dialogData: any) => { // NOTE: Need arrow function if need to use "this" inside function
     const actorType = dialogData.actorType;
-    switch(actorType) {
+    switch (actorType) {
       case (ActorTypeEnum.background): {
         alert("Adding background not Implemented");
         break;
@@ -419,19 +452,19 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   updateColor(id: string, newColor: string) {
-    this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id, changes: { color: newColor } } }));
+    this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id, changes: { data: { color: newColor } } as Actor } }));
   }
 
   onActorMoved(id: string, newX: number, newY: number) {
     const currentlySelected = this.findById(id, this.actors.getValue());
     if (currentlySelected) {
       this.selectedActor.next(currentlySelected);
-      this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id, changes: { x: newX, y: newY } } }))
+      this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id, changes: { data: { x: newX, y: newY } } as Actor } }))
     }
   }
 
   onActorTransformed(id: string, shape: Shape<ShapeConfig>) {
-    const changes: Partial<Actor> = {
+    const changes: Partial<ActorGeneric> = {
       x: roundTo3Decimals(shape.x()),
       y: roundTo3Decimals(shape.y()),
       transform: {
@@ -440,17 +473,17 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         scaleY: roundTo3Decimals(shape.scaleY()),
       }
     };
-    this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id: id, changes: changes } }));
+    this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id: id, changes: { data: changes } as Actor } }));
   }
 
   private findById(id: string, list: Actor[]): Actor {
-    return (list.filter(actor => actor.id == id) || [null])[0];
+    return (list.filter(actor => actor?.data && actor.data.id == id) || [null])[0];
   }
 
   undo() {
     const previous = this.selectedActor.getValue();
     if (previous) {
-      this.store.dispatch(ActorActions.updateActor({ id: previous.id, actorUpdate: { id: previous.id, changes: previous } }))
+      this.store.dispatch(ActorActions.updateActor({ id: previous.data.id, actorUpdate: { id: previous.data.id, changes: previous } }))
     }
   }
 
@@ -478,15 +511,22 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       withLatestFrom(this.actors), map(([sd, ad]) => {
         return {
           ...sd, actors: ad.map(actor => {
+            const actorBaseProps = (actor.data as ActorBase);
+            const actorRectangleProps = (actor.data as ActorRectangle);
+            const actorCircleeProps = (actor.data as ActorCircle);
+            const actorResourceBarProps = (actor.data as ActorResourceBar);
+            const actorImageProps = (actor.data as ActorImage);
+
             const actorData = {
               ...actor,
-              type: actor.type, name: actor.name,
-              x: actor.x, y: actor.y,
-              width: actor.width, height: actor.height, radius: actor.radius,
-              color: actor.color,
-              transform: actor.transform,
-              transformDataJson: JSON.stringify(actor.transform),
-              movable: actor.movable,
+              type: actorBaseProps.type, name: actorResourceBarProps.name,
+              x: actor.data.x, y: actor.data.y,
+              width: actorRectangleProps.width, height: actorRectangleProps.height,
+              radius: actorCircleeProps.radius,
+              color: actorRectangleProps.color,
+              transform: actor.data.transform,
+              transformDataJson: JSON.stringify(actor.data.transform),
+              movable: actorBaseProps.movable,
             } as ActorSvc;
             if (sd?.id) { actorData.updatedAt = new Date(); }
             else actorData.createdAt = new Date();

@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { environment } from "../environments/environment";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Observable, throwError } from "rxjs";
-import { Actor } from "../models/actor.model";
+import { Actor, ActorGeneric } from "../models/actor.model";
 
 @Injectable({providedIn: 'root'})
 export class ActorsService {
@@ -13,8 +13,8 @@ export class ActorsService {
         return this.http.get<Actor[]>(this.apiUrl);
     }
 
-    getActorsForScene(id: string): Observable<Actor[]> {
-        return this.http.get<Actor[]>(`${this.apiUrl}/${id}`);
+    getActorsForScene(id: string): Observable<ActorGeneric[]> {
+        return this.http.get<ActorGeneric[]>(`${this.apiUrl}/${id}`);
     }
 
     private handleError(error:HttpErrorResponse): Observable<never> {
