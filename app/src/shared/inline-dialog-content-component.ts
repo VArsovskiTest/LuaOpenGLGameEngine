@@ -1,7 +1,6 @@
 // inline-dialog-content.component.ts
-
 import { CommonModule } from '@angular/common';
-import { Component, Inject, TemplateRef } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, Inject, TemplateRef } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -19,14 +18,12 @@ export interface DialogData {
   selector: `inline-dialog-content`,
   template: `
   <ng-content>
-    <h2 mat-dialog-title *ngIf="data?.title"><strong>{{ data.title }}</strong></h2>
     <mat-dialog-content style="padding-bottom: 15px"><!--Removes the scrollbar if not necessary-->
-    <ng-container *ngIf="data?.message">
-      <p><strong>{{ data?.message }}</strong></p>
-    </ng-container>
-    <ng-container *ngIf="!data?.message">
-      <hr/>
-    </ng-container>
+      <h2 class="mat-dialog-title" *ngIf="data?.title">{{ data?.title }}</h2>
+      <h4 class="mat-dialog-subtitle" *ngIf="data?.message">{{ data?.message }}</h4>
+      <ng-container *ngIf="!data?.message">
+        <hr/>
+      </ng-container>
       <ng-container *ngIf="data.formGroup"
         [ngTemplateOutlet]="data.innerContent"
         [ngTemplateOutletContext]="{ $implicit: data.formGroup }">
@@ -42,11 +39,16 @@ export interface DialogData {
   `,
   imports: [CommonModule, MatDialogModule, MatButtonModule]
 })
-export class InlineDialogContentComponent {
+export class InlineDialogContentComponent implements AfterViewInit {
   constructor(
     public dialogRef: MatDialogRef<InlineDialogContentComponent>,
+    private cdr: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) { }
+
+  ngAfterViewInit(): void {
+    this.cdr.markForCheck();
+  }
 
   onOk(): void {
     if (this.data.formGroup) { // TODO: problem: this data is not updated to the new input values from this form..

@@ -3,10 +3,10 @@ import { Store } from '@ngrx/store';
 import Konva from "konva";
 
 import * as ActorActions from '../../store/actors/actors.actions'
-import { Actor, ActorTransformations } from '../../models/actor.model'
+import { Actor, ActorTransformations } from '../../store/actors/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { BehaviorSubject, delay, map, Observable, Subject, switchMap, take, throttleTime, withLatestFrom } from 'rxjs';
-import { Scene, SceneState } from '../../models/scene.model';
+import { Scene, SceneState } from '../../store/scenes/scene.model';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
 import { ActorSvc, SceneService, SceneSvc } from '../../services/scene-service';
 import { ActorsService } from '../../services/actors-service';
@@ -14,11 +14,11 @@ import { generateRandom, roundTo3Decimals } from '../../shared/math-helper';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { SceneSizeEnum } from '../../enums/enums';
-import { CalculateHeight, CalculateWidth } from '../../shared/scene-helper';
+import { CalculateHeight, CalculateWidth, generateRandomColor } from '../../shared/scene.helper';
 import { Stage } from 'konva/lib/Stage';
-import { SceneHelper } from '../../shared/scene.helper';
 import { ActorTypeEnum } from '../../enums/enums';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { BackgroundAdapter, CircleAdapter, ImageAdapter, RectangleAdapter, ResourceBarAdapter } from '../../models/actor-adapters';
 
 @Component({
   selector: 'scene-editor',
@@ -30,6 +30,8 @@ import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms'
 export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild("stageContainer") stageCongainer!: ElementRef<HTMLDivElement>;
+  showFileLoader: BehaviorSubject<boolean> = new BehaviorSubject(false);
+
   private sceneService: SceneService = inject(SceneService);
   private actorsService: ActorsService = inject(ActorsService);
 
@@ -60,7 +62,6 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   protected showStageMenu$: Observable<boolean> = new Observable();
 
   private keyboardHandler: (e: KeyboardEvent) => any = () => { };
-  private sceneHelper = new SceneHelper();
 
   private VISIBLE_WIDTH = 1200; // Default stage width
   private VISIBLE_HEIGHT = 800; // Default stage height
@@ -71,7 +72,6 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private shapes: { [id: string]: Konva.Shape } = {};
   private tr: Konva.Transformer = new Konva.Transformer({});
-
   constructor(private cdr: ChangeDetectorRef) { };
 
   //#region Stage Handlers
@@ -148,6 +148,9 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stage.container().addEventListener('keydown', this.keyboardHandler);
     this.actors$.subscribe(actors => {
       this.actors.next(actors);
+      const backgroundActorId = this.backgroundActor.getValue().id;
+      const backgroundActor = actors.find(actor => actor.id == backgroundActorId);
+      if (backgroundActor) this.backgroundActor.next(backgroundActor);
       this.redrawShapes(actors, this.VISIBLE_WIDTH, this.VISIBLE_HEIGHT);
     });
 
@@ -181,26 +184,21 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   private initializeActorsAndBackground(actors: Actor[]) {
     let backgroundData = actors.find(actor => actor.type == "background");
 
-    if (backgroundData) {
-      console.log("Background exists in actors list:", backgroundData);
-      this.backgroundActor.next(backgroundData);
-    }
+    if (backgroundData) { this.backgroundActor.next(backgroundData); }
     else {
-      console.log("Initializing new background:", backgroundData);
       backgroundData = this.getOrGenerateBackground();
       actors.push(backgroundData);
       this.backgroundActor.next(backgroundData);
-      this.background.next(this.sceneHelper.getRectangleFromActor(this.backgroundActor.getValue()));
+      this.background.next(RectangleAdapter.actorToShape(this.backgroundActor.getValue()));
       this.store.dispatch(ActorActions.addActor({ actor: this.backgroundActor.getValue() }));
     }
 
     actors.forEach(actor => {
-      if (!actor.color) actor.color = this.sceneHelper.generateRandomColor();
+      if (!actor.color) actor.color = generateRandomColor();
       this.store.dispatch(ActorActions.addActor({ actor: actor }));
     });
 
     this.actors.next(actors);
-    // return this.actors.getValue();
   }
 
   //#endregion
@@ -224,6 +222,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       .subscribe(color => {
         const updated = { ...this.backgroundActor.getValue(), color } as Actor;
         this.updateColor(updated.id, color);
+        this.backgroundActor.next(updated);
       });
 
     // Init Keyboard event
@@ -247,13 +246,13 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     let existing = this.actors.getValue().find((actor: Actor) => actor.type == 'background');
     if (existing) return existing;
 
-    const colorHex = color || this.sceneHelper.generateRandomColor(35, 75);
+    const colorHex = color || generateRandomColor(35, 75);
     const backgroundData = existing || {
       id: crypto.randomUUID(),
       sceneId: this.currentScene.getValue()?.currentScene?.id,
       type: "background",
       color: colorHex,
-      x: 0, y: 0, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT,
+      x: 0, y: 0, z:0, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT,
       fill: colorHex,
       draggable: false,
       resizable: false
@@ -274,11 +273,11 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             {
               let backgroundData = this.backgroundActor.getValue();
               backgroundData = { ...backgroundData, id: backgroundData.id, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT, transform: { scaleX: 1.0, scaleY: 1.0 } };
-              shape = this.sceneHelper.getRectangleFromActor(backgroundData);
+              shape = BackgroundAdapter.actorToShape(backgroundData);
               break;
             }
           case ActorTypeEnum.rectangle: {
-            shape = this.sceneHelper.getRectangleFromActor(actor, {
+            shape = RectangleAdapter.actorToShape(actor, {
               draggable: true,
               resizable: true,
               dragBoundFunc: function (pos: any) {
@@ -290,7 +289,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             break;
           }
           case ActorTypeEnum.circle: {
-            shape = this.sceneHelper.getCircleFromActor(actor, {
+            shape = CircleAdapter.actorToShape(actor, {
               draggable: true,
               resizable: true,
               dragBoundFunc: function (pos: any) {
@@ -302,34 +301,39 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             break;
           }
           case ActorTypeEnum.image: {
-            shape = new Konva.Image({
+            shape = ImageAdapter.actorToShape({} as Actor, 
+            {
               image: actor?.image || new ImageBitmap(), //HTMLOrSVGImageElement | HTMLVideoElement | HTMLCanvasElement | ImageBitmap | OffscreenCanvas | VideoFrame
               crop: actor?.crop || {x: 0, y: 0, width: 0, height: 0},
-              cornerRadius: actor?.cornerRadius
-            });
+              cornerRadius: actor?.cornerRadius,
+              dragBoundFunc: function (pos: any) {
+                const newX = Math.max(0, Math.min(pos.x, vw - (actor.crop?.width ?? 0)));
+                const newY = Math.max(0, Math.min(pos.y, vh - (actor.crop?.height ?? 0)));
+                return { x: newX, y: newY };
+              }
+            })
+            shape = new Konva.Image();
             break;
           }
           case ActorTypeEnum.resourcebar: {
-            shape = this.sceneHelper.getResourceBarFromActor(actor, { draggable: false });
+            shape = ResourceBarAdapter.actorToShape(actor, { draggable: false });
           }
         }
 
         if (shape!) {
           shape.on("click tap", (e) => {
             this.selectedColor.next(actor.color);
-            const sameActorClick = (this.selectedActor.getValue()?.id || false) && (e.target.id() == this.selectedActor.getValue()?.id);
             const backgroundClick = actor.type == 'background';
             const targetId = e.target.attrs["id"];
+            const selectedId = this.selectedActor.getValue()?.id;
 
-            if (!sameActorClick && !backgroundClick) this.showTransformer(actor.id, targetId);
+            this.showTransformer(actor.id, targetId);
+            if (!backgroundClick) this.highlightActor(selectedId!, targetId)
             else {
-              if (!backgroundClick) this.highlightActor(this.selectedActor.getValue()?.id, targetId)
-              else {
-                this.highlightStage();
-                this.backgroundActor.next(actor);
-              }
-              this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
+              this.highlightStage();
+              this.backgroundActor.next(actor);
             }
+            this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
 
             this.selectedActor.next(this.findById(actor.id, this.actors.getValue()));
             e.cancelBubble = true;
@@ -351,24 +355,36 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.layer.draw();
   }
 
-  private highlightActor(id: string | undefined, targetId: string | undefined) {
+  private highlightOutline(id: string | null) {
+    this.actors.getValue().forEach(actor => {
+      this.shapes[actor.id].strokeWidth(actor.id == id ? 4 : 2);
+    });
+  }
+
+  private highlightActor(id: string, targetId: string) {
     this.showStageMenu.next(false);
     this.showActorMenu.next(targetId == id);
+    this.highlightOutline(id!);
   }
 
   private highlightStage() {
     this.showActorMenu.next(false);
     this.showStageMenu.next(true);
+    this.highlightOutline(null);
   }
 
   private showTransformer(id: string, targetId: string | undefined) {
     this.showActorMenu.next(false);
     this.showStageMenu.next(false);
 
-    if (targetId && this.shapes[targetId]) { this.tr.nodes([this.shapes[targetId]]); this.tr.moveToTop(); }
-    else { this.tr.nodes([]); };
+    const backgroundClick = this.actors.getValue().find(actor => actor.id == targetId)?.type == "background";
+    const sameActorClick = (this.selectedActor.getValue()?.id || false) && (targetId == this.selectedActor.getValue()?.id);
+    const transformNodes = targetId && !sameActorClick && !backgroundClick ? [this.shapes[targetId]] : [];
+    const showTransformer = transformNodes.length ? !this.tr.isTransforming() : false;
 
-    this.tr.setAttr("isTransforming", this.tr.nodes.length ? !this.tr.isTransforming : false);
+    this.tr.nodes(transformNodes);
+    this.tr.moveToTop(); // Set transforming actor to top
+    this.tr.setAttr("isTransforming", showTransformer);
   }
 
   addRectangle() {
@@ -377,9 +393,10 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       type: "rectangle",
       x: generateRandom(100, 500),
       y: generateRandom(100, 250),
+      z: 1,
       width: generateRandom(50, 150),
       height: generateRandom(50, 100),
-      color: this.sceneHelper.generateRandomColor(20, 50)
+      color: generateRandomColor(20, 50)
     };
     this.store.dispatch(ActorActions.addActor({ actor: newActor }))
   }
@@ -390,10 +407,15 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
       type: "circle",
       x: generateRandom(100, 500),
       y: generateRandom(100, 250),
+      z: 1,
       radius: generateRandom(30, 100),
-      color: this.sceneHelper.generateRandomColor(20, 50)
+      color: generateRandomColor(20, 50)
     };
     this.store.dispatch(ActorActions.addActor({ actor: newActor }))
+  }
+
+  addImage(actorType: any) {
+    this.showFileLoader.next(actorType.value as ActorTypeEnum == "image");
   }
 
   addActor = (dialogData: any) => { // NOTE: Need arrow function if need to use "this" inside function
@@ -508,15 +530,21 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected onColorChange(event: any) {
     const newColor = event.value;
-
     const selectionMode = this.showStageMenu.getValue() ? "stage" : this.showActorMenu.getValue() ? "actor" : "none ?";
-    console.log("SceneEditor: color received: ", newColor);
-    console.log("Selection model: ", selectionMode);
-    if (this.showActorMenu.getValue()) {
-      this.actorColorChange$.next(newColor);
-    } else {
-      this.backgroundColorChange$.next(newColor);
-    }
+    if (this.showActorMenu.getValue()) this.actorColorChange$.next(newColor);
+    else this.backgroundColorChange$.next(newColor);
+  }
+
+  protected moveToTop() {
+    const actorId = this.selectedActor.getValue()?.id;
+    if (actorId) this.shapes[actorId].moveToTop();
+  }
+
+  protected moveToBottom() {
+    const actorId = this.selectedActor.getValue()?.id;
+    if (actorId) this.shapes[actorId].moveToBottom();
+    const backgroundActorId = this.backgroundActor.getValue().id;
+    this.shapes[backgroundActorId].moveToBottom();
   }
 
   ngOnDestroy(): void {

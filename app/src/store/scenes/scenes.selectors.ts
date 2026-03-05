@@ -1,6 +1,6 @@
 // scene.selectors.ts
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { SceneState } from '../../models/scene.model';
+import { SceneState } from './scene.model';
 
 export const selectSceneState = createFeatureSelector<SceneState>('scenes');
 

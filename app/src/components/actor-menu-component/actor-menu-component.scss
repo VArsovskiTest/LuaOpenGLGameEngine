@@ -1,6 +1,7 @@
 .actor-menu-container {
     display: flex;
     margin-right: 150px;
+    align-items: center;
 }
 
 .behavior-items-container li {
@@ -23,5 +24,5 @@
 .color-picker-container {
     align-content: center;
     margin: 15px 0;
-    border: 2px solid #502c33;
+    border: 2px solid var(--mat-sys-primary);
 }

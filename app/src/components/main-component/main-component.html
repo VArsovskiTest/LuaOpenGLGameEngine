@@ -7,19 +7,28 @@
 
   <div class="main">
     <aside class="toolbar">
-      <div class="main-content">
-        <h1>GL HF editor 🎉</h1>
-        <p>Click on the menu to start editting and running your game</p>
+      <div class="main-content-empty">
+        <div class="title">
+          <h1>GL HF editor</h1>
+        </div>
+        <div class="title">
+          <h1>🎉</h1>
+        </div>
+        <div class="subtitle">
+          <p>Click on the menu to start editting and running your game</p>
+        </div>
       </div>
     </aside>
     <div class="divider" role="separator" aria-label="Divider"></div>
     <aside class="canvas">
-      <div class="main-content">
+      <div [ngClass]="getMainContentClass()">
         @if (showCurrentScene.getValue()) {
-        @if (currentScene$ | async; as scene) {
-        <h2>Editing: {{ scene.name }} ({{ scene.size }})</h2>
-        <scene-editor></scene-editor>
-        }
+          @if (currentScene$ | async; as scene) {
+            <div class="scene-editor-title">
+              <h2>Editing: {{ scene.name }} ({{ scene.size }})</h2>
+            </div>
+            <scene-editor></scene-editor>
+          }
         }
         @if (showLoadScene.getValue() && !showCurrentScene.getValue()) {
         <load-scene-list></load-scene-list>

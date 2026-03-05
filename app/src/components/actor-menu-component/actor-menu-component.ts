@@ -15,6 +15,8 @@ export class ActorMenuComponent implements AfterViewInit {
   @Input() showActorMenu$: Observable<boolean> = new Observable();
   @Input() showStageMenu$: Observable<boolean> = new Observable();
   @Output() selectedColorChanged: EventEmitter<string | null> = new EventEmitter();
+  @Output() actorMovedTop: EventEmitter<boolean> = new EventEmitter();
+  @Output() actorMovedBottom: EventEmitter<boolean> = new EventEmitter();
   // @ViewChild('selectedColorContainer') selectedColorContainer!: ElementRef;
 
   private fb: FormBuilder = inject(FormBuilder);
@@ -36,6 +38,9 @@ export class ActorMenuComponent implements AfterViewInit {
     console.log("Color-Picker: emitting color: ", color)
     this.selectedColorChanged.emit(color);
   }
+
+  moveToTop() { this.actorMovedTop.emit(true); }
+  moveToBottom() { this.actorMovedBottom.emit(true); }
 
   protected handleMenuItemClick(item: any) {}
 }

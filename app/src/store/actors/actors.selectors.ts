@@ -1,5 +1,5 @@
 import { createFeatureSelector, createSelector  } from "@ngrx/store";
-import { ActorStoreState } from "../../models/actor.model";
+import { ActorStoreState } from "./actor.model";
 import { adapter } from './actors.adapter'
 
 export const selectActorsState = createFeatureSelector<ActorStoreState>('actors');

@@ -1,5 +1,5 @@
 import { createEntityAdapter, EntityAdapter } from '@ngrx/entity'
-import { Actor } from '../../models/actor.model';
+import { Actor } from './actor.model';
 
 export const adapter: EntityAdapter<Actor> = createEntityAdapter<Actor>({
     selectId: (actor: Actor) => actor.id,

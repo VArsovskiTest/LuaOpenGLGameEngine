@@ -6,11 +6,17 @@
             [appDialogLoaderSuccess]="addActor">
             <ng-template #appDialogLoaderContent>
                 <form [formGroup]="addActorFormData">
-                    <mat-radio-group formControlName="actorType">
+                    <mat-radio-group (change)="addImage($event)" formControlName="actorType">
                         <mat-radio-button value="rectangle">Add Rectangle</mat-radio-button>
                         <mat-radio-button value="circle">Add Circle</mat-radio-button>
                         <mat-radio-button value="image">Add Image</mat-radio-button>
                     </mat-radio-group>
+                        
+                    @if (showFileLoader.getValue()) {
+                        <mat-dialog-actions>
+                            <file-loader-component></file-loader-component>
+                        </mat-dialog-actions>
+                    }
                 </form>
             </ng-template>
             Add Actor</button>
@@ -18,9 +24,14 @@
             <button mat-button class="menu-button" (click)="undo()">Undo Action</button>
             <button mat-button class="menu-button" (click)="clearAll()">Clear</button>
             <button mat-button class="menu-button" (click)="saveScene()">Save</button>
-            <div>
-                <actor-menu [showActorMenu$]="showActorMenu$" [showStageMenu$]="showStageMenu$" [incomingColor$]="selectedColor$" (selectedColorChanged)="onColorChange($event)"></actor-menu>
-            </div>
+            <actor-menu
+                [showActorMenu$]="showActorMenu$"
+                [showStageMenu$]="showStageMenu$"
+                [incomingColor$]="selectedColor$"
+                (actorMovedTop)="moveToTop()"
+                (actorMovedBottom)="moveToBottom()"
+                (selectedColorChanged)="onColorChange($event)">
+            </actor-menu>
         </div>
     </ng-container>
     <div class="stage-canvas">
