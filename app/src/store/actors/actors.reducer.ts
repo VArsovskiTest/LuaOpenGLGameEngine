@@ -1,7 +1,7 @@
 import { createReducer, on } from "@ngrx/store";
 import { adapter } from '../actors/actors.adapter'
 import * as ActorActions from './actors.actions';
-import { ActorStoreState } from "../../models/actor.model";
+import { ActorStoreState } from "./actor.model";
 import { Update } from "@ngrx/entity";
 
 export const initialState: ActorStoreState = adapter.getInitialState({selectedId: null})

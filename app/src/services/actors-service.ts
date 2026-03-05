@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { environment } from "../environments/environment";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Observable, throwError } from "rxjs";
-import { Actor } from "../models/actor.model";
+import { Actor } from "../store/actors/actor.model";
 
 @Injectable({providedIn: 'root'})
 export class ActorsService {

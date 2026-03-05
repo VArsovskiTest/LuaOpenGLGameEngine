@@ -6,6 +6,29 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+:root {
+  // Change the system-level color to a dark gray
+  --mat-sys-primary: light-dark(#502c33, #cedce2);
+  --mat-sys-primary-variant: light-dark(#a8897a, #111a24);
+  --mat-sys-text-primary: light-dark(#502c33, #ddd);
+  --mat-sys-text-primary-variant: light-dark(#0c5c5c, #ddd);
+  --mat-sys-primary-content: light-dark(blanchedalmond, #acc8e1);
+  --mat-sys-primary-hover-variant: light-dark(#e0e8e5, #bbc5d8);
+  --mat-sys-on-surface: light-dark(whitesmoke, #111a24);
+  --mat-sys-on-surface-hover: light-dark(#e0e8e5, #505757);
+  --mat-sys-on-surface-variant: light-dark(#0c5c5c, #00dddd);
+  --mat-sys-surface: light-dark(whitesmoke, #cedce2);
+  --mat-dialog-color: light-dark(whitesmoke, #243546);
+  --mat-dialog-color-variant: light-dark(#0c5c5c, #ddd);
+  --mat-dialog-supporting-text-color: light-dark(#a08c83, #3c3e53);
+  --mat-sys-body-medium: 400 0.875rem / 1.25rem Roboto;
+  --mat-sys-body-medium-font: Roboto;
+  --mat-sys-body-medium-line-height: 1.25rem;
+  --mat-sys-body-medium-size: 0.875rem;
+  --mat-sys-body-medium-tracking: 0.016rem;
+  --mat-sys-body-medium-weight: 400;
+}
+
 html {
   height: 100%;
   @include mat.theme((color: (primary: mat.$cyan-palette,
@@ -14,7 +37,16 @@ html {
       typography: Roboto,
       density: 0,
     ));
-    background-color: #502c33;
+    background-color: var(--mat-sys-primary);
+    button {
+      color: var(--mat-sys-primary);
+    }
+    .mat-mdc-radio-button {
+      columns: var(--mat-sys-primary);
+    }
+    .mat-mdc-radio-touch-target{
+      color: var(--mat-sys-primary);
+    }
 }
 
 body {
@@ -26,10 +58,9 @@ body {
   height: 100%;
 }
 
-// editor-menu-component.scss
 h1 {
   font-size: 2.25rem;
-  color: var(--gray-900);
+  color: var(--mat-sys-text-primary);
   font-weight: 500;
   line-height: 100%;
   letter-spacing: -0.125rem;
@@ -37,46 +68,52 @@ h1 {
   font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol";
+  padding: 0.25rem;
+}
+h2 {
+  font-size: 1.5rem;
+  color: var(--mat-sys-text-primary);
+  font-weight: 500;
+  line-height: 100%;
+  letter-spacing: -0.125rem;
+  margin: 0;
+  font-family: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
+  padding: 0.25rem;
 }
 
 p {
   margin: 0;
-  color: var(--gray-700);
+  color: var(--mat-sys-text-primary);
+  padding: 0.25rem;
 }
 
 .app-shell {
   height: 100vh;
-  /* full viewport height */
   display: flex;
   flex-direction: column;
-  /* ribbon on top, rest below */
 }
 
 .ribbon {
-  /* Make it full-width top bar */
-  // width: calc(100% - 3rem);
-  background: #502c33;
-  color: white;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-surface, var(--mat-sys-surface-variant, rgba(0, 0, 0, 0.6)));
   padding: 0.8rem 1.5rem;
 
-  /* Option A – most common & flexible today */
   display: flex;
-  justify-content: space-between;   /* logo left, menu right – or center, etc. */
-  align-items: center;              /* vertical center */
+  justify-content: space-between;
+  align-items: center;
 }
 
 .main {
   flex: 1 1 auto;
-  /* take all remaining height */
   display: flex;
-  /* now horizontal */
   min-height: 0;
-  /* important for nested flex in some browsers */
 }
 
 .menu a,
 .menu button {
-  color: whitesmoke;
+  color: var(--mat-sys-on-surface-variant);
   text-decoration: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -89,34 +126,53 @@ p {
 
 .toolbar {
   flex: 0 0 15%;
-  color:whitesmoke;
-  background: #502c33;
-  padding-left: 1.5rem; // padding: 0.5rem 0.5rem 0.5rem 1.5rem;
+  color: var(--mat-dialog-supporting-text-color);
+  background: var(--mat-sys-primary, var(--mat-sys-primary, rgba(0, 0, 0, 0.6)));
+  padding-left: 1.5rem;
   overflow-y: auto;
-  /* scroll if too much content */
 }
 
 .main-content {
-  background: whitesmoke;
+  background-color: var(--mat-dialog-color);
   color: #333;
   height: 98%;
   align-content: center;
   vertical-align: middle;
   padding-left: 1rem;
   margin-right: 0.5rem;
+}
+.main-content-empty {
+  background-color: var(--mat-sys-on-surface);
+  @extend .main-content;
+  overflow: auto;
+}
+.main-content-editor {
+  background-color: var(--mat-sys-primary-content);
+  @extend .main-content;
+  padding: 0.25rem;
   overflow: scroll;
 }
 
-// TODO: Figure out how to except mat-paginator before uncommenting this
-// .main-content * {
-//   padding: 0.5rem;
-// }
+.main-content-editor h2 {
+  color: var(--mat-sys-text-primary);
+}
+
+.title {
+    font-weight: bolder;
+    padding: 0.5rem 0 0.5rem 0;
+    align-content: center;
+}
+.subtitle {
+    font-style: italic;
+    padding: 0.5rem 0 0.5rem 0;
+    align-content: center;
+}
 
 .canvas {
   width: calc(100% - 3rem);
   flex: 1 1 auto; /* take the rest */
   background: #fff;
-  background-color: #502c33;
+  background-color: var(--mat-sys-primary);
   padding-right: 1.5rem;
 }
 
@@ -221,14 +277,85 @@ p {
   }
 }
 
+.mat-mdc-menu-content button {
+  background-color: var(--mat-sys-on-surface-hover);  
+}
+
+.mat-mdc-menu-content button:hover {
+  background-color: var(--mat-sys-on-surface-hover);  
+}
+
+.mat-focus-indicator:hover {
+  color: var(--mat-sys-on-surface-variant);
+  background-color: light-dark(#0c5c5c, whitesmoke);
+}
+
 .menu-button-container {
-  background-color: whitesmoke;
+  color: var(--mat-sys-on-surface-variant);
+  background-color: var(--mat-sys-on-surface);
   padding: 10px;
   cursor: pointer;
 }
 
+.menu-button-container:hover {
+  color: var(--mat-sys-primary-hover-variant);
+  background-color: var(--mat-sys-on-surface);
+  padding: 10px;
+  cursor: pointer;  
+}
+
+file-loader-component button {
+  color: var(--mat-sys-primary-hover-variant);
+  background-color: var(--mat-sys-on-surface);
+}
+
+.mat-mdc-dialog-content, .mat-mdc-dialog-actions {
+  background-color: var(--mat-dialog-color);
+}
+
+.mat-mdc-menu-item-text {
+  color: var(--mat-dialog-color-variant);
+}
+
+.mat-dialog-title {
+  color: var(--mat-sys-text-primary-variant);
+  font-weight: bold;
+}
+
+.mat-dialog-subtitle {
+  color: var(--mat-sys-text-primary-variant);
+  font-weight: bold;
+}
+
+.mat-mdc-dialog-content label {
+  color: var(--mat-dialog-color-variant);
+}
+
+.mdc-button span {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.mat-option span,
+.mat-mdc-select svg span,
+.mat-mdc-paginator-range-actions>*
+{
+  color: var(--mat-sys-primary);
+}
+
 .navbar {
-  width: 100%
+  width: 100%;
+  background-color: var(--mat-sys-on-surface-variant);
+}
+
+.mdc-button span,
+.mat-dialog-actions button
+.mat-mdc-dialog-actions button span
+{
+  color: var(--mat-sys-text-primary);
+}
+
+load-scene-list .mdc-button span {
+  color: var(--mat-sys-text-primary-variant);
 }
 
 // Optional: separator between logical sections
@@ -237,6 +364,29 @@ p {
   height: 24px;
   background: #d0d0d0;
   margin: 0 8px;
+}
+
+.file-upload {
+  color: var(--mat-sys-on-surface-variant);
+  background-color: var(--mat-sys-on-surface);
+  display: block;
+  width: fit-content;
+  align-content: center;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 20px;
+  padding: 10px 7px 10px 7px;
+  font-weight: 500;
+}
+
+.file-upload:hover {
+  color: var(--mat-sys-primary, var(--gray-900, rgba(0, 0, 0, 0.6)));
+  background-color: var(--mat-sys-primary-hover-variant);
+}
+
+.file-upload button {
+  display: contents;
+  width: fit-content;
 }
 
 // For very small screens (mobile-ish)

@@ -1,31 +1,28 @@
-//#006a6a
+//load-scene-list-component.scss
 .table-definition-row {
-    background-color : #502c33;
-    color: whitesmoke;
+    background-color: var(--mat-sys-primary, var(--mat-sys-surface, rgba(0, 0, 0, 0.6)));
+    color: var(--mat-sys-on-surface, var(--mat-sys-on-surface, rgba(0, 0, 0, 0.6)));
+}
+.table-item-row {    
+    background-color: var(--mat-sys-on-surface, var(--mat-sys-on-surface, rgba(0, 0, 0, 0.6)));
+    color: var(--mat-sys-primary, var(--mat-sys-on-surface-variant, rgba(0, 0, 0, 0.6)));
+    font-weight: normal;
 }
 .table-item-row-selected {
-    //background-color : #502c33;
-    // color: #006a6a;
+    background-color: var(--mat-sys-on-surface, var(--mat-dialog-color, rgba(0, 0, 0, 0.6)));
     color: var(--mat-sys-primary);
     font-weight: bold;
 }
-.table-item-row-selected:hover {
-    background-color: #a08c83;
-    // color: #006a6a;
-    color: var(--mat-sys-primary);
-}
-
-.table-item-row {    
-    background-color : whitesmoke;
-    color:#502c33;
-    font-weight: normal;
-}
 .table-item-row:hover {
-    background-color: #a08c83;
-    color: whitesmoke;
+    background-color: var(--mat-dialog-supporting-text-color, var(--mat-dialog-supporting-text-color, rgba(0, 0, 0, 0.6)));
+    color : var(--mat-sys-primary, var(--mat-sys-primary, rgba(0, 0, 0, 0.6)));
     cursor: pointer;
 }
-
+.table-item-row-selected:hover {
+    // color: #006a6a;
+    background-color: var(--mat-sys-primary, var(--mat-dialog-supporting-text-color, rgba(0, 0, 0, 0.6)));
+    color: var(--mat-sys-on-surface, var(--mat-sys-on-surface, rgba(0, 0, 0, 0.6)));
+}
 .data-grid-container {
     width: 98%;
 }

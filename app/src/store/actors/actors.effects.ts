@@ -2,7 +2,7 @@ import { inject, Injectable } from "@angular/core";
 import { Actions, createEffect, ofType } from "@ngrx/effects";
 import { BehaviorSubject, map, take, tap } from "rxjs";
 import * as ActorActions from './actors.actions';
-import { Actor } from "../../models/actor.model";
+import { Actor } from "./actor.model";
 import { select, Store } from "@ngrx/store";
 
 @Injectable()

@@ -1,10 +1,11 @@
-import { Component, inject, output } from '@angular/core';
+import { Component, inject, Input, output } from '@angular/core';
 import { MenuItemsEnum, SceneSizeEnum } from '../../enums/enums';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { select, Store } from '@ngrx/store';
 import * as SceneActions from '../../store/scenes/scenes.actions';
 import { MenuItem } from '../../models/miscelaneous.models';
 import { ColorPicker } from 'primeng/colorpicker';
+import { BehaviorSubject } from 'rxjs';
 // import { CURRENT_FORM_GROUP } from '../../helpers/dialog-form-tokens';
 
 @Component({
@@ -26,7 +27,6 @@ import { ColorPicker } from 'primeng/colorpicker';
 export class EditorMenuComponent {
   selectedMenuItem = output<MenuItem | null>();
   store = inject(Store);
-
   protected color: string = "#ffff00";
 
   private fb = inject(FormBuilder);

@@ -11,7 +11,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 
 // State imports
-import { SceneState } from './models/scene.model';
+import { SceneState } from './store/scenes/scene.model';
 
 // NgRx imports
 import { StoreModule } from '@ngrx/store';
@@ -27,6 +27,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatFormFieldModule, MatLabel } from '@angular/material/form-field';
+import { MatSnackBarModule } from '@angular/material/snack-bar'
 import { MatDialogContent } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { MatCard } from '@angular/material/card';
@@ -47,6 +48,7 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { LoadSceneListComponent } from './components/load-scene-list-component/load-scene-list-component';
 import { CustomColorPickerComponent } from './custom-components/custom-color-picker-component/custom-color-picker-component';
 import { ActorMenuComponent } from './components/actor-menu-component/actor-menu-component';
+import { FileLoaderComponent } from './shared/file-loader-component/file-loader-component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'main', pathMatch: 'full' },
@@ -73,7 +75,7 @@ const routes: Routes = [
   ],
   imports: [
     BrowserModule,
-    BrowserAnimationsModule,
+    // BrowserAnimationsModule,
     RouterModule.forRoot(routes),          // ← routing here
     StoreModule.forRoot({}),               // global reducers if any
     StoreModule.forFeature('scenes', sceneReducer),
@@ -85,9 +87,10 @@ const routes: Routes = [
     MatButtonModule,
     MatDialogContent,
     MatFormFieldModule,
+    MatSnackBarModule,
+    MatCheckboxModule,
     MatInputModule,
     MatRadioModule,
-    MatCheckboxModule,
     MatIconModule,
     MatMenuModule,
     MatTableModule,
@@ -96,6 +99,7 @@ const routes: Routes = [
     MatCard,
     ColorPickerModule,
     CustomColorPickerComponent,
+    FileLoaderComponent,
     FormsModule,
     ReactiveFormsModule,
     StoreDevtoolsModule.instrument({

@@ -2,8 +2,8 @@ import { inject, Injectable } from "@angular/core";
 import { catchError, map, Observable, of, throwError } from "rxjs";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { environment } from "../environments/environment";
-import { Scene } from "../models/scene.model";
-import { Actor } from "../models/actor.model";
+import { Scene } from "../store/scenes/scene.model";
+import { Actor } from "../store/actors/actor.model";
 
 export interface SceneSvc extends Scene { createdAt?: Date; updatedAt?: Date; }
 export interface ActorSvc extends Actor { createdAt?: Date; updatedAt?: Date; }

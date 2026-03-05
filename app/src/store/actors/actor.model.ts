@@ -1,5 +1,5 @@
 import { IRect } from "konva/lib/types";
-import { ActorTypeEnum } from "../enums/enums";
+import { ActorTypeEnum } from "../../enums/enums";
 
 // src/app/models/actor.model.ts
 export interface ActorTransformations {
@@ -13,6 +13,7 @@ export interface Actor {
   type: ActorTypeEnum;
   x: number;
   y: number;
+  z: number;
   width?: number;
   height?: number;
   radius?: number;

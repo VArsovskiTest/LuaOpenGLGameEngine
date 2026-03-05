@@ -7,7 +7,7 @@ import { BehaviorSubject, tap } from 'rxjs';
 import * as SceneActions from '../../store/scenes/scenes.actions';
 import { MenuItem } from '../../models/miscelaneous.models';
 import { MenuItemsEnum } from '../../enums/enums';
-import { Scene } from '../../models/scene.model';
+import { Scene } from '../../store/scenes/scene.model';
 
 @Component({
   selector: 'main-component',
@@ -49,6 +49,10 @@ export class MainComponent implements OnDestroy, OnInit {
     if (this.showLoadScene.getValue()) {
       this.showCurrentScene.next(false);
     };
+  }
+
+  protected getMainContentClass() {
+    return this.showLoadScene ? "main-content-editor" : "main-content-empty" ;
   }
 
   ngOnDestroy() {

@@ -1,6 +1,6 @@
 import { EntityState } from "@ngrx/entity";
-import { Actor } from "./actor.model";
-import { SceneSizeEnum } from "../enums/enums";
+import { Actor } from "../actors/actor.model";
+import { SceneSizeEnum } from "../../enums/enums";
 
 
 // src/app/models/scene.model.ts

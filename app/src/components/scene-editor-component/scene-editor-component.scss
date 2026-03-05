@@ -1,24 +1,23 @@
 :host {
   display: block;
-  background: black;        // light placeholder - change later
+  background: black;
   border-bottom: 1px solid #ddd;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  user-select: none;         // prevents text selection when dragging
+  user-select: none;
 }
 
 .stage-container {
   display: flex;
   flex-direction: column;
-  background-color: #502c33;
+  background-color: var(--mat-sys-primary, var(--mat-sys-primary, rgba(0, 0, 0, 0.6)));
 }
 
 .stage-toolbar {
-  background-color: white;
+  background-color: var(--mat-sys-on-surface);
   padding: 0rem, 1.5rem;
   height: 1 rem;
   display: flex;
-  // justify-content: space-between;
-  align-items: center; /* vertical center */
+  align-items: center;
 }
 
 .stage-canvas {
