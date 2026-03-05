@@ -11,7 +11,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 
 // State imports
-import { SceneState } from './models/scene.model';
+import { SceneState } from './store/scenes/scene.model';
 
 // NgRx imports
 import { StoreModule } from '@ngrx/store';

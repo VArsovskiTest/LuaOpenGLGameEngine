@@ -1,5 +1,5 @@
 import { createAction, props } from "@ngrx/store";
-import { Scene, SceneState } from '../../models/scene.model'
+import { Scene, SceneState } from '../../store/scenes/scene.model'
 import { Update } from "@ngrx/entity";
 import { SceneSizeEnum } from "../../enums/enums";
 

@@ -7,7 +7,7 @@ import { BehaviorSubject, tap } from 'rxjs';
 import * as SceneActions from '../../store/scenes/scenes.actions';
 import { MenuItem } from '../../models/miscelaneous.models';
 import { MenuItemsEnum } from '../../enums/enums';
-import { Scene } from '../../models/scene.model';
+import { Scene } from '../../store/scenes/scene.model';
 
 @Component({
   selector: 'main-component',

@@ -1,5 +1,5 @@
 import { Shape } from "konva/lib/Shape";
-import { Actor, ActorCircle, ActorGeneric, ActorRectangle, ActorResourceBar } from "../models/actor.model";
+import { Actor, ActorCircle, ActorGeneric, ActorRectangle, ActorResourceBar } from "../store/actors/actor.model";
 import { roundTo3Decimals } from "./math-helper";
 import Konva from "konva";
 

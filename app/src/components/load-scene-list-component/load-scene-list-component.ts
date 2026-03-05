@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, inject, OnInit, ViewChild } from '@angular/core';
 import { SceneService } from '../../services/scene-service';
-import { Scene, SceneState } from '../../models/scene.model';
+import { Scene, SceneState } from '../../store/scenes/scene.model';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';

@@ -3,10 +3,10 @@ import { Store } from '@ngrx/store';
 import Konva from "konva";
 
 import * as ActorActions from '../../store/actors/actors.actions'
-import { Actor, ActorBase, ActorCircle, ActorGeneric, ActorImage, ActorRectangle, ActorResourceBar, ActorTransformations } from '../../models/actor.model'
+import { Actor, ActorBase, ActorCircle, ActorGeneric, ActorImage, ActorRectangle, ActorResourceBar, ActorTransformations } from '../../store/actors/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { BehaviorSubject, delay, map, Observable, Subject, switchMap, take, throttleTime, withLatestFrom } from 'rxjs';
-import { Scene, SceneState } from '../../models/scene.model';
+import { Scene, SceneState } from '../../store/scenes/scene.model';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
 import { ActorSvc, SceneService, SceneSvc } from '../../services/scene-service';
 import { ActorsService } from '../../services/actors-service';
@@ -331,40 +331,43 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     actors.sort((actor1, actor2) => actor1.type > actor2.type ? 1 : -1) // Parse background first
       .forEach(actor => {
-        let shape = this.generateShape(actor, vw, vh);
-        if (shape!) {
-          shape.on("click tap", (e) => {
-            const color = actor.type != 'image' ? (actor as ActorRectangle).color : undefined;
-            if (color) this.selectedColor.next(color);
-            const sameActorClick = (this.selectedActor.getValue()?.data.id || false) && (e.target.id() == this.selectedActor.getValue()?.data.id);
-            const backgroundClick = actor.type == 'background';
-            const targetId = e.target.attrs["id"];
-
-            if (!sameActorClick && !backgroundClick) this.showTransformer(actor.id, targetId);
-            else {
-              if (!backgroundClick) this.highlightActor(this.selectedActor.getValue()?.data.id, targetId)
-              else {
-                this.highlightStage();
-                this.backgroundActor.next({data: actor });
-              }
-              this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
-            }
-
-            this.selectedActor.next(this.findById(actor.id, this.actors.getValue()));
-            e.cancelBubble = true;
-            this.layer.batchDraw();
-
-            shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
-            shape.on('transformend', (shape) => { this.onActorTransformed(actor.id, shape.currentTarget); });
-
-            if (shape.getParent()) {
-              if (actor.type == "background") shape.moveToBottom(); else shape.moveToTop();
-            }
-          });
-
-          this.layer.add(shape);
-          this.shapes[actor.id] = shape;
+        if (!actor.type) {
+          console.warn("selectedActor", this.selectedActor);
+          console.warn("suspicious actor", actor);
         }
+        let shape = this.generateShape(actor, vw, vh);
+        shape.on("click tap", (e) => {
+          const color = actor.type != 'image' ? (actor as ActorRectangle).color : undefined;
+          if (color) this.selectedColor.next(color);
+
+          const sameActorClick = (this.selectedActor.getValue()?.data.id || false) && (e.target.id() == this.selectedActor.getValue()?.data.id);
+          const backgroundClick = actor.type == 'background';
+          const targetId = e.target.attrs["id"];
+
+          if (!sameActorClick && !backgroundClick) this.showTransformer(actor.id, targetId);
+          else {
+            if (!backgroundClick) this.highlightActor(this.selectedActor.getValue()?.data.id, targetId)
+            else {
+              this.highlightStage();
+              this.backgroundActor.next({data: actor });
+            }
+            this.store.dispatch(ActorActions.selectActor({ id: actor.id }));
+          }
+
+          this.selectedActor.next(this.findById(actor.id, this.actors.getValue()));
+          e.cancelBubble = true;
+          this.layer.batchDraw();
+
+          shape.on("dragend", () => { this.onActorMoved(actor.id, shape.x(), shape.y()) });
+          shape.on('transformend', (shape) => this.onActorTransformed(actor.id, shape.currentTarget));
+
+          if (shape.getParent()) {
+            if (actor.type == "background") shape.moveToBottom(); else shape.moveToTop();
+          }
+        });
+
+        this.layer.add(shape);
+        this.shapes[actor.id] = shape;
       });
     this.layer.draw();
   }
@@ -464,7 +467,11 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onActorTransformed(id: string, shape: Shape<ShapeConfig>) {
+    const currentActorData = this.selectedActor.getValue()?.data;
+    const actorColor = currentActorData?.type != "image" ? (currentActorData as ActorRectangle).color : null;
     const changes: Partial<ActorGeneric> = {
+      id: id,
+      type: currentActorData?.type,
       x: roundTo3Decimals(shape.x()),
       y: roundTo3Decimals(shape.y()),
       transform: {
@@ -473,6 +480,9 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         scaleY: roundTo3Decimals(shape.scaleY()),
       }
     };
+
+    let updatedChanges = changes as Partial<ActorRectangle>;
+    if (actorColor != null) updatedChanges = {...updatedChanges, color: actorColor };
     this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id: id, changes: { data: changes } as Actor } }));
   }
 
@@ -528,7 +538,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
               transformDataJson: JSON.stringify(actor.data.transform),
               movable: actorBaseProps.movable,
             } as ActorSvc;
-            if (sd?.id) { actorData.updatedAt = new Date(); }
+            if (sd.id) { actorData.updatedAt = new Date(); }
             else actorData.createdAt = new Date();
             return actorData;
           })

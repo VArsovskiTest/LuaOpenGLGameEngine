@@ -1,5 +1,5 @@
 import { createEntityAdapter, EntityAdapter } from "@ngrx/entity";
-import { Scene } from '../../models/scene.model';
+import { Scene } from '../../store/scenes/scene.model';
 
 // TODO: Adapter is not needed until multiple scenes required
 // export const adapter: EntityAdapter<Scene> = createEntityAdapter<Scene>({

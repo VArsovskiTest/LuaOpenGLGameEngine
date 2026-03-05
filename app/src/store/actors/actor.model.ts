@@ -1,5 +1,5 @@
 import { IRect } from "konva/lib/types";
-import { ActorTypeEnum } from "../enums/enums";
+import { ActorTypeEnum } from "../../enums/enums";
 
 // src/app/models/actor.model.ts
 
