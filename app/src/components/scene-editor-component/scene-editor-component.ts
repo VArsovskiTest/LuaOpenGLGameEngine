@@ -3,7 +3,7 @@ import { Store } from '@ngrx/store';
 import Konva from "konva";
 
 import * as ActorActions from '../../store/actors/actors.actions'
-import { Actor, ActorTransformations } from '../../store/actors/actor.model'
+import { Actor, ActorImageUploadModel, ActorTransformations } from '../../store/actors/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
 import { BehaviorSubject, delay, map, Observable, Subject, switchMap, take, throttleTime, withLatestFrom } from 'rxjs';
 import { Scene, SceneState } from '../../store/scenes/scene.model';
@@ -18,7 +18,8 @@ import { CalculateHeight, CalculateWidth, generateRandomColor } from '../../shar
 import { Stage } from 'konva/lib/Stage';
 import { ActorTypeEnum } from '../../enums/enums';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { BackgroundAdapter, CircleAdapter, ImageAdapter, RectangleAdapter, ResourceBarAdapter } from '../../models/actor-adapters';
+import { BackgroundAdapter, CircleAdapter, GenericActorAdapter, ImageAdapter, RectangleAdapter, ResourceBarAdapter } from '../../models/actor-adapters';
+import { formatSize } from '../../shared/size-helper';
 
 @Component({
   selector: 'scene-editor',
@@ -43,11 +44,14 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   actors = new BehaviorSubject<Actor[]>([]);
   selectedActor = new BehaviorSubject<Actor | null | undefined>(undefined);
+  imageActor = new BehaviorSubject<ActorImageUploadModel | null>(null);
   currentScene = new BehaviorSubject<SceneState | null>(null);
 
   private fb = inject(FormBuilder);
   protected addActorFormData: FormGroup = this.fb.group({
-    actorType: [''] // TODO: Do validation later if need be: Validators.apply(() =>{...})
+    actorType: ActorTypeEnum, // TODO: Do validation later if need be: Validators.apply(() =>{...})
+    sceneId: '',
+    file: File,
   });
 
   protected defaultColor: string = "#000000";
@@ -210,8 +214,6 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showStageMenu$ = this.showStageMenu.asObservable();
     this.selectedColor$ = this.selectedColor.asObservable();
 
-    // Init actions for OnColorChange event
-    // If you need to emit the updated actor, you can next it to another subject here
     this.actorColorChange$.pipe(throttleTime(50, undefined, { leading: true, trailing: false })) // Immediate first, then at most every 50ms
       .subscribe(color => {
         const updated = { ...this.selectedActor.getValue(), color } as Actor;
@@ -242,24 +244,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private getOrGenerateBackground(color?: string) {
-    let existing = this.actors.getValue().find((actor: Actor) => actor.type == 'background');
-    if (existing) return existing;
-
-    const colorHex = color || generateRandomColor(35, 75);
-    const backgroundData = existing || {
-      id: crypto.randomUUID(),
-      sceneId: this.currentScene.getValue()?.currentScene?.id,
-      type: "background",
-      color: colorHex,
-      x: 0, y: 0, z:0, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT,
-      fill: colorHex,
-      draggable: false,
-      resizable: false
-    } as Actor;
-    return backgroundData;
-  }
-
+  //#region Canvas methods
   private redrawShapes(actors: Actor[], vw: number, vh: number) {
     // this.layer.destroyChildren();   // ← Preserve transformer instead
     this.layer.getChildren().forEach(child => { if (child !== this.tr) { child.destroy(); } });
@@ -347,6 +332,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             if (actor.type == "background") shape.moveToBottom(); else shape.moveToTop();
           }
 
+          shape.zIndex(actor.z);
           this.layer.add(shape);
           this.shapes[actor.id] = shape;
         }
@@ -418,7 +404,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showFileLoader.next(actorType.value as ActorTypeEnum == "image");
   }
 
-  addActor = (dialogData: any) => { // NOTE: Need arrow function if need to use "this" inside function
+  addActor = (dialogData: any) => {
     const actorType = dialogData.actorType;
     switch(actorType) {
       case (ActorTypeEnum.background): {
@@ -434,7 +420,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
         break;
       }
       case (ActorTypeEnum.image): {
-        alert("Adding image not implemented");
+        this.uploadImage();
         break;
       }
     }
@@ -465,9 +451,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.store.dispatch(ActorActions.updateActor({ id: id, actorUpdate: { id: id, changes: changes } }));
   }
 
-  private findById(id: string, list: Actor[]): Actor {
-    return (list.filter(actor => actor.id == id) || [null])[0];
-  }
+  //#endregion
 
   undo() {
     const previous = this.selectedActor.getValue();
@@ -478,6 +462,16 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   clearAll() {
     this.store.dispatch(ActorActions.clearScene());
+  }
+
+  setUploadedImage(imageData: any) {
+    this.imageActor.next(imageData);
+  }
+
+  uploadImage() {
+    const file = this.imageActor.getValue()?.file as File;
+    const uploadedImage$ = this.actorsService.uploadActor(this.currentScene.getValue()?.currentScene?.id!, file);
+    uploadedImage$.subscribe(image => alert(image));
   }
 
   saveScene() {
@@ -503,7 +497,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             const actorData = {
               ...actor,
               type: actor.type, name: actor.name,
-              x: actor.x, y: actor.y,
+              x: actor.x, y: actor.y, z: actor.z,
               width: actor.width, height: actor.height, radius: actor.radius,
               color: actor.color,
               transform: actor.transform,
@@ -519,7 +513,7 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     );
     let sceneSaved: Scene | null = null;
     sceneToSave$.subscribe(scene => {
-      this.sceneService.saveScene(scene).subscribe(savedScene => sceneSaved = savedScene)
+      this.sceneService.saveScene(scene).subscribe(savedScene => sceneSaved = savedScene);
     });
   }
 
@@ -535,16 +529,32 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     else this.backgroundColorChange$.next(newColor);
   }
 
+  private updateActors() {
+      this.actors.getValue().map(actor => {
+        const newActor = GenericActorAdapter(actor)?.shapeToActor(this.shapes[actor.id]);
+        if (newActor) {
+          const zIndex = this.shapes[this.selectedActor.getValue()!.id].zIndex();
+          newActor.z = zIndex;
+          if (zIndex) this.store.dispatch(ActorActions.updateActor({ id: newActor.id, actorUpdate: { id: newActor.id, changes: newActor } }));
+        }
+      });
+  }
+
   protected moveToTop() {
     const actorId = this.selectedActor.getValue()?.id;
-    if (actorId) this.shapes[actorId].moveToTop();
+    if (actorId) {
+      this.shapes[actorId].moveToTop();
+      this.updateActors();
+    };
   }
 
   protected moveToBottom() {
     const actorId = this.selectedActor.getValue()?.id;
-    if (actorId) this.shapes[actorId].moveToBottom();
-    const backgroundActorId = this.backgroundActor.getValue().id;
-    this.shapes[backgroundActorId].moveToBottom();
+    if (actorId) this.shapes[actorId].moveToBottom(); {
+      const backgroundActorId = this.backgroundActor.getValue().id;
+      this.shapes[backgroundActorId].moveToBottom();
+      this.updateActors();
+    };
   }
 
   ngOnDestroy(): void {
@@ -553,4 +563,28 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.stage?.destroy();
   }
+
+  //#region Private Helpers
+  private getOrGenerateBackground(color?: string) {
+    let existing = this.actors.getValue().find((actor: Actor) => actor.type == 'background');
+    if (existing) return existing;
+
+    const colorHex = color || generateRandomColor(35, 75);
+    const backgroundData = existing || {
+      id: crypto.randomUUID(),
+      sceneId: this.currentScene.getValue()?.currentScene?.id,
+      type: "background",
+      color: colorHex,
+      x: 0, y: 0, z:0, width: this.VISIBLE_WIDTH, height: this.VISIBLE_HEIGHT,
+      fill: colorHex,
+      draggable: false,
+      resizable: false
+    } as Actor;
+    return backgroundData;
+  }
+
+  private findById(id: string, list: Actor[]): Actor {
+    return (list.filter(actor => actor.id == id) || [null])[0];
+  }
+  //#endregion
 }

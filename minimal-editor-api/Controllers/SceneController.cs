@@ -49,6 +49,7 @@ public class ScenesController : ControllerBase
                     existingActor.Type = incoming.Type;
                     existingActor.X = incoming.X;
                     existingActor.Y = incoming.Y;
+                    existingActor.Z = incoming.Z;
                     existingActor.Color = incoming.Color;
                     existingActor.Transform = incoming.Transform;
                     existingActor.UpdatedAt = DateTime.UtcNow;
@@ -61,6 +62,7 @@ public class ScenesController : ControllerBase
                         Type = incoming.Type,
                         X = incoming.X,
                         Y = incoming.Y,
+                        Z = incoming.Z,
                         Color = incoming.Color,
                         Transform = incoming.Transform,
                         UpdatedAt = DateTime.UtcNow,

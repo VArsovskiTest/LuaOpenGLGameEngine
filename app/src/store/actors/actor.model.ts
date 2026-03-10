@@ -43,3 +43,10 @@ export interface ActorStoreState { // TODO: Think of new name, you'll need Actor
     entities: { [id: string]: Actor };
     selectedId: string | null;
 }
+
+export interface ActorImageUploadModel {
+  //{ actorType: imageData.actorType, sceneId: imageData.sceneId, file: imageData.file.name }
+  actorType: ActorTypeEnum,
+  sceneId: string,
+  file: File
+}

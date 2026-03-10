@@ -55,6 +55,7 @@ body {
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
   height: 100%;
+  margin-top: -0.35rem;
 }
 
 h1 {
@@ -121,7 +122,7 @@ p {
 }
 
 .toolbar {
-  flex: 0 0 15%;
+  flex: 0 0 14%;
   color: var(--mat-dialog-supporting-text-color);
   background: var(--mat-sys-primary, var(--mat-sys-primary, rgba(0, 0, 0, 0.6)));
   padding-left: 1.5rem;
@@ -296,14 +297,12 @@ p {
   color: var(--mat-sys-on-surface-variant);
   background-color: var(--mat-sys-on-surface);
   padding: 10px;
-  cursor: pointer;
 }
 
 .menu-button-container:hover {
   color: var(--mat-sys-primary-hover-variant);
   background-color: var(--mat-sys-on-surface);
   padding: 10px;
-  cursor: pointer;  
 }
 
 file-loader-component button {
@@ -345,7 +344,8 @@ file-loader-component button {
 }
 
 .navbar {
-  width: 100%;
+  width: calc(99% + 6px);
+  height: 90%;
   background-color: var(--mat-sys-on-surface-variant);
 }
 
@@ -378,6 +378,7 @@ load-scene-list .mdc-button span {
   cursor: pointer;
   border-radius: 20px;
   padding: 10px 7px 10px 7px;
+  margin: 10px 0;
   font-weight: 500;
 }
 
@@ -389,6 +390,11 @@ load-scene-list .mdc-button span {
 .file-upload button {
   display: contents;
   width: fit-content;
+}
+
+file-loader-component span {
+  font-weight: 600;
+  color:var(--mat-sys-text-primary);
 }
 
 // For very small screens (mobile-ish)

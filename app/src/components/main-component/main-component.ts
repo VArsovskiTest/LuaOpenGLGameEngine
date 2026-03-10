@@ -22,6 +22,7 @@ export class MainComponent implements OnDestroy, OnInit {
   private store = inject(Store);
 
   protected currentScene$ = this.store.select(selectCurrentScene);
+  protected currentScene: BehaviorSubject<Scene | null> = new BehaviorSubject<Scene | null>(null);
   private outputSub?: OutputRefSubscription;
   protected showCurrentScene: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   protected showLoadScene: BehaviorSubject<boolean> = new BehaviorSubject(false);
@@ -40,6 +41,7 @@ export class MainComponent implements OnDestroy, OnInit {
     });
     this.store.pipe(
       ofType(SceneActions.setCurrentScene),
+      tap(scene => this.currentScene.next(scene.scene)),
       tap(a => console.log("setCurrentScene action received in component:", a))
     ).subscribe();
   }
@@ -52,7 +54,7 @@ export class MainComponent implements OnDestroy, OnInit {
   }
 
   protected getMainContentClass() {
-    return this.showLoadScene ? "main-content-editor" : "main-content-empty" ;
+    return this.currentScene.getValue() && this.showLoadScene.getValue() ? "main-content-editor" : "main-content-empty" ;
   }
 
   ngOnDestroy() {

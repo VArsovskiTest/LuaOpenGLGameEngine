@@ -42,8 +42,7 @@ public class GameState
         actorState.Selected = true;
         Actors.ForEach(actor =>
         {
-            if (actor.ActorId == actorState.ActorId)
-                // actor = actorState;
+            if (actor.ActorId == actorState.ActorId) // actor = actorState;
                 actor.Selected = actorState.Selected;
             actor.Hovered = actorState.Hovered;
             actor.X = actorState.X;

@@ -1,17 +1,8 @@
 <!-- Component.html -->
 <div>
-    <label mat-button for="files" class="file-upload">
-        <button mat-button id="file-upload" class="menu-button"></button>Browse
-    </label>
-    <input id="files" style="visibility:hidden;" type="file">
+  <label mat-button for="files" class="file-upload image-upload-container btn btn-bwm">
+    <button #imageInput mat-button id="file-upload" class="menu-button"></button>Browse
+  </label>
+  <span>{{ this.selectedFileName }}</span>
+  <input id="files" style="visibility:hidden;" accept="image/*" type="file" (change)="imageSelected($event)">
 </div>
-
-<!-- <div class="menu-button-container">
-  <button mat-button hovered="true" class="menu-button">
-    <ng-template>
-      <label mat-menu-item for="files" class="file-upload">Browse</label>
-      <input mat-menu-item id="files" style="visibility:hidden;" type="file">
-    </ng-template>
-    Browse
-  </button>
-</div> -->

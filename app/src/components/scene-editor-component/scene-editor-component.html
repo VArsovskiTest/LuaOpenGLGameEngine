@@ -1,7 +1,8 @@
 <div class="stage-container">
     <ng-container>
         <div class="stage-toolbar">
-            <button mat-button class="menu-button" [appDialogLoader]="{title: 'Add Actor', message: 'Select actor type to add to current scene'}"
+            <button mat-button class="menu-button"
+            [appDialogLoader]="{ title: 'Add Actor', message: 'Select actor type to add to current scene' }"
             [appDialogLoaderFormData]="addActorFormData"
             [appDialogLoaderSuccess]="addActor">
             <ng-template #appDialogLoaderContent>
@@ -11,10 +12,13 @@
                         <mat-radio-button value="circle">Add Circle</mat-radio-button>
                         <mat-radio-button value="image">Add Image</mat-radio-button>
                     </mat-radio-group>
-                        
+
                     @if (showFileLoader.getValue()) {
                         <mat-dialog-actions>
-                            <file-loader-component></file-loader-component>
+                            <file-loader-component
+                                [sceneId]="currentScene.getValue().currentScene.id"
+                                (uploadImage)="setUploadedImage($event)">
+                            </file-loader-component>
                         </mat-dialog-actions>
                     }
                 </form>

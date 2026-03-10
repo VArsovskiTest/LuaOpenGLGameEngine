@@ -27,4 +27,10 @@ public static class EnumExtensions
         // Fallback to standard parsing if no EnumMember matches
         return (T)Enum.Parse(typeof(T), value, true);
     }
+
+    public static readonly Func<Type, Dictionary<Enum, string>> GetEnumValues = (type) =>
+    {
+        if (!type.IsEnum) throw new ArgumentException("Type must be an enum.");
+        return Enum.GetValues(type).Cast<Enum>().ToDictionary(e => e, e => e.GetEnumMemberValue());
+    };
 }

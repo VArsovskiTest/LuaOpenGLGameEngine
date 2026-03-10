@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { environment } from "../environments/environment";
-import { HttpClient, HttpErrorResponse } from "@angular/common/http";
+import { HttpClient, HttpErrorResponse, HttpHeaders } from "@angular/common/http";
 import { Observable, throwError } from "rxjs";
 import { Actor } from "../store/actors/actor.model";
 
@@ -9,12 +9,20 @@ export class ActorsService {
     constructor(private http: HttpClient) { }
     private apiUrl = `${environment.apiUrl}/actors`;
 
+    private headers = new HttpHeaders();
+    //.set('set-custom-headers-here', 'some-value')
+
     getActors(): Observable<Actor[]> {
-        return this.http.get<Actor[]>(this.apiUrl);
+        return this.http.get<Actor[]>(this.apiUrl, { headers: this.headers });
     }
 
     getActorsForScene(id: string): Observable<Actor[]> {
-        return this.http.get<Actor[]>(`${this.apiUrl}/${id}`);
+        return this.http.get<Actor[]>(`${this.apiUrl}/${id}`, { headers: this.headers });
+    }
+
+    uploadActor(sceneId: string, file: File): Observable<Actor> {
+        const uploaded = this.http.post(`${this.apiUrl}/upload/${sceneId}`, { fileData: file }, { headers: this.headers });
+        return uploaded as Observable<Actor>;
     }
 
     private handleError(error:HttpErrorResponse): Observable<never> {
