@@ -1,14 +1,13 @@
 import { Component, ElementRef, EventEmitter, inject, Input, Output, ViewChild } from '@angular/core';
-import { formatSize } from '../size-helper';
-import { ActorsService } from '../../services/actors-service';
+import { formatSize } from './helpers/size-helper';
+import { ActorsService } from '../services/actors-service';
 import { BehaviorSubject } from 'rxjs';
-import { ActorTypeEnum } from '../../enums/enums';
+import { ActorTypeEnum } from '../enums/enums';
 
 @Component({
   selector: 'file-loader-component',
   imports: [],
   templateUrl: './file-loader-component.html',
-  styleUrl: './file-loader-component.scss',
 })
 export class FileLoaderComponent {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;

@@ -139,6 +139,12 @@ p {
   margin-right: 0.5rem;
 }
 .main-content-empty {
+  width: 98.5%;
+  background-color: var(--mat-sys-primary-content);
+  @extend .main-content;
+  overflow: auto;
+}
+.main-content-empty-left {
   background-color: var(--mat-sys-on-surface);
   @extend .main-content;
   overflow: auto;
@@ -173,7 +179,7 @@ p {
 }
 
 .canvas {
-  width: calc(100% - 3rem);
+  width: 82%;
   flex: 1 1 auto; /* take the rest */
   background: #fff;
   background-color: var(--mat-sys-primary);
@@ -344,7 +350,7 @@ file-loader-component button {
 }
 
 .navbar {
-  width: calc(99% + 6px);
+  width: calc(99% + 26px);
   height: 90%;
   background-color: var(--mat-sys-on-surface-variant);
 }

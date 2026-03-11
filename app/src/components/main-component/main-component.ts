@@ -5,7 +5,7 @@ import { selectCurrentScene } from '../../store/scenes/scenes.selectors';
 import { ofType } from '@ngrx/effects';
 import { BehaviorSubject, tap } from 'rxjs';
 import * as SceneActions from '../../store/scenes/scenes.actions';
-import { MenuItem } from '../../models/miscelaneous.models';
+import { MenuItem, SnackbarModel } from '../../models/miscelaneous.models';
 import { MenuItemsEnum } from '../../enums/enums';
 import { Scene } from '../../store/scenes/scene.model';
 
@@ -26,6 +26,8 @@ export class MainComponent implements OnDestroy, OnInit {
   private outputSub?: OutputRefSubscription;
   protected showCurrentScene: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   protected showLoadScene: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  protected showSnackbar: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  protected snackbarModel: BehaviorSubject<SnackbarModel> = new BehaviorSubject({} as SnackbarModel);
 
   private cdr = inject(ChangeDetectorRef);
 
@@ -55,6 +57,10 @@ export class MainComponent implements OnDestroy, OnInit {
 
   protected getMainContentClass() {
     return this.currentScene.getValue() && this.showLoadScene.getValue() ? "main-content-editor" : "main-content-empty" ;
+  }
+
+  protected getSnackbarClass() {
+    return this.snackbarModel.getValue().success ? "snackbar-success-content" : "snackbar-fail-content";
   }
 
   ngOnDestroy() {

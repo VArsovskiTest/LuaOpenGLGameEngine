@@ -13,6 +13,7 @@ export const actorsReducer = createReducer(initialState
         (state, { actor }) => adapter.addOne(actor, state))
     , on(ActorActions.updateActor,
         (state, { actorUpdate }) => adapter.updateOne(actorUpdate, state))
+    , on(ActorActions.updateAll, (state, { actorUpdates }) => adapter.updateMany(actorUpdates, state))
     , on(ActorActions.removeActor,
         (state, {id}) => adapter.removeOne(id, state))
     , on(ActorActions.selectActor, (state, {id}) => ({...state, selectedId: id}))

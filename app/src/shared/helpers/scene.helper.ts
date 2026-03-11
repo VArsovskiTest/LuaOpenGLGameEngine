@@ -1,8 +1,8 @@
 import { Shape } from "konva/lib/Shape";
-import { Actor } from "../store/actors/actor.model";
+import { Actor } from "../../store/actors/actor.model";
 import { roundTo3Decimals } from "./math-helper";
 import Konva from "konva";
-import { SceneSizeEnum } from "../enums/enums";
+import { SceneSizeEnum } from "../../enums/enums";
 
 export const sceneSizes = (): { x: number, y: number }[] => {
     return [

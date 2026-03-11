@@ -20,8 +20,6 @@ export class DialogLoaderInlineDirective {
 
   @HostListener('click')
   onHostClick() {
-    console.log("Dialog-Loader-Inline-Directive: click");
-
     // If custom template exists: embed it
     if (this.customTemplate) {
       const view = this.vcr.createEmbeddedView(this.customTemplate);

@@ -4,15 +4,7 @@ import { AfterViewInit, ChangeDetectorRef, Component, Inject, TemplateRef } from
 import { FormGroup } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-
-export interface DialogData {
-  title?: string;
-  message?: string;
-  okText?: string;
-  cancelText?: string;
-  innerContent?: TemplateRef<any>;
-  formGroup?: FormGroup;
-}
+import { DialogData } from '../../models/miscelaneous.models';
 
 @Component({
   selector: `inline-dialog-content`,

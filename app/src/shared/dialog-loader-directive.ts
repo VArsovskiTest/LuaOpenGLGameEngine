@@ -2,9 +2,10 @@
 import { Directive, HostListener, ContentChild, TemplateRef, ElementRef, inject, Input } from "@angular/core";
 import { AfterContentInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { DialogData, InlineDialogContentComponent } from "./inline-dialog-content-component";
+import { InlineDialogContentComponent } from "./templates/inline-dialog-content-component";
 import { Store } from "@ngrx/store";
 import { FormGroup } from "@angular/forms";
+import { DialogData } from "../models/miscelaneous.models";
 
 @Directive({
   standalone: false,

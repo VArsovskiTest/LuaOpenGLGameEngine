@@ -12,7 +12,7 @@
   background-color: var(--mat-sys-primary, var(--mat-sys-primary, rgba(0, 0, 0, 0.6)));
 }
 
-.stage-toolbar {
+.stage-toolbar { // TODO: set same value as the stage-container (if possible)
   background-color: var(--mat-sys-on-surface);
   padding: 0rem, 1.5rem;
   height: 1 rem;

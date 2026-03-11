@@ -27,7 +27,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatFormFieldModule, MatLabel } from '@angular/material/form-field';
-import { MatSnackBarModule } from '@angular/material/snack-bar'
+import { MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarModule } from '@angular/material/snack-bar'
 import { MatDialogContent } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { MatCard } from '@angular/material/card';
@@ -37,7 +37,7 @@ import { ColorPickerModule } from 'primeng/colorpicker';
 import { SceneEditorComponent } from './components/scene-editor-component/scene-editor-component';
 import { EditorMenuComponent } from './components/editor-menu-component/editor-menu-component';
 import { DialogLoaderDirective } from './shared/dialog-loader-directive';
-import { DialogLoaderInlineDirective } from './shared/dialog-loader-inline-directive';
+import { DialogLoaderInlineDirective } from './shared/templates/dialog-loader-inline-directive';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { actorsReducer } from './store/actors/actors.reducer';
 import { ActorsEffects } from './store/actors/actors.effects';
@@ -48,7 +48,9 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { LoadSceneListComponent } from './components/load-scene-list-component/load-scene-list-component';
 import { CustomColorPickerComponent } from './custom-components/custom-color-picker-component/custom-color-picker-component';
 import { ActorMenuComponent } from './components/actor-menu-component/actor-menu-component';
-import { FileLoaderComponent } from './shared/file-loader-component/file-loader-component';
+import { FileLoaderComponent } from './shared/file-loader-component';
+import { CustomSnackbarComponent } from './custom-components/custom-snackbar-component/custom-snackbar-component';
+import { LoadSnackbarDirective } from './shared/load-snackbar-directive';
 
 const routes: Routes = [
   { path: '', redirectTo: 'main', pathMatch: 'full' },
@@ -66,9 +68,10 @@ const routes: Routes = [
     LoadSceneListComponent,
     DialogLoaderDirective,
     DialogLoaderInlineDirective,
+    LoadSnackbarDirective,
     CustomInputComponent,
-    // CustomRadioGroupComponent,
     CustomSwitchComponent,
+    // CustomRadioGroupComponent,
     // MatTableDataSource,
 
     // ... ALL other components, directives, pipes
@@ -99,6 +102,7 @@ const routes: Routes = [
     MatCard,
     ColorPickerModule,
     CustomColorPickerComponent,
+    CustomSnackbarComponent,
     FileLoaderComponent,
     FormsModule,
     ReactiveFormsModule,
@@ -114,6 +118,7 @@ const routes: Routes = [
   ],
   providers: [
     provideHttpClient(withInterceptorsFromDi()),
+    { provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: {duration: 2500} },
     // provideAnimationsAsync(), // enables smooth animations (CSS-based in v21+)
     // providePrimeNG({
     //   theme: {

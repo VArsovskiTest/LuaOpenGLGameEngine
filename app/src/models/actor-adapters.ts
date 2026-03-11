@@ -1,7 +1,7 @@
 import Konva from "konva";
 import { Actor } from "../store/actors/actor.model";
 import { Shape } from "konva/lib/Shape";
-import { roundTo3Decimals } from "../shared/math-helper";
+import { roundTo3Decimals } from "../shared/helpers/math-helper";
 import { actorsReducer } from "../store/actors/actors.reducer";
 import { ActorTypeEnum } from "../enums/enums";
 import { ActorBehavior } from "./miscelaneous.models";

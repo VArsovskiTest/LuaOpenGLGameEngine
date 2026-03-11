@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { environment } from "../environments/environment";
 import { HttpClient, HttpErrorResponse, HttpHeaders } from "@angular/common/http";
-import { Observable, throwError } from "rxjs";
+import { catchError, Observable, throwError, map } from "rxjs";
 import { Actor } from "../store/actors/actor.model";
 
 @Injectable({providedIn: 'root'})
@@ -21,7 +21,10 @@ export class ActorsService {
     }
 
     uploadActor(sceneId: string, file: File): Observable<Actor> {
-        const uploaded = this.http.post(`${this.apiUrl}/upload/${sceneId}`, { fileData: file }, { headers: this.headers });
+        const uploaded = this.http.post(`${this.apiUrl}/upload/${sceneId}`, { fileData: file }, { headers: this.headers }).pipe(
+            map(response => response), //TODO: Show snackbar success,
+            catchError(response => response) //TODO: Show snackbar fail
+        );
         return uploaded as Observable<Actor>;
     }
 

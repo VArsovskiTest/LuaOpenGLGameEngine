@@ -3,23 +3,23 @@ import { Store } from '@ngrx/store';
 import Konva from "konva";
 
 import * as ActorActions from '../../store/actors/actors.actions'
-import { Actor, ActorImageUploadModel, ActorTransformations } from '../../store/actors/actor.model'
+import { Actor, ActorImageUploadModel } from '../../store/actors/actor.model'
 import { selectAllActors, selectSelectedActor, selectSelectedActorId } from '../../store/actors/actors.selectors';
-import { BehaviorSubject, delay, map, Observable, Subject, switchMap, take, throttleTime, withLatestFrom } from 'rxjs';
+import { BehaviorSubject, map, Observable, Subject, take, throttleTime, withLatestFrom } from 'rxjs';
 import { Scene, SceneState } from '../../store/scenes/scene.model';
 import { selectSceneState } from '../../store/scenes/scenes.selectors';
 import { ActorSvc, SceneService, SceneSvc } from '../../services/scene-service';
 import { ActorsService } from '../../services/actors-service';
-import { generateRandom, roundTo3Decimals } from '../../shared/math-helper';
+import { generateRandom, roundTo3Decimals } from '../../shared/helpers/math-helper';
 import { Shape, ShapeConfig } from 'konva/lib/Shape';
-import { KonvaEventObject } from 'konva/lib/Node';
 import { SceneSizeEnum } from '../../enums/enums';
-import { CalculateHeight, CalculateWidth, generateRandomColor } from '../../shared/scene.helper';
+import { CalculateHeight, CalculateWidth, generateRandomColor } from '../../shared/helpers/scene.helper';
+
 import { Stage } from 'konva/lib/Stage';
 import { ActorTypeEnum } from '../../enums/enums';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { BackgroundAdapter, CircleAdapter, GenericActorAdapter, ImageAdapter, RectangleAdapter, ResourceBarAdapter } from '../../models/actor-adapters';
-import { formatSize } from '../../shared/size-helper';
+import { Update } from '@ngrx/entity';
 
 @Component({
   selector: 'scene-editor',
@@ -530,31 +530,36 @@ export class SceneEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private updateActors() {
-      this.actors.getValue().map(actor => {
-        const newActor = GenericActorAdapter(actor)?.shapeToActor(this.shapes[actor.id]);
-        if (newActor) {
-          const zIndex = this.shapes[this.selectedActor.getValue()!.id].zIndex();
-          newActor.z = zIndex;
-          if (zIndex) this.store.dispatch(ActorActions.updateActor({ id: newActor.id, actorUpdate: { id: newActor.id, changes: newActor } }));
-        }
-      });
+    const actors = this.actors.getValue();
+    const actorUpdates = actors.map(actor => { return { id: actor.id, actorUpdate: { id: actor.id, changes: actor }, changes: actor }}) as Update<Actor>[];
+    this.store.dispatch(ActorActions.updateAll({ actorUpdates }));
   }
 
   protected moveToTop() {
-    const actorId = this.selectedActor.getValue()?.id;
-    if (actorId) {
-      this.shapes[actorId].moveToTop();
-      this.updateActors();
-    };
+    const selectedActor = this.selectedActor.getValue();
+    if (selectedActor?.id) {
+      const shape = this.shapes[selectedActor.id];
+      if (shape) {
+        shape.moveToTop();
+        // this.updateActors();
+      }
+    }
   }
 
   protected moveToBottom() {
-    const actorId = this.selectedActor.getValue()?.id;
-    if (actorId) this.shapes[actorId].moveToBottom(); {
-      const backgroundActorId = this.backgroundActor.getValue().id;
-      this.shapes[backgroundActorId].moveToBottom();
-      this.updateActors();
-    };
+    const selectedActor = this.selectedActor.getValue();
+    if (selectedActor?.id) {
+      const shape = this.shapes[selectedActor.id];
+      if (shape) {
+        shape.moveToBottom();
+        const backgroundActorId = this.backgroundActor.getValue().id;
+        const backgroundShape = this.shapes[backgroundActorId];
+        if (backgroundShape) {
+          backgroundShape.moveToBottom();
+        }
+        // this.updateActors();
+      }
+    }
   }
 
   ngOnDestroy(): void {

@@ -7,7 +7,7 @@
 
   <div class="main">
     <aside class="toolbar">
-      <div class="main-content-empty">
+      <div class="main-content-empty-left">
         <div class="title">
           <h1>GL HF editor</h1>
         </div>
@@ -36,4 +36,10 @@
       </div>
     </aside>
   </div>
+
+  @if (showSnackbar.getValue()) {
+    <div [ngClass]="getSnackbarClass()">
+      <app-custom-snackbar-component snackbarModel="snackbarModel"></app-custom-snackbar-component>
+    </div>
+  }
 </div>
